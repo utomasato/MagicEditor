@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>p5.js Responsive Control</title>
+    <script src="lib/p5/p5.min.js"></script>
+    <style>
+        @font-face {
+          font-family: 'NotoColorEmojiLocal';
+          src: url('NotoColorEmoji-Regular.ttf') format('truetype');
+        }
+    
+        .emoji {
+          font-family: 'NotoColorEmojiLocal', 'Apple Color Emoji', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* スクロールバーを完全に非表示 */
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        body {
+            position: relative;
+        }
+        
+        .info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+            pointer-events: none; /* マウスイベントを通す */
+        }
+        
+        /* p5.jsのキャンバス用のスタイル */
+        main {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <div>Canvas: <span id="canvas-size"></span></div>
+        <div>Device Pixel Ratio: <span id="pixel-ratio"></span></div>
+    </div>
+
+    <script src="lib/engine.js"></script>
+    <script src="lib/gamelib.js"></script>
+    <script src="src/main.js"></script>
+    <script src="src/ring.js"></script>
+    <script src="src/sigil.js"></script>
+</body>
+</html>
