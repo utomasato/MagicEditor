@@ -5,6 +5,8 @@ let isPanning;
 let panStart = {};
 let isDragging;
 let dragOffset;
+let isRotating;
+let rotateOffset;
 let isAddRing;
 let rings = [];
 let mousePos = {};
@@ -23,14 +25,19 @@ function Start()
     config.gridWidth = 100;
     config.menuHeight = 100;
     config.menuBgColor = color(55, 55, 55, 200);
+    config.ringWidth = 40;
+    config.minRingCircumference = 40;
+    config.itemPadding = 3;
+    config.sigilWidth = 7;
     config.sigilColor = color(0, 0, 0);
     config.sigilSize = 40;
     config.sigilLineWidth = 0.04;
+    config.ringRotateHandleWidth = 20;
     
     buttons = [
-        // new Button(x, y, w, h, color, anchor, pivot, text, pressed);
-        new Button(-10, 10, 80, 80, color(255, 200, 200), {x: 1, y: 0}, {x: 1, y: 0}, "-", function(){ZoomOut();}),
-        new Button(-100, 10, 80, 80, color(255, 200, 200), {x: 1, y: 0}, {x: 1, y: 0}, "+", function(){ZoomIn();}),
+        new Button(10, -10, 60, 40, color(200, 200, 200), {x: 0, y: 1}, {x: 0, y: 1}, "-", function(){ZoomOut();}),
+        new Button(80, -10, 60, 40, color(200, 200, 200), {x: 0, y: 1}, {x: 0, y: 1}, "=", function(){ZoomReset();}),
+        new Button(150, -10, 60, 40, color(200, 200, 200), {x: 0, y: 1}, {x: 0, y: 1}, "+", function(){ZoomIn();}),
         new Button(10, 10, 80, 80, color(255, 200, 200), {x: 0, y: 0}, {x: 0, y: 0}, "Add", function(){isAddRing = true;}),
     ];
     
@@ -40,6 +47,7 @@ function Start()
     panStart = {x: 0, y: 0};
     isDragging = false;
     dragOffset = {x: 0, y: 0};
+    isRotating = false;
     isAddRing = false;
     
     mousePos = {x: 0, y: 0};
@@ -47,7 +55,6 @@ function Start()
     selectRing = null;
     
     //test
-    rings.push(new MagicRing({x: 0, y: 0}));
     rings.push(new MagicRing({x: 100, y: 100}));
 }
 
@@ -63,14 +70,23 @@ function Update()
     if (CheckMouseDown() || CheckTouchStart())
     {
         const ClickObj = CheckMouseObject();
-        CheckButtons();
+        // CheckButtons();
         switch (ClickObj[0])
         {
             case "menu":
+            case "button":
                 break;
             case "ring":
-                selectRing = ClickObj[1];
-                StartDragRing(selectRing, mousePos);
+                selectRing = ClickObj[1][0];
+                //console.log(ClickObj[1][1])
+                switch (ClickObj[1][1])
+                {
+                    case "inner":
+                        StartDragRing(selectRing, mousePos);
+                        break;
+                    case "outer":
+                        StartRotateRing(selectRing, mousePos);
+                }
                 break;
             default :
                 StartPan(GetMousePos());
@@ -94,7 +110,12 @@ function Update()
         {
             DragRing(selectRing, mousePos);
         }
-        else if (isPanning) {
+        else if (isRotating)
+        {
+            RotateRing(selectRing, mousePos);
+        }
+        else if (isPanning) 
+        {
             Pan(GetMousePos());
         }
     }
@@ -105,7 +126,12 @@ function Update()
         {
             EndDragRing();
         }
-        else if (isPanning){
+        else if (isRotating)
+        {
+            EndRotateRing();
+        }
+        else if (isPanning)
+        {
             EndPan();
         }
         isAddRing = false;
@@ -148,9 +174,9 @@ function Draw()
 
     // FPS表示
     DrawText(12, "FPS: " + GetFPSText(), width - 10, height - 10, color(0, 0, 0), RIGHT);
-    DrawText(12, "MausePos: (" + mousePos.x + ", " + mousePos.y + ")", width - 10, height - 30, color(0, 0, 0), RIGHT);
-    DrawText(12, "Pos: (" + cameraPos.x + ", " + cameraPos.y + ")", width - 10, height - 50, color(0,0,0), RIGHT);
-    DrawText(12, "Size: " + zoomSize, width - 10, height - 70, color(0,0,0),RIGHT);
+    //DrawText(12, "MausePos: (" + mousePos.x + ", " + mousePos.y + ")", width - 10, height - 30, color(0, 0, 0), RIGHT);
+    //DrawText(12, "Pos: (" + cameraPos.x + ", " + cameraPos.y + ")", width - 10, height - 50, color(0,0,0), RIGHT);
+    DrawText(12, "Size: " + zoomSize, width - 10, height - 30, color(0,0,0),RIGHT);
 }
 
 function OnResize()
@@ -184,6 +210,10 @@ function DrawGrid()
 // ---------------------------------------------
 function CheckMouseObject()
 {
+    if (CheckButtons())
+    {
+        return ["button"];
+    }
     if (CheckMouseOnMenu())
     {
         return ["menu"];
@@ -193,6 +223,7 @@ function CheckMouseObject()
     {
         return ["ring", ring];
     }
+    
     return [null];
 }
 
@@ -228,11 +259,14 @@ function DrawButtons()
 }
 
 function CheckButtons()
-{
+{   
+    let isbutton = false;
     buttons.forEach (btn =>
     {
-        btn.CheckPressed();
+        const result = btn.CheckPressed();
+        if (result) isbutton = true;
     });
+    return isbutton;
 }
 
 
@@ -249,6 +283,10 @@ function ZoomOut()
 {
     zoomSize -= 0.1;
     if (zoomSize < 0.1) zoomSize = 0.1;
+}
+function ZoomReset()
+{
+    zoomSize = 1;
 }
 
 // ---------------------------------------------
@@ -272,9 +310,34 @@ function DragRing(ring, pos)
 
 function EndDragRing()
 {
-    if (!isDragging) return;
     isDragging = false;
     console.log("EndDrag");
+}
+
+// ---------------------------------------------
+// リングをドラッグして回す
+// ---------------------------------------------
+function StartRotateRing(ring, pos)
+{
+    isRotating = true;
+    const mouseAngle = Math.atan2(pos.y - ring.pos.y, pos.x - ring.pos.x);
+    rotateOffset = (ring.angle) - mouseAngle;
+    console.log("StartRotate");
+}
+
+function RotateRing(ring, pos)
+{
+    if(!isRotating) return;
+    const mouseAngle = Math.atan2(pos.y - ring.pos.y, pos.x - ring.pos.x);
+    const newAngleRad = mouseAngle + rotateOffset;
+    ring.angle = newAngleRad;
+    console.log("Rotate");
+}
+
+function EndRotateRing()
+{
+    isRotating = false;
+    console.log("EndRotate");
 }
 
 // ---------------------------------------------

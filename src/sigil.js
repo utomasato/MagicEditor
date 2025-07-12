@@ -1,6 +1,6 @@
 //各シジルの描画
 
-function DrawSigil(token, x, y, config)
+function DrawSigil(token, x, y)
 {
     PushTransform();
     Translate(x, y);

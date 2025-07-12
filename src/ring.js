@@ -3,19 +3,52 @@ class MagicRing
     constructor(pos) 
     {
         this.pos = pos;
-        this.radius = 30;
+        this.radius = 0;
+        this.innerradius = 0;
+        this.outerradius = 0;
         this.rotate = 0;
         this.color = color(0, 0, 0, 128);
-        this.items = [];
-        this.items 
+        this.items = [new Sigil(0, 0, "RETURN")];
+        this.circumference = 0;
+        this.itemRadWidth = {sigil: 0, char: 0, padding: 0};
+        this.CalculateLayout();
+        this.angle = 0;
     }
 
     Draw() 
     {
         PushTransform();
         Translate(this.pos.x, this.pos.y);
-        FillCircle(0, 0, this.radius, this.color);
+        Rotate(this.angle);
+        //FillCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, this.color);
+        DrawCircle(0, 0, this.innerradius, color(0,0,0)); // 内側の円
+        DrawCircle(0, 0, this.outerradius, color(0,0,0)); // 外側の円
+        Rotate(this.itemRadWidth.sigil/2);
+        this.items.forEach(item =>
+        {
+            item.Draw(this.radius, this.itemRadWidth);
+        });
         PopTransform();
+    }
+    
+    CalculateLayout()
+    {
+        // リングの長さを求める
+        let totalLength = 0;
+        this.items.forEach(item => 
+        {
+           totalLength += item.GetLength() + config.itemPadding;
+        });
+        this.circumference = Math.max(totalLength, config.minRingCircumference);
+        this.radius = this.circumference;
+        this.innerradius = this.radius - config.ringWidth/2;
+        this.outerradius = this.radius + config.ringWidth/2;
+        this.itemRadWidth = 
+        {
+            sigil: config.sigilWidth / this.circumference * TWO_PI,
+            char: 0,
+            padding: config.itemPadding / this.circumference * TWO_PI,
+        };
     }
     
     CheckDistance(pos)
@@ -26,16 +59,24 @@ class MagicRing
     CheckPosIsOn(pos)
     {
         const distance = this.CheckDistance(pos)
-        if (distance < this.radius)
+        if (distance < this.outerradius + config.ringRotateHandleWidth)
         {
-            return this;
+            if (distance < this.outerradius)
+            {
+                if (distance < this.innerradius)
+                {
+                    return [this, "inner"];
+                }
+                return [this, "ring"]
+            }
+            return [this, "outer"];
         }
         return null;
     }
 }
 
 class RingItem {
-    constructor()
+    constructor(x, y, value)
     {
         this.x = x;
         this.y = y;
@@ -48,15 +89,31 @@ class RingItem {
         return 0;
     }
     
-    Draw(radWidth, config)
+    Draw(radius, itemRadWidth)
     {
     }
 }
 
 class Sigil extends RingItem {
-    constructor()
+    constructor(x, y, value)
     {
         super();
+        this.x = x;
+        this.y = y;
+        this.type = "sigil";
+        this.value = value;
+    }
+    
+    GetLength()
+    {
+        return config.sigilWidth;
+    }
+    
+    Draw(radius, radWidth)
+    {
+        Rotate(-radWidth.sigil/2);
+        DrawSigil(this.value, 0, -radius);
+        Rotate(-radWidth.sigil/2 - radWidth.padding);
     }
 }
 
@@ -80,7 +137,9 @@ class Button
         let [width, height] = GetScreenSize();
         const x = width * this.anchor.x + this.x - this.w * this.pivot.x;
         const y = height * this.anchor.y + this.y - this.h * this.pivot.y;
-        FillRect(x, y, this.w, this.h, this.color);
+        //FillRect(x, y, this.w, this.h, this.color);
+        DrawRoundRect(x, y, this.w, this.h, 10, color(0,0,0), 3); 
+        FillRoundRect(x, y, this.w, this.h, 10, this.color);
         DrawText(24, this.text, x + this.w/2, y + this.h/2, color(0, 0, 0), CENTER);
     }
     
@@ -92,6 +151,8 @@ class Button
         if (x < GetMouseX() && GetMouseX() < x + this.w && y < GetMouseY() && GetMouseY() < y + this.h)
         {
             this.pressed();
+            return true;
         }
+        return false;
     }
 }
