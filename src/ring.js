@@ -8,9 +8,14 @@ class MagicRing
         this.outerradius = 0;
         this.rotate = 0;
         this.color = color(0, 0, 0, 128);
-        this.items = [new Sigil(0, 0, "RETURN")];
+        this.items = [new Sigil(0, 0, "RETURN", this),
+            new Chars(0, 0, "longName", this),
+            new Chars(0, 0, "a", this),
+            new Chars(0, 0, "bcdefghijklmnop", this),
+            new Chars(0, 0, "BCDEFGHIJKOMNOP", this),
+            ];
         this.circumference = 0;
-        this.itemRadWidth = {sigil: 0, char: 0, padding: 0};
+        this.itemRadWidth = {sigil: 0, char: 0, charSpacing:0, padding: 0};
         this.CalculateLayout();
         this.angle = 0;
     }
@@ -27,6 +32,7 @@ class MagicRing
         this.items.forEach(item =>
         {
             item.Draw(this.radius, this.itemRadWidth);
+            Rotate(-this.itemRadWidth.padding);
         });
         PopTransform();
     }
@@ -46,7 +52,8 @@ class MagicRing
         this.itemRadWidth = 
         {
             sigil: config.sigilWidth / this.circumference * TWO_PI,
-            char: 0,
+            char: config.charWidth / this.circumference * TWO_PI,
+            charSpacing: config.charSpacing / this.circumference * TWO_PI,
             padding: config.itemPadding / this.circumference * TWO_PI,
         };
     }
@@ -76,12 +83,13 @@ class MagicRing
 }
 
 class RingItem {
-    constructor(x, y, value)
+    constructor(x, y, value, ring)
     {
         this.x = x;
         this.y = y;
         this.type = "item";
         this.value = value;
+        this.ring = ring;
     }
     
     GetLength()
@@ -92,14 +100,19 @@ class RingItem {
     Draw(radius, itemRadWidth)
     {
     }
+    
+    SetValue(newValue)
+    {
+        this.value = newValue;
+    }
 }
 
 class Sigil extends RingItem {
     constructor(x, y, value)
     {
         super();
-        this.x = x;
-        this.y = y;
+        //this.x = x;
+        //this.y = y;
         this.type = "sigil";
         this.value = value;
     }
@@ -113,7 +126,39 @@ class Sigil extends RingItem {
     {
         Rotate(-radWidth.sigil/2);
         DrawSigil(this.value, 0, -radius);
-        Rotate(-radWidth.sigil/2 - radWidth.padding);
+        //Rotate(-radWidth.sigil/2 - radWidth.padding);
+        Rotate(-radWidth.sigil/2);
+    }
+}
+
+class Chars extends RingItem {
+    constructor(x, y, value)
+    {
+        super();
+        this.x = x;
+        this.y = y;
+        this.type = "char";
+        this.value = value;
+    }
+    
+    GetLength()
+    {
+        return this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing;
+    }
+    
+    Draw(radius, radWidth)
+    {
+        Rotate(PI);
+        Rotate(radWidth.char/2 + radWidth.charSpacing);
+        const chars = this.value.split('');
+        chars.forEach(char =>
+        {
+            Rotate(-radWidth.char/2);
+            Rotate(-radWidth.charSpacing);
+            DrawText(config.fontSize, char, 0, radius, color(0,0,0), CENTER);
+            Rotate(-radWidth.char/2);
+        });
+        Rotate(PI);
     }
 }
 
