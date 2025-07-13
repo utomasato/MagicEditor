@@ -9,33 +9,22 @@ class MagicRing
         this.rotate = 0;
         this.color = color(0, 0, 0, 128);
         this.items = [new Sigil(0, 0, "RETURN", this),
+            new Sigil(0, 0, "add", this),
             new Chars(0, 0, "longName", this),
             new Chars(0, 0, "a", this),
+            new Sigil(0, 0, "sub", this),
             new Chars(0, 0, "bcdefghijklmnop", this),
+            new Sigil(0, 0, "mul", this),
             new Chars(0, 0, "BCDEFGHIJKOMNOP", this),
+            new Sigil(0, 0, "div", this),
             ];
         this.circumference = 0;
         this.itemRadWidth = {sigil: 0, char: 0, charSpacing:0, padding: 0};
+        this.layouts = [];
         this.CalculateLayout();
         this.angle = 0;
     }
 
-    Draw() 
-    {
-        PushTransform();
-        Translate(this.pos.x, this.pos.y);
-        Rotate(this.angle);
-        //FillCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, this.color);
-        DrawCircle(0, 0, this.innerradius, color(0,0,0)); // 内側の円
-        DrawCircle(0, 0, this.outerradius, color(0,0,0)); // 外側の円
-        Rotate(this.itemRadWidth.sigil/2);
-        this.items.forEach(item =>
-        {
-            item.Draw(this.radius, this.itemRadWidth);
-            Rotate(-this.itemRadWidth.padding);
-        });
-        PopTransform();
-    }
     
     CalculateLayout()
     {
@@ -46,9 +35,12 @@ class MagicRing
            totalLength += item.GetLength() + config.itemPadding;
         });
         this.circumference = Math.max(totalLength, config.minRingCircumference);
+        // 円周の長さから半径を求める
         this.radius = this.circumference;
         this.innerradius = this.radius - config.ringWidth/2;
         this.outerradius = this.radius + config.ringWidth/2;
+        
+        // 各アイテムの要素ごとのリング内での角度を求める
         this.itemRadWidth = 
         {
             sigil: config.sigilWidth / this.circumference * TWO_PI,
@@ -56,8 +48,48 @@ class MagicRing
             charSpacing: config.charSpacing / this.circumference * TWO_PI,
             padding: config.itemPadding / this.circumference * TWO_PI,
         };
+        
+        let currentAngle = this.items[0].GetLength() / this.circumference * PI;
+        this.items.forEach(item =>
+        {
+            currentAngle -= item.GetLength() / this.circumference * PI; // アイテムの描画位置(中心)
+            const itemEndAngle = currentAngle - (item.GetLength() / this.circumference * PI) - this.itemRadWidth.padding/2; // 次のアイテムとの境目
+            this.layouts.push({item: item, angle: currentAngle, angle2: itemEndAngle}); // [描画されるアイテム, 描画される位置(中心), 次のアイテムとの境目]
+            currentAngle -= (item.GetLength() / this.circumference * PI + this.itemRadWidth.padding);
+        });
     }
     
+    Draw() 
+    {
+        
+        PushTransform();
+        Translate(this.pos.x, this.pos.y);
+        Rotate(this.angle);
+        DrawCircle(0, 0, this.innerradius, color(0,0,0)); // 内側の円
+        DrawCircle(0, 0, this.outerradius, color(0,0,0)); // 外側の円
+
+        this.layouts.forEach(l=>{
+            l.item.Draw(this.radius, l.angle, this.itemRadWidth)
+        });
+        if(debugMode){
+            this.DrawDebugLine();
+        }
+        PopTransform();
+        
+    }
+    DrawDebugLine()
+    {
+        this.layouts.forEach(l=>{
+            PushTransform();
+            Rotate(l.angle);
+            DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0,255,0));
+            PopTransform();
+            PushTransform();
+            Rotate(l.angle2);
+            DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0,0,255));
+            PopTransform();
+        });
+    }
     CheckDistance(pos)
     {
         return Math.sqrt((pos.x - this.pos.x)**2 + (pos.y - this.pos.y)**2);
@@ -97,7 +129,7 @@ class RingItem {
         return 0;
     }
     
-    Draw(radius, itemRadWidth)
+    Draw(radius, layout, itemRadWidth)
     {
     }
     
@@ -121,13 +153,13 @@ class Sigil extends RingItem {
     {
         return config.sigilWidth;
     }
-    
-    Draw(radius, radWidth)
+
+    Draw(radius, angle, itemRadWidth)
     {
-        Rotate(-radWidth.sigil/2);
+        PushTransform();
+        Rotate(angle);
         DrawSigil(this.value, 0, -radius);
-        //Rotate(-radWidth.sigil/2 - radWidth.padding);
-        Rotate(-radWidth.sigil/2);
+        PopTransform();
     }
 }
 
@@ -137,7 +169,7 @@ class Chars extends RingItem {
         super();
         this.x = x;
         this.y = y;
-        this.type = "char";
+        this.type = "chars";
         this.value = value;
     }
     
@@ -146,19 +178,19 @@ class Chars extends RingItem {
         return this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing;
     }
     
-    Draw(radius, radWidth)
+    Draw(radius, angle, itemRadWidth)
     {
-        Rotate(PI);
-        Rotate(radWidth.char/2 + radWidth.charSpacing);
+        PushTransform();
+        Rotate(angle + PI);
+        const radwide = this.GetLength() / radius * TWO_PI;
+        Rotate(radwide/2 - itemRadWidth.char/2);
         const chars = this.value.split('');
         chars.forEach(char =>
         {
-            Rotate(-radWidth.char/2);
-            Rotate(-radWidth.charSpacing);
-            DrawText(config.fontSize, char, 0, radius, color(0,0,0), CENTER);
-            Rotate(-radWidth.char/2);
+            DrawText(config.fontSize, char, 0, radius, config.fontColor, CENTER);
+            Rotate(-itemRadWidth.char-itemRadWidth.charSpacing);
         });
-        Rotate(PI);
+        PopTransform();
     }
 }
 

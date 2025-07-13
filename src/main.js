@@ -4,8 +4,12 @@ let zoomSize;
 let rings = [];
 let buttons = [];
 
+let debugMode;
+
 function Start()
 {
+    debugMode = false;
+
     let [width, height] = GetScreenSize();
     // タイトルの設定
     SetTitle("MagicEditor");
@@ -13,19 +17,20 @@ function Start()
     
     config = {
         bgColor: color(255, 255, 255),
-        gridColor: color(128, 128, 128, 128),
+        gridColor: color(100, 100, 100, 100),
         gridWidth: 100,
         menuHeight: 100,
         menuBgColor: color(55, 55, 55, 200),
         ringWidth: 45,
         minRingCircumference: 40,
-        itemPadding: 3, //アイテム同士の幅
+        itemPadding: 2, //アイテム同士の幅
         sigilWidth: 7,
         charSpacing: 0.3, // 文字同士の幅
         charWidth: 1,
         fontsize: 15,
-        sigilColor: color(0, 0, 0),
+        fontColor: color(0, 0, 0),
         sigilSize: 40,
+        sigilColor: color(0, 0, 0),
         sigilLineWidth: 0.04,
         ringRotateHandleWidth: 20,
     };
@@ -76,6 +81,11 @@ function Update()
     else if (CheckMouseUp() || CheckTouchEnded())
     {
         MouseUpEvent();
+    }
+    
+    if (CheckKeyDown(Key.D))
+    {
+        debugMode = !debugMode;
     }
 }
 
