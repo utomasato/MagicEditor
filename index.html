@@ -61,7 +61,7 @@
         #resizer {
             width: 10px;
             height: 100%;
-            background: #2c3e50;
+            background: #ccc;
             cursor: col-resize; /* カーソルをリサイズアイコンに変更 */
             flex-shrink: 0;
             /* ドラッグ中のテキスト選択を防ぐ */
@@ -151,53 +151,57 @@
       });
     </script>
 
-    <!-- ▼▼▼ ここからリサイズ処理用のJavaScript ▼▼▼ -->
+    <!-- ▼▼▼ リサイズ処理とクリック判定用のJavaScript (タッチ対応) ▼▼▼ -->
     <script>
         const resizer = document.getElementById('resizer');
         const leftPanel = document.getElementById('p5-container');
         const mainContainer = document.getElementById('main-container');
 
-        // マウスがリサイズバー上で押された時の処理
-        resizer.addEventListener('mousedown', function(e) {
-            // デフォルトの動作（テキスト選択など）をキャンセル
+        // --- リサイズ処理 ---
+
+        // ドラッグ開始時の処理 (マウスとタッチ共通)
+        const handleDragStart = (e) => {
             e.preventDefault();
+            // 移動と終了のイベントリスナーを登録
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+            window.addEventListener('touchmove', handleDragMove, { passive: false });
+            window.addEventListener('touchend', handleDragEnd);
+        };
 
-            // マウス移動とマウスボタンを離した時のイベントリスナーをwindowに追加
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        });
+        // ドラッグ中の処理 (マウスとタッチ共通)
+        const handleDragMove = (e) => {
+            // イベントオブジェクトから座標を取得 (タッチイベントとマウスイベントで分岐)
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
 
-        // マウスが移動した時の処理
-        function handleMouseMove(e) {
-            // main-containerの左端からの相対的なマウスX座標を計算
             const containerRect = mainContainer.getBoundingClientRect();
-            let newLeftWidth = e.clientX - containerRect.left;
+            let newLeftWidth = clientX - containerRect.left;
 
             // パネルが極端に小さく/大きくなりすぎないように制限
             const minWidth = containerRect.width * 0.1; // 最小幅10%
             const maxWidth = containerRect.width * 0.9; // 最大幅90%
 
-            if (newLeftWidth < minWidth) {
-                newLeftWidth = minWidth;
-            }
-            if (newLeftWidth > maxWidth) {
-                newLeftWidth = maxWidth;
-            }
+            if (newLeftWidth < minWidth) newLeftWidth = minWidth;
+            if (newLeftWidth > maxWidth) newLeftWidth = maxWidth;
 
-            // 左パネルの幅を更新
             leftPanel.style.width = newLeftWidth + 'px';
-        }
+        };
 
-        // マウスボタンが離された時の処理
-        function handleMouseUp() {
-            // イベントリスナーを削除して、リサイズ処理を終了
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+        // ドラッグ終了時の処理 (マウスとタッチ共通)
+        const handleDragEnd = () => {
+            // 登録したイベントリスナーを全て解除
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
             
-            // p5.jsやUnityにウィンドウサイズが変更されたことを通知する
-            // これにより、各キャンバスが新しいサイズに合わせて再描画される
+            // p5.jsやUnityにウィンドウサイズが変更されたことを通知
             window.dispatchEvent(new Event('resize'));
-        }
+        };
+
+        // リサイズバーにイベントリスナーを設定
+        resizer.addEventListener('mousedown', handleDragStart);
+        resizer.addEventListener('touchstart', handleDragStart, { passive: false });
     </script>
 </body>
 </html>
