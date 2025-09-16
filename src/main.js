@@ -6,6 +6,7 @@ let fieldItems = [];
 let buttons = [];
 let cursormode = "grad";
 let debugMode;
+let globalIsClockwise = true;
 
 // =============================================
 // 入力と状態管理のためのグローバル変数
@@ -178,8 +179,9 @@ function Start() {
     rings[12].items.push(new Chars(0, 0, "-45", rings[12]));
     rings[12].items.push(new Chars(0, 0, "45", rings[12]));
     rings[7].items.push(new Name(0, 0, "materialName", rings[7]));
-    rings[7].items.push(new StringToken(0, 0, "Fire1", rings[7]));
+    rings[7].items.push(new StringToken(0, 0, "Fire_1", rings[7]));
     rings.forEach(ring => ring.CalculateLayout());
+    alignConnectedRings(rings[0]);
 }
 
 function Update() {

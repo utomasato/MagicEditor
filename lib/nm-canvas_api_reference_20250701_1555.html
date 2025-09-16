@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>nm-canvas_api_reference.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid@11.4.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="gamelibjs-api%E3%83%AA%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9">GameLib.js APIリファレンス</h1>
+<h2 id="%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E5%85%A5%E5%8A%9B">キーボード入力</h2>
+<h3 id="%E5%9F%BA%E6%9C%AC%E9%96%A2%E6%95%B0">基本関数</h3>
+<ul>
+<li><strong>CheckKey(keyBit)</strong> - キーが押されているかをチェック</li>
+<li><strong>CheckKeyDown(keyBit)</strong> - キーが今フレームで押されたかをチェック</li>
+<li><strong>CheckKeyUp(keyBit)</strong> - キーが今フレームで離されたかをチェック</li>
+</ul>
+<h3 id="%E3%82%AD%E3%83%BC%E5%AE%9A%E6%95%B0">キー定数</h3>
+<pre class="hljs"><code><div><span class="hljs-comment">// アルファベットキー（A-Z）</span>
+Key.A, Key.B, Key.C, ... Key.Z
+
+<span class="hljs-comment">// 特殊キー</span>
+Key.Space   <span class="hljs-comment">// スペースキー</span>
+Key.Left    <span class="hljs-comment">// 左矢印キー</span>
+Key.Up      <span class="hljs-comment">// 上矢印キー</span>
+Key.Right   <span class="hljs-comment">// 右矢印キー</span>
+Key.Down    <span class="hljs-comment">// 下矢印キー</span>
+</div></code></pre>
+<h3 id="%E4%BD%BF%E7%94%A8%E4%BE%8B">使用例</h3>
+<pre class="hljs"><code><div><span class="hljs-keyword">if</span> (CheckKey(Key.A)) {
+    <span class="hljs-comment">// Aキーが押されている間の処理</span>
+}
+
+<span class="hljs-keyword">if</span> (CheckKeyDown(Key.Space)) {
+    <span class="hljs-comment">// スペースキーが押された瞬間の処理</span>
+}
+</div></code></pre>
+<hr>
+<h2 id="%E3%83%9E%E3%82%A6%E3%82%B9%E5%85%A5%E5%8A%9B">マウス入力</h2>
+<h3 id="%E5%9F%BA%E6%9C%AC%E9%96%A2%E6%95%B0">基本関数</h3>
+<ul>
+<li><strong>CheckMouse()</strong> - マウスボタンが押されているかをチェック</li>
+<li><strong>CheckMouseDown()</strong> - マウスボタンが今フレームで押されたかをチェック</li>
+<li><strong>CheckMouseUp()</strong> - マウスボタンが今フレームで離されたかをチェック</li>
+</ul>
+<h3 id="%E5%BA%A7%E6%A8%99%E5%8F%96%E5%BE%97">座標取得</h3>
+<ul>
+<li><strong>GetMouseX()</strong> - マウスのX座標を取得</li>
+<li><strong>GetMouseY()</strong> - マウスのY座標を取得</li>
+<li><strong>GetMousePos()</strong> - マウス座標を{x, y}オブジェクトで取得</li>
+</ul>
+<h3 id="%E3%82%AB%E3%83%BC%E3%82%BD%E3%83%AB%E5%88%B6%E5%BE%A1">カーソル制御</h3>
+<ul>
+<li><strong>HideMouseCursor()</strong> - マウスカーソルを非表示にする</li>
+<li><strong>ShowMouseCursor()</strong> - マウスカーソルを表示する</li>
+<li><strong>SetMouseCursor(cursorType)</strong> - カスタムカーソルを設定</li>
+</ul>
+<h4 id="%E3%82%AB%E3%83%BC%E3%82%BD%E3%83%AB%E3%82%BF%E3%82%A4%E3%83%97%E4%B8%80%E8%A6%A7">カーソルタイプ一覧</h4>
+<pre class="hljs"><code><div><span class="hljs-comment">// 基本的なカーソル</span>
+<span class="hljs-string">'default'</span>     <span class="hljs-comment">// 通常の矢印</span>
+<span class="hljs-string">'pointer'</span>     <span class="hljs-comment">// 手のポインタ</span>
+<span class="hljs-string">'text'</span>        <span class="hljs-comment">// テキスト選択</span>
+<span class="hljs-string">'wait'</span>        <span class="hljs-comment">// 待機（砂時計）</span>
+<span class="hljs-string">'crosshair'</span>   <span class="hljs-comment">// 十字線</span>
+<span class="hljs-string">'move'</span>        <span class="hljs-comment">// 移動</span>
+<span class="hljs-string">'not-allowed'</span> <span class="hljs-comment">// 禁止</span>
+
+<span class="hljs-comment">// リサイズ用カーソル</span>
+<span class="hljs-string">'n-resize'</span>    <span class="hljs-comment">// 上下リサイズ</span>
+<span class="hljs-string">'e-resize'</span>    <span class="hljs-comment">// 左右リサイズ</span>
+<span class="hljs-string">'ne-resize'</span>   <span class="hljs-comment">// 右上左下リサイズ</span>
+<span class="hljs-string">'nw-resize'</span>   <span class="hljs-comment">// 左上右下リサイズ</span>
+
+<span class="hljs-comment">// その他</span>
+<span class="hljs-string">'help'</span>        <span class="hljs-comment">// ヘルプ</span>
+<span class="hljs-string">'grab'</span>        <span class="hljs-comment">// つかめる</span>
+<span class="hljs-string">'grabbing'</span>    <span class="hljs-comment">// つかんでいる</span>
+</div></code></pre>
+<hr>
+<h2 id="%E3%82%AA%E3%83%BC%E3%83%87%E3%82%A3%E3%82%AA%E5%87%A6%E7%90%86">オーディオ処理</h2>
+<h3 id="%E5%9F%BA%E6%9C%AC%E5%86%8D%E7%94%9F%E5%88%B6%E5%BE%A1">基本再生制御</h3>
+<ul>
+<li><strong>PlaySound(filename, startTime = 0)</strong> - 音声ファイルを再生（キャッシュあり）</li>
+<li><strong>IsPlayingSound(filename)</strong> - 音声が再生中かどうかをチェック</li>
+<li><strong>PauseSound(filename)</strong> - 音声を一時停止</li>
+<li><strong>StopSound(filename)</strong> - 音声を停止（最初に戻す）</li>
+</ul>
+<h3 id="%E9%9F%B3%E9%87%8F%E3%83%BB%E4%B8%80%E6%8B%AC%E5%88%B6%E5%BE%A1">音量・一括制御</h3>
+<ul>
+<li><strong>SetSoundVolume(filename, volume)</strong> - 音声のボリューム設定（0.0-1.0）</li>
+<li><strong>StopAllSounds()</strong> - 全ての音声を停止</li>
+<li><strong>ClearSoundCache()</strong> - 音声キャッシュをクリア（メモリ解放）</li>
+</ul>
+<h3 id="%E4%BD%BF%E7%94%A8%E4%BE%8B">使用例</h3>
+<pre class="hljs"><code><div><span class="hljs-comment">// BGMを再生</span>
+PlaySound(<span class="hljs-string">"bgm.mp3"</span>);
+
+<span class="hljs-comment">// 効果音を再生</span>
+<span class="hljs-keyword">if</span> (CheckKeyDown(Key.Space)) {
+    PlaySound(<span class="hljs-string">"jump.wav"</span>);
+}
+
+<span class="hljs-comment">// 音量を50%に設定</span>
+SetSoundVolume(<span class="hljs-string">"bgm.mp3"</span>, <span class="hljs-number">0.5</span>);
+</div></code></pre>
+<hr>
+<h2 id="%E5%9F%BA%E6%9C%AC%E5%9B%B3%E5%BD%A2%E6%8F%8F%E7%94%BB">基本図形描画</h2>
+<h3 id="%E7%B7%9A%E3%83%BB%E7%82%B9">線・点</h3>
+<ul>
+<li><strong>DrawLine(x0, y0, x1, y1, color, width = 1)</strong> - 線を描画</li>
+</ul>
+<h3 id="%E5%86%86%E3%83%BB%E6%A5%95%E5%86%86">円・楕円</h3>
+<ul>
+<li><strong>DrawCircle(cx, cy, radius, color, width = 1)</strong> - 円の枠線を描画</li>
+<li><strong>FillCircle(cx, cy, radius, color)</strong> - 円を塗りつぶし</li>
+<li><strong>DrawEllipse(cx, cy, w, h, color, width = 1)</strong> - 楕円の枠線を描画</li>
+<li><strong>FillEllipse(cx, cy, w, h, color)</strong> - 楕円を塗りつぶし</li>
+</ul>
+<h3 id="%E5%86%86%E5%BC%A7%E3%83%BB%E6%89%87%E5%BD%A2">円弧・扇形</h3>
+<ul>
+<li><strong>DrawArc(cx, cy, w, h, startAngle, endAngle, color, width = 1)</strong> - 円弧の枠線を描画</li>
+<li><strong>FillArc(cx, cy, w, h, startAngle, endAngle, color)</strong> - 円弧を塗りつぶし</li>
+</ul>
+<h3 id="%E5%9B%9B%E8%A7%92%E5%BD%A2">四角形</h3>
+<ul>
+<li><strong>DrawRect(x, y, w, h, color, width = 1)</strong> - 四角形の枠線を描画</li>
+<li><strong>FillRect(x, y, w, h, color)</strong> - 四角形を塗りつぶし</li>
+<li><strong>DrawRoundRect(x, y, w, h, radius, color, width = 1)</strong> - 角丸四角形の枠線を描画</li>
+<li><strong>FillRoundRect(x, y, w, h, radius, color)</strong> - 角丸四角形を塗りつぶし</li>
+</ul>
+<h3 id="%E4%B8%89%E8%A7%92%E5%BD%A2">三角形</h3>
+<ul>
+<li><strong>DrawTriangle(x1, y1, x2, y2, x3, y3, color, width = 1)</strong> - 三角形の枠線を描画</li>
+<li><strong>FillTriangle(x1, y1, x2, y2, x3, y3, color)</strong> - 三角形を塗りつぶし</li>
+</ul>
+<hr>
+<h2 id="%E7%89%B9%E6%AE%8A%E5%9B%B3%E5%BD%A2%E6%8F%8F%E7%94%BB">特殊図形描画</h2>
+<h3 id="%E3%83%AC%E3%83%B3%E3%82%BA%E5%BD%A2%E7%8A%B6">レンズ形状</h3>
+<ul>
+<li><strong>DrawLensShape(cx, cy, width, height, color, strokeWidth = 1)</strong> - レンズ形状の枠線を描画</li>
+<li><strong>FillLensShape(cx, cy, width, height, color)</strong> - レンズ形状を塗りつぶし</li>
+</ul>
+<h3 id="%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3">グラデーション</h3>
+<ul>
+<li><strong>FillRectGradientH(x, y, w, h, c0, c1)</strong> - 水平グラデーション四角形を描画</li>
+<li><strong>FillRectGradientV(x, y, w, h, c0, c1)</strong> - 垂直グラデーション四角形を描画</li>
+</ul>
+<hr>
+<h2 id="%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88%E3%83%BB%E7%B5%B5%E6%96%87%E5%AD%97%E6%8F%8F%E7%94%BB">テキスト・絵文字描画</h2>
+<h3 id="%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88%E6%8F%8F%E7%94%BB">テキスト描画</h3>
+<ul>
+<li><strong>DrawText(fontSize, str, x, y, color, align = LEFT)</strong> - テキストを描画</li>
+</ul>
+<h3 id="%E7%B5%B5%E6%96%87%E5%AD%97%E6%8F%8F%E7%94%BB">絵文字描画</h3>
+<ul>
+<li><strong>DrawEmoji(fontSize, emojiStr, x, y, angle = 0, flipped = false)</strong> - 絵文字を描画</li>
+<li><strong>GetEmojiWidth(emojiStr, fontSize)</strong> - 絵文字の実際の描画サイズを取得</li>
+</ul>
+<h3 id="%E4%BD%BF%E7%94%A8%E4%BE%8B">使用例</h3>
+<pre class="hljs"><code><div><span class="hljs-comment">// テキスト描画</span>
+DrawText(<span class="hljs-number">24</span>, <span class="hljs-string">"Hello World"</span>, <span class="hljs-number">100</span>, <span class="hljs-number">100</span>, color(<span class="hljs-number">255</span>, <span class="hljs-number">255</span>, <span class="hljs-number">255</span>));
+
+<span class="hljs-comment">// 絵文字描画（回転・反転対応）</span>
+DrawEmoji(<span class="hljs-number">32</span>, <span class="hljs-string">"🚀"</span>, <span class="hljs-number">200</span>, <span class="hljs-number">200</span>, PI/<span class="hljs-number">4</span>, <span class="hljs-literal">false</span>);
+</div></code></pre>
+<hr>
+<h2 id="%E3%82%A2%E3%83%95%E3%82%A3%E3%83%B3%E5%A4%89%E6%8F%9B">アフィン変換</h2>
+<h3 id="%E5%A4%89%E6%8F%9B%E5%88%B6%E5%BE%A1">変換制御</h3>
+<ul>
+<li><strong>PushTransform()</strong> - 変換行列の状態を保存</li>
+<li><strong>PopTransform()</strong> - 変換行列の状態を復元</li>
+</ul>
+<h3 id="%E5%A4%89%E6%8F%9B%E6%93%8D%E4%BD%9C">変換操作</h3>
+<ul>
+<li><strong>Translate(x, y)</strong> - 座標の移動</li>
+<li><strong>Rotate(angle)</strong> - 回転（ラジアン）</li>
+<li><strong>Scale(sx, sy = null)</strong> - スケール（拡大・縮小）</li>
+</ul>
+<h3 id="%E4%BD%BF%E7%94%A8%E4%BE%8B">使用例</h3>
+<pre class="hljs"><code><div>PushTransform();
+Translate(<span class="hljs-number">100</span>, <span class="hljs-number">100</span>);
+Rotate(PI/<span class="hljs-number">4</span>);
+Scale(<span class="hljs-number">2.0</span>);
+<span class="hljs-comment">// ここで描画処理</span>
+FillCircle(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">20</span>, color(<span class="hljs-number">255</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>));
+PopTransform();
+</div></code></pre>
+<hr>
+<h2 id="%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0%E3%83%BB%E6%99%82%E9%96%93">システム・時間</h2>
+<h3 id="%E6%99%82%E9%96%93%E9%96%A2%E4%BF%82">時間関係</h3>
+<ul>
+<li><strong>DeltaTime()</strong> - デルタタイム（前フレームからの経過時間）を取得</li>
+<li><strong>CurrentTime()</strong> - 現在時刻を取得</li>
+</ul>
+<h3 id="%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0%E5%88%B6%E5%BE%A1">システム制御</h3>
+<ul>
+<li><strong>Clear(color)</strong> - 画面をクリア</li>
+<li><strong>SetTitle(title)</strong> - ウィンドウタイトルを設定</li>
+<li><strong>GetScreenSize()</strong> - 画面サイズを[width, height]で取得</li>
+<li><strong>GetFPSText()</strong> - FPS情報を文字列で取得</li>
+<li><strong>CaptureScreenImage(filename)</strong> - スクリーンショットを保存</li>
+<li><strong>ToggleFullScreen()</strong> - フルスクリーンモードを切り替え</li>
+</ul>
+<hr>
+<h2 id="%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A0%85">注意事項</h2>
+<ol>
+<li><strong>音声ファイル</strong>: 音声ファイルは<code>./assets/</code>フォルダに配置してください</li>
+<li><strong>色指定</strong>: p5.jsのcolor()関数を使用して色を指定します</li>
+<li><strong>角度</strong>: 回転角度はラジアン単位で指定します（度数法の場合はradians()関数を使用）</li>
+<li><strong>座標系</strong>: p5.jsの座標系（左上が原点）を使用します</li>
+</ol>
+
+</body>
+</html>

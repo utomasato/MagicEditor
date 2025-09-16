@@ -80,6 +80,7 @@ class MagicRing
     
     Draw() 
     {
+        const direction = globalIsClockwise ? -1 : 1;
         for (let i = 0; i < this.items.length; i++) {
             const item = this.items[i];
             if (item && item.type === 'joint') {
@@ -90,7 +91,7 @@ class MagicRing
                     const layout = this.layouts[i];
                     if(!layout) continue;
 
-                    const startAngleOnRing = parentRing.angle + layout.angle;
+                    const startAngleOnRing = parentRing.angle + layout.angle * direction;
                     const p0x = parentRing.pos.x + parentRing.radius * Math.sin(startAngleOnRing);
                     const p0y = parentRing.pos.y - parentRing.radius * Math.cos(startAngleOnRing);
 
@@ -135,7 +136,7 @@ class MagicRing
         {
             if (this.items[i] && this.layouts[i]) 
             {
-                this.items[i].DrawByRing(this.radius, this.layouts[i].angle, this.itemRadWidth);
+                this.items[i].DrawByRing(this.radius, this.layouts[i].angle * direction , this.itemRadWidth);
             }
         }
 
@@ -167,14 +168,15 @@ class MagicRing
     
     DrawDebugLine()
     {
+        const direction = globalIsClockwise ? -1 : 1;
         this.layouts.forEach(l=>{
             if (l) {
                 PushTransform();
-                Rotate(l.angle);
+                Rotate(l.angle * direction );
                 DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0,255,0));
                 PopTransform();
                 PushTransform();
-                Rotate(l.angle2);
+                Rotate(l.angle2 * direction );
                 DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0,0,255));
                 PopTransform();
             }
@@ -216,8 +218,9 @@ class MagicRing
     
     CheckPosItem(pos)
     {
+        const direction = globalIsClockwise ? -1 : 1;
         const mouseAngle = -PI - Math.atan2(pos.x - this.pos.x, pos.y - this.pos.y);
-        const angle = (((mouseAngle - this.angle)/PI % 2 + 2) % 2 - 2) * PI;
+        const angle = (((mouseAngle - this.angle)/PI *direction % 2 + 2) % 2 - 2) * PI;
         
         for (let i = 0; i < this.layouts.length; i++) {
             const layout = this.layouts[i];
@@ -379,9 +382,18 @@ class Sigil extends RingItem {
 
     DrawByRing(radius, angle, itemRadWidth)
     {
+        const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
         Rotate(angle);
-        DrawSigil(this.value, 0, -radius);
+        if (globalIsClockwise && this.value != "RETURN" && this.value != "COMPLETE") 
+        {
+            Rotate(PI);
+            DrawSigil(this.value, 0, radius);
+        }
+        else
+        {
+            DrawSigil(this.value, 0, -radius);
+        }
         PopTransform();
     }
     
@@ -392,7 +404,10 @@ class Sigil extends RingItem {
         {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
-            DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle, zoomSize);
+            if (globalIsClockwise)
+                DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle+PI, zoomSize);
+            else
+                DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle, zoomSize);
         }
         else
         {
@@ -432,15 +447,17 @@ class Chars extends RingItem {
     
     DrawByRing(radius, angle, itemRadWidth)
     {
+        const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
-        Rotate(angle + PI);
+        Rotate(angle);
+        if (!globalIsClockwise) Rotate(PI);
         const radwide = this.GetLength() / radius * TWO_PI;
-        Rotate(radwide/2 - itemRadWidth.char/2);
+        Rotate((radwide/2 - itemRadWidth.char/2) * direction);
         const chars = this.value.split('');
         chars.forEach(char =>
         {
-            DrawText(config.fontSize, char, 0, radius, config.fontColor, CENTER);
-            Rotate(-itemRadWidth.char-itemRadWidth.charSpacing);
+            DrawText(config.fontSize, char, 0, radius * direction , config.fontColor, CENTER);
+            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
         });
         PopTransform();
     }
@@ -454,7 +471,8 @@ class Chars extends RingItem {
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
             PushTransform();
             Translate(GetMouseX(), GetMouseY());
-            Rotate(-mouseAngle + PI);
+            Rotate(-mouseAngle);
+            if (!globalIsClockwise) Rotate(PI);
             DrawText(config.fontSize * zoomSize, this.value, 0, 0, config.fontColor, CENTER);
             PopTransform();
         }
@@ -496,28 +514,38 @@ class StringToken extends RingItem {
     
     DrawByRing(radius, angle, itemRadWidth)
     {
+        const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
-        Rotate(angle + PI);
+        Rotate(angle);
+        if (!globalIsClockwise) Rotate(PI);
         const radwide = this.GetLength() / radius * TWO_PI;
-        Rotate(radwide/2 - itemRadWidth.stringSide);
-        arc(0, radius, config.stringSideWidth*TWO_PI*2, config.stringSideWidth*TWO_PI*2, HALF_PI, -HALF_PI);
-        Rotate(-itemRadWidth.char/2);
+        Rotate((radwide/2 - itemRadWidth.stringSide) * direction);
+        arc(0, radius * direction, config.stringSideWidth*TWO_PI*2, config.stringSideWidth*TWO_PI*2, HALF_PI, -HALF_PI);
+        Rotate(-itemRadWidth.char/2 * direction);
         const chars = this.value.split('');
         chars.forEach(char =>
         {
-            DrawText(config.fontSize, char, 0, radius, config.fontColor, CENTER);
-            Rotate(-itemRadWidth.char-itemRadWidth.charSpacing);
+            DrawText(config.fontSize, char, 0, radius * direction, config.fontColor, CENTER);
+            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
         });
-        Rotate(itemRadWidth.char/2 + itemRadWidth.charSpacing);
+        Rotate((itemRadWidth.char/2 + itemRadWidth.charSpacing) * direction);
         noFill();
         stroke(config.sigilColor);
         strokeWeight(1);
-        arc(0, radius, config.stringSideWidth*TWO_PI*2, config.stringSideWidth*TWO_PI*2, -HALF_PI, HALF_PI);
+        arc(0, radius * direction, config.stringSideWidth*TWO_PI*2, config.stringSideWidth*TWO_PI*2, -HALF_PI, HALF_PI);
         const innerlineradius = (radius-config.stringSideWidth*TWO_PI)*2;
         const outerlineradius = (radius+config.stringSideWidth*TWO_PI)*2
         const outlinewidth = this.value.length * itemRadWidth.char + (this.value.length-1) * itemRadWidth.charSpacing;
-        arc(0, 0, innerlineradius, innerlineradius, HALF_PI, HALF_PI+outlinewidth);
-        arc(0, 0, outerlineradius, outerlineradius, HALF_PI, HALF_PI+outlinewidth);
+        if (globalIsClockwise)
+        {
+            arc(0, 0, innerlineradius, innerlineradius, -HALF_PI-outlinewidth, -HALF_PI);
+            arc(0, 0, outerlineradius, outerlineradius, -HALF_PI-outlinewidth, -HALF_PI);
+        }
+        else
+        {
+            arc(0, 0, innerlineradius, innerlineradius, HALF_PI, HALF_PI+outlinewidth);
+            arc(0, 0, outerlineradius, outerlineradius, HALF_PI, HALF_PI+outlinewidth);
+        }
         PopTransform();
     }
     
@@ -531,8 +559,8 @@ class StringToken extends RingItem {
         {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
-            Rotate(-mouseAngle + PI);
-        }
+            Rotate(-mouseAngle);
+            if (!globalIsClockwise) Rotate(PI);        }
         Scale(zoomSize);
         DrawText(config.fontSize, this.value, 0, 0, config.fontColor, CENTER);
         const textlen = config.fontSize*this.value.length*0.6;
@@ -589,17 +617,33 @@ class Name extends RingItem {
     
     DrawByRing(radius, angle, itemRadWidth)
     {
+        /*
         PushTransform();
         Rotate(angle);
-        DrawSigil("name", 0, -radius);
-        Rotate(PI);
-        const radwide = (this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing) / radius * TWO_PI;
-        Rotate(radwide/2 - itemRadWidth.char/2);
+        if (!globalIsClockwise) Rotate(PI);
+        const radwide = this.GetLength() / radius * TWO_PI;
+        Rotate((radwide/2 - itemRadWidth.char/2) * direction);
         const chars = this.value.split('');
         chars.forEach(char =>
         {
-            DrawText(config.fontSize, char, 0, radius, config.fontColor, CENTER);
-            Rotate(-itemRadWidth.char-itemRadWidth.charSpacing);
+            DrawText(config.fontSize, char, 0, radius * direction , config.fontColor, CENTER);
+            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
+        });
+        PopTransform();
+        */
+        
+        const direction = globalIsClockwise ? -1 : 1;
+        PushTransform();
+        Rotate(angle);
+        DrawSigil("name", 0, -radius);
+        if (!globalIsClockwise) Rotate(PI);
+        const radwide = (this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing) / radius * TWO_PI;
+        Rotate((radwide/2 - itemRadWidth.char/2) * direction);
+        const chars = this.value.split('');
+        chars.forEach(char =>
+        {
+            DrawText(config.fontSize, char, 0, radius * direction , config.fontColor, CENTER);
+            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
         });
         PopTransform();
     }
@@ -614,7 +658,8 @@ class Name extends RingItem {
         {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
-            Rotate(-mouseAngle + PI);
+            Rotate(-mouseAngle);
+            if (!globalIsClockwise) Rotate(PI);
         }
         Scale(zoomSize);
         DrawText(config.fontSize, this.value, 0, 0, config.fontColor, CENTER);
