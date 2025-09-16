@@ -14,6 +14,9 @@ function createBasePanel(titleText, closeCallback, deleteCallback) {
     currentUiPanel.style('display', 'flex');
     currentUiPanel.style('flex-direction', 'column');
     currentUiPanel.style('gap', '8px');
+    currentUiPanel.style('user-select', 'none'); // このパネル内でのテキスト選択を無効化
+    currentUiPanel.style('-webkit-user-select', 'none');
+
     const header = createDiv('');
     header.parent(currentUiPanel);
     header.style('display', 'flex');
@@ -56,25 +59,20 @@ function createBasePanel(titleText, closeCallback, deleteCallback) {
     return { panel: currentUiPanel, contentArea: contentArea };
 }
 
-function finishTextInput() {
-    if (isFinishingText) return;
-    isFinishingText = true;
-    if (currentInputElement && editingItem) {
-        editingItem.value = currentInputElement.value();
-        if (editingItem.parentRing) {
-            editingItem.parentRing.CalculateLayout();
-        }
-    }
-    if (currentUiPanel) {
-        currentUiPanel.remove();
-        currentUiPanel = null;
-    }
-    currentInputElement = null;
-    editingItem = null;
-    setTimeout(() => { isFinishingText = false; }, 50);
-}
-
+/**
+ * テキスト編集可能なアイテム（Chars, StringToken, Name）のパネルを作成します。
+ * p5.domの入力ボックスの代わりに、ブラウザ標準のpromptダイアログを使用します。
+ * @param {RingItem} item 編集対象のアイテム
+ */
 function createTextInput(item) {
+    const closePanel = () => {
+        if (currentUiPanel) {
+            currentUiPanel.remove();
+            currentUiPanel = null;
+        }
+        editingItem = null;
+    };
+    
     const handleDelete = () => {
         if (item.parentRing) {
             const ring = item.parentRing;
@@ -86,30 +84,59 @@ function createTextInput(item) {
         } else {
             fieldItems = fieldItems.filter(fItem => fItem !== item);
         }
-        finishTextInput();
+        closePanel();
     };
-    const panelResult = createBasePanel('Edit Value', finishTextInput, handleDelete);
+
+    const panelResult = createBasePanel('Edit Value', closePanel, handleDelete);
     if (!panelResult) return;
+
     const { contentArea } = panelResult;
     editingItem = item;
-    currentInputElement = createInput(item.value);
-    currentInputElement.parent(contentArea);
-    currentInputElement.style('border', '1px solid #ccc');
-    currentInputElement.style('padding', '4px');
-    currentInputElement.style('font-size', '14px');
-    const inputEl = currentInputElement.elt;
-    inputEl.focus();
-    inputEl.selectionStart = inputEl.selectionEnd = inputEl.value.length;
-    const keyInterceptor = (e) => {
-        e.stopImmediatePropagation();
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            finishTextInput();
+
+    // 値を表示するコンテナ
+    const valueContainer = createDiv('');
+    valueContainer.parent(contentArea);
+    valueContainer.style('display', 'flex');
+    valueContainer.style('align-items', 'center');
+    valueContainer.style('gap', '8px');
+
+    // 現在の値を表示するエリア
+    const valueDisplay = createP(item.value);
+    valueDisplay.parent(valueContainer);
+    valueDisplay.style('margin', '0');
+    valueDisplay.style('flex-grow', '1');
+    valueDisplay.style('padding', '4px');
+    valueDisplay.style('background', '#fff');
+    valueDisplay.style('border', '1px solid #ccc');
+    valueDisplay.style('border-radius', '4px');
+    valueDisplay.style('min-width', '100px');
+
+    // 編集ボタン
+    const editButton = createButton('編集');
+    editButton.parent(valueContainer);
+    
+    // 編集ボタンが押されたら、promptダイアログを表示
+    editButton.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const newValue = prompt("新しい値を入力してください:", item.value || "");
+
+        // ユーザーがキャンセルしなかった場合のみ値を更新
+        if (newValue !== null) {
+            item.value = newValue;
+            valueDisplay.html(newValue); // パネル上の表示も更新
+            if (item.parentRing) {
+                item.parentRing.CalculateLayout();
+            }
+            closePanel();
         }
-    };
-    inputEl.addEventListener('keydown', keyInterceptor, true);
-    inputEl.addEventListener('blur', finishTextInput);
+        
+        // --- ▼▼▼ ここから修正 ▼▼▼ ---
+        // ダイアログが閉じた後、必ずパネルも閉じる
+        // closePanel();
+        // --- ▲▲▲ ここまで ▲▲▲ ---
+    });
 }
+
 
 function createSigilDropdown(item) {
     const closeDropdown = () => {
@@ -212,7 +239,8 @@ function createRingPanel(ring) {
     jointButton.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         const newJoint = new Joint(ring.pos.x, ring.pos.y, ring, null);
-        newJoint.pos.x += ring.outerradius + 40;
+        newJoint.pos.x +=  (ring.radius + 70) * Math.sin(ring.angle + PI/20);
+        newJoint.pos.y -=  (ring.radius + 70) * Math.cos(ring.angle + PI/20);
         fieldItems.push(newJoint);
         closePanel();
     });
@@ -254,6 +282,7 @@ function createRingPanel(ring) {
         });
     }
 }
+
 
 function createJointPanel(item) {
     const closePanel = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } editingItem = null; };
@@ -308,31 +337,21 @@ function createJointPanel(item) {
                     return;
                 }
                 
-                // --- ▼▼▼ ここから修正 ▼▼▼ ---
-                
-                // 1. 描画方向とJointのリング上の角度を取得
                 const direction = globalIsClockwise ? -1 : 1;
                 const jointLocalAngle = parentRing.layouts[jointIndex].angle;
 
-                // 2. Jointの出口のグローバルな角度を計算
                 const jointGlobalAngle = parentRing.angle + jointLocalAngle * direction;
 
-                // 3. 親リングと子リングの現在の距離を計算（これを維持する）
                 const currentDistance = dist(parentRing.pos.x, parentRing.pos.y, connectedRing.pos.x, connectedRing.pos.y);
                 
-                // 4. 子リングの新しい位置を計算 (p5.jsの角度系に補正)
                 const p5Angle = jointGlobalAngle - HALF_PI;
                 const newChildX = parentRing.pos.x + currentDistance * cos(p5Angle);
                 const newChildY = parentRing.pos.y + currentDistance * sin(p5Angle);
 
-                // 5. 子リングの新しい角度を計算（親を向くように）
                 const angleToParent = atan2(parentRing.pos.y - newChildY, parentRing.pos.x - newChildX);
                 const newChildAngle = angleToParent + HALF_PI;
 
-                // 6. 子リングのサブツリー全体を移動・回転させる
-                transformSubtree(connectedRing, newChildX, newChildY, newChildAngle);
-
-                // --- ▲▲▲ ここまで ▲▲▲ ---
+                transformSubtree(connectedRing, newChildX, newChildAngle);
 
                 closePanel();
             });
@@ -344,5 +363,73 @@ function createJointPanel(item) {
         message.style('margin', '0');
         message.style('color', '#888');
     }
+}
+
+function createConsolePanel() {
+    consolePanel = createDiv('');
+    consolePanel.position(GetScreenSize()[0] + 25, GetScreenSize()[1] - 160);
+    consolePanel.size(GetScreenSize()[0] - 35, 150);
+    consolePanel.style('z-index', '1000');
+    consolePanel.style('background-color', 'rgba(30, 30, 30, 0.85)');
+    consolePanel.style('border-radius', '6px');
+    consolePanel.style('box-shadow', '0 2px 5px rgba(0,0,0,0.2)');
+    consolePanel.style('display', 'flex');
+    consolePanel.style('flex-direction', 'column');
+    consolePanel.style('font-family', 'monospace');
+    consolePanel.style('color', '#eee');
+    consolePanel.style('position', 'absolute');
+
+    const header = createDiv('');
+    header.parent(consolePanel);
+    header.style('padding', '8px 8px');
+    header.style('background-color', 'rgba(50, 50, 50, 0.9)');
+    header.style('display', 'flex');
+    header.style('justify-content', 'space-between');
+    header.style('align-items', 'center');
+    header.style('cursor', 'move');
+
+    header.elt.addEventListener('mousedown', (e) => {
+        if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'OPTION') {
+            isDraggingConsole = true;
+            consoleDragOffset.x = mouseX - consolePanel.position().x;
+            consoleDragOffset.y = mouseY - consolePanel.position().y;
+            e.preventDefault();
+        }
+    });
+    
+    const title = createP('Console');
+    title.parent(header);
+    title.style('margin', '0');
+
+    const languageSelect = createSelect();
+    languageSelect.parent(header);
+    languageSelect.option('postscript');
+    languageSelect.option('lisp');
+    languageSelect.changed(() => {
+        setInterpreter(languageSelect.value());
+    });
+
+    consoleText = createP('Ready.');
+    consoleText.parent(consolePanel);
+    consoleText.style('padding', '8px');
+    consoleText.style('margin', '0');
+    consoleText.style('flex-grow', '1');
+    consoleText.style('white-space', 'pre-wrap');
+    consoleText.style('word-wrap', 'break-word');
+    consoleText.style('overflow-y', 'auto');
+
+    const resizeHandle = createDiv('');
+    resizeHandle.parent(consolePanel);
+    resizeHandle.style('width', '20px');
+    resizeHandle.style('height', '20px');
+    resizeHandle.style('position', 'absolute');
+    resizeHandle.style('right', '0');
+    resizeHandle.style('bottom', '0');
+    resizeHandle.style('cursor', 'se-resize');
+
+    resizeHandle.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        isResizingConsole = true;
+    });
 }
 

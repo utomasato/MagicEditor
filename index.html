@@ -37,6 +37,19 @@
             width: 100%;
             overflow: hidden; /* スクロールバーを完全に非表示 */
             font-family: Arial, sans-serif;
+            
+            touch-action: none; /* iOSでの画面全体のスクロール(オーバースクロール)を防止 */
+            /* Safari(iOS)でのテキスト選択や長押しメニューを無効化 */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* UI要素の操作を許可するための上書き設定 */
+        select, input, button, textarea {
+            user-select: auto;
+            -webkit-user-select: auto;
+            touch-action: auto; /* UI要素ではブラウザのタッチ操作を許可 */
         }
 
         /* --- レイアウトの核となる部分 --- */
@@ -136,13 +149,13 @@
     <script src="./lib/engine.js"></script>
     <script src="./lib/gamelib.js"></script>
     <script src="./lib/touch.js"></script>  
-    <script src="./src/main.js"></script>
     <script src="./src/objects.js"></script>  
     <script src="./src/sigil.js"></script>  
     <script src="./src/input.js"></script>
     <script src="./src/ui.js"></script>  
     <script src="./src/layout.js"></script>  
-
+    <script src="./src/interpreter.js"></script>  
+    <script src="./src/main.js"></script>
 
     <script>
       // http:// 接続時に navigator.mediaDevices が未定義になる問題への対策
@@ -245,3 +258,4 @@
     </script>
 </body>
 </html>
+

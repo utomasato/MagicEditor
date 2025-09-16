@@ -6,7 +6,7 @@ let fieldItems = [];
 let buttons = [];
 let cursormode = "grad";
 let debugMode;
-let globalIsClockwise = true;
+let globalIsClockwise = false;
 
 // =============================================
 // 入力と状態管理のためのグローバル変数
@@ -35,9 +35,22 @@ let currentSelectElement = null;
 let editingItem = null;
 let isFinishingText = false;
 
+let interpreters = {};    // すべてのインタープリタのインスタンスを保持
+let activeInterpreter;    // 現在アクティブなインタープリタ
+
+let consolePanel = null;
+let consoleText = null;
+
+let isDraggingConsole = false;
+let consoleDragOffset = { x: 0, y: 0 };
+let isResizingConsole = false;
 
 function Start() {
     debugMode = false;
+
+    interpreters['postscript'] = new PostscriptInterpreter();
+    interpreters['lisp'] = new LispInterpreter();
+    activeInterpreter = interpreters['postscript']; 
 
     let [width, height] = GetScreenSize();
     SetTitle("MagicEditor");
@@ -68,18 +81,29 @@ function Start() {
     };
 
     buttons = [
-        new Button(10, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "ring", function () { isAddRing = true; }),
-        new Button(70, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "sigil", function () { isAddSigil = true; }),
-        new Button(130, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "num", function () { isAddNum = true; }),
-        new Button(190, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "str", function () { isAddStr = true; }),
-        new Button(250, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "name", function () { isAddName = true; }),
-        new Button(-10, 10, 50, 50, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "▶️", function () { CommitMagicSpell(); }),
-        new Button(10, -10, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "-", function () { ZoomOut(); }),
-        new Button(10, -60, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "=", function () { ZoomReset(); }),
-        new Button(10, -110, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "+", function () { ZoomIn(); }),
-        new Button(10, 80, 40, 40, color(200, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "a", function () { cursormode = "grad"; SetMouseCursor('grab'); }),
-        new Button(10, 125, 40, 40, color(200, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "b", function () { cursormode = "default"; SetMouseCursor('default'); }),
-        new Button(10, 180, 160, 40, color(200, 220, 255), { x: 0, y: 0 }, { x: 0, y: 0 }, "Align Rings", () => {
+        new Button(10, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "ring", () => { isAddRing = true; }),
+        new Button(70, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "sigil", () => { isAddSigil = true; }),
+        new Button(130, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "num", () => { isAddNum = true; }),
+        new Button(190, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "str", () => { isAddStr = true; }),
+        new Button(250, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "name", () => { isAddName = true; }),
+        new Button(-10, 10, 50, 50, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "▶️", () => { CommitMagicSpell(); }),
+        new Button(-70, 10, 100, 50, color(200, 255, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "Execute", () => {
+            if (rings.length > 0) {
+                const mpsCode = GenerateSpell(rings[0]);
+                try {
+                    const resultStack = activeInterpreter.execute(mpsCode);
+                    updateConsolePanel(`Execution successful.\n\nResult:\n[${resultStack.join(', ')}]`);
+                } catch (e) {
+                    updateConsolePanel(`Execution Error:\n${e.message}`);
+                }
+            }
+        }),
+        new Button(10, -10, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "-", () => { ZoomOut(); }),
+        new Button(10, -60, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "=", () => { ZoomReset(); }),
+        new Button(10, -110, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "+", () => { ZoomIn(); }),
+        new Button(10, 80, 40, 40, color(200, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "a", () => { cursormode = "grad"; SetMouseCursor('grab'); }),
+        new Button(60, 80, 40, 40, color(200, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "b", () => { cursormode = "default"; SetMouseCursor('default'); }),
+        new Button(110, 80, 160, 40, color(200, 220, 255), { x: 0, y: 0 }, { x: 0, y: 0 }, "Align Rings", () => {
             if (rings.length > 0) {
                 alignConnectedRings(rings[0]);
             }
@@ -90,98 +114,10 @@ function Start() {
     cameraPos = { x: 0, y: 0 };
 
     InputInitialize();
-
-    // MPSコードに対応する魔法陣の構造を生成
-    rings = [
-        new MagicRing({ x: 0, y: 0 }),     // 0: NEW ROOT
-        new DictRing({ x: 0, y: 0 }),      // 1: old root
-        new DictRing({ x: 0, y: 0 }),      // 2: main
-        new DictRing({ x: 0, y: 0 }),      // 3: emission
-        new DictRing({ x: 0, y: 0 }),      // 4: shape
-        new DictRing({ x: 0, y: 0 }),      // 5: colorOverLifetime
-        new DictRing({ x: 0, y: 0 }),      // 6: rotationOverLifetime
-        new DictRing({ x: 0, y: 0 }),      // 7: renderer
-        new ArrayRing({ x: 0, y: 0 }),     // 8: startLifetime array
-        new ArrayRing({ x: 0, y: 0 }),     // 9: startSize array
-        new ArrayRing({ x: 0, y: 0 }),     // 10: startRotation array
-        new DictRing({ x: 0, y: 0 }),      // 11: gradient object < ... >
-        new ArrayRing({ x: 0, y: 0 }),     // 12: rotation (z) array
-        new ArrayRing({ x: 0, y: 0 }),     // 13: colorKeys array [ [...] ]
-        new ArrayRing({ x: 0, y: 0 }),     // 14: alphaKeys array [ [...] ]
-        new ArrayRing({ x: 0, y: 0 }),     // 15: colorKey 1
-        new ArrayRing({ x: 0, y: 0 }),     // 16: colorKey 2
-        new ArrayRing({ x: 0, y: 0 }),     // 17: alphaKey 1
-        new ArrayRing({ x: 0, y: 0 }),     // 18: alphaKey 2
-        new ArrayRing({ x: 0, y: 0 }),     // 19: alphaKey 3
-    ];
-    rings[0].items.push(new Joint(0, 0, rings[1], rings[0]));
-    rings[1].items.push(new Name(0, 0, "main", rings[1]));
-    rings[1].items.push(new Joint(0, 0, rings[2], rings[1]));
-    rings[1].items.push(new Name(0, 0, "emission", rings[1]));
-    rings[1].items.push(new Joint(0, 0, rings[3], rings[1]));
-    rings[1].items.push(new Name(0, 0, "shape", rings[1]));
-    rings[1].items.push(new Joint(0, 0, rings[4], rings[1]));
-    rings[1].items.push(new Name(0, 0, "colorOverLifetime", rings[1]));
-    rings[1].items.push(new Joint(0, 0, rings[5], rings[1]));
-    rings[1].items.push(new Name(0, 0, "rotationOverLifetime", rings[1]));
-    rings[1].items.push(new Joint(0, 0, rings[6], rings[1]));
-    rings[1].items.push(new Name(0, 0, "renderer", rings[1]));
-    rings[1].items.push(new Joint(0, 0, rings[7], rings[1]));
-    rings[2].items.push(new Name(0, 0, "startLifetime", rings[2]));
-    rings[2].items.push(new Joint(0, 0, rings[8], rings[2]));
-    rings[2].items.push(new Name(0, 0, "startSpeed", rings[2]));
-    rings[2].items.push(new Chars(0, 0, "0.5", rings[2]));
-    rings[2].items.push(new Name(0, 0, "startSize", rings[2]));
-    rings[2].items.push(new Joint(0, 0, rings[9], rings[2]));
-    rings[2].items.push(new Name(0, 0, "startRotation", rings[2]));
-    rings[2].items.push(new Joint(0, 0, rings[10], rings[2]));
-    rings[8].items.push(new Chars(0, 0, "0.5", rings[8]));
-    rings[8].items.push(new Chars(0, 0, "1.0", rings[8]));
-    rings[9].items.push(new Chars(0, 0, "0.2", rings[9]));
-    rings[9].items.push(new Chars(0, 0, "0.4", rings[9]));
-    rings[10].items.push(new Chars(0, 0, "0", rings[10]));
-    rings[10].items.push(new Chars(0, 0, "360", rings[10]));
-    rings[3].items.push(new Name(0, 0, "rateOverTime", rings[3]));
-    rings[3].items.push(new Chars(0, 0, "50", rings[3]));
-    rings[4].items.push(new Name(0, 0, "angle", rings[4]));
-    rings[4].items.push(new Chars(0, 0, "5", rings[4]));
-    rings[4].items.push(new Name(0, 0, "radius", rings[4]));
-    rings[4].items.push(new Chars(0, 0, "0.0001", rings[4]));
-    rings[5].items.push(new Name(0, 0, "gradient", rings[5]));
-    rings[5].items.push(new Joint(0, 0, rings[11], rings[5]));
-    rings[11].items.push(new Name(0, 0, "colorKeys", rings[11]));
-    rings[11].items.push(new Joint(0, 0, rings[13], rings[11]));
-    rings[11].items.push(new Name(0, 0, "alphaKeys", rings[11]));
-    rings[11].items.push(new Joint(0, 0, rings[14], rings[11]));
-    rings[13].items.push(new Joint(0, 0, rings[15], rings[13]));
-    rings[13].items.push(new Joint(0, 0, rings[16], rings[13]));
-    rings[15].items.push(new Chars(0, 0, "1.0", rings[15]));
-    rings[15].items.push(new Chars(0, 0, "0.6", rings[15]));
-    rings[15].items.push(new Chars(0, 0, "0.0", rings[15]));
-    rings[15].items.push(new Chars(0, 0, "1.0", rings[15]));
-    rings[15].items.push(new Chars(0, 0, "0.0", rings[15]));
-    rings[16].items.push(new Chars(0, 0, "1.0", rings[16]));
-    rings[16].items.push(new Chars(0, 0, "0.0", rings[16]));
-    rings[16].items.push(new Chars(0, 0, "0.0", rings[16]));
-    rings[16].items.push(new Chars(0, 0, "1.0", rings[16]));
-    rings[16].items.push(new Chars(0, 0, "1.0", rings[16]));
-    rings[14].items.push(new Joint(0, 0, rings[17], rings[14]));
-    rings[14].items.push(new Joint(0, 0, rings[18], rings[14]));
-    rings[14].items.push(new Joint(0, 0, rings[19], rings[14]));
-    rings[17].items.push(new Chars(0, 0, "0.0", rings[17]));
-    rings[17].items.push(new Chars(0, 0, "0.0", rings[17]));
-    rings[18].items.push(new Chars(0, 0, "1.0", rings[18]));
-    rings[18].items.push(new Chars(0, 0, "0.5", rings[18]));
-    rings[19].items.push(new Chars(0, 0, "0.0", rings[19]));
-    rings[19].items.push(new Chars(0, 0, "1.0", rings[19]));
-    rings[6].items.push(new StringToken(0, 0, "z", rings[6]));
-    rings[6].items.push(new Joint(0, 0, rings[12], rings[6]));
-    rings[12].items.push(new Chars(0, 0, "-45", rings[12]));
-    rings[12].items.push(new Chars(0, 0, "45", rings[12]));
-    rings[7].items.push(new Name(0, 0, "materialName", rings[7]));
-    rings[7].items.push(new StringToken(0, 0, "Fire_1", rings[7]));
-    rings.forEach(ring => ring.CalculateLayout());
-    alignConnectedRings(rings[0]);
+    
+    rings = [new MagicRing({ x: 0, y: 0 })];
+    
+    createConsolePanel(); 
 }
 
 function Update() {
@@ -191,7 +127,6 @@ function Update() {
         y: (GetMouseY() - height / 2) / zoomSize + cameraPos.y
     };
 
-    // input.jsで定義された関数を呼び出す
     if (CheckMouseDown() || CheckTouchStart()) { MouseDownEvent(); }
     else if (CheckMouse() || CheckTouch()) { MouseHoldEvent(); }
     else if (CheckMouseUp() || CheckTouchEnded()) { MouseUpEvent(); }
@@ -215,7 +150,7 @@ function Draw() {
     if (draggingItem && draggingItem.item) { draggingItem.item.DrawByDrag(); }
 
     FillRect(0, 0, width, config.menuHeight, config.menuBgColor);
-    DrawButtons(); // input.jsで定義
+    DrawButtons();
     DrawText(12, "FPS: " + GetFPSText(), width - 10, height - 10, color(0, 0, 0), RIGHT);
     DrawText(12, "Size: " + zoomSize, width - 10, height - 30, color(0, 0, 0), RIGHT);
     if (debugMode) {
@@ -247,23 +182,35 @@ function ZoomIn() { zoomSize = min(5, zoomSize + 0.1); }
 function ZoomOut() { zoomSize = max(0.1, zoomSize - 0.1); }
 function ZoomReset() { zoomSize = 1; }
 
-function CommitMagicSpell() {
-    const magicSpell = GenerateSpell();
-    const data = {
-        isActive: true,
-        message: "MagicSpell",
-        value: 0,
-        text: magicSpell,
-    };
-    sendJsonToUnity('JsReceiver', 'ReceiveGeneralData', data);
-}
-
-function GenerateSpell() {
-    // ルートリングのSpell()を呼び出す
-    if (rings.length > 0) {
-        const spell = rings[0].Spell();
-        return spell;
+function updateConsolePanel(message) {
+    if (consoleText) {
+        consoleText.html(message.replace(/\n/g, '<br>'));
     }
-    return "";
 }
 
+function setInterpreter(name) {
+    if (interpreters[name]) {
+        activeInterpreter = interpreters[name];
+        updateConsolePanel(`Interpreter switched to: ${name}`);
+    } else {
+        console.error(`Interpreter not found: ${name}`);
+    }
+}
+
+function CommitMagicSpell() {
+    if (rings.length > 0) {
+        const magicSpell = GenerateSpell(rings[0]);
+        const data = {
+            isActive: true,
+            message: "MagicSpell",
+            value: 0,
+            text: magicSpell,
+        };
+        sendJsonToUnity('JsReceiver', 'ReceiveGeneralData', data);
+    }
+}
+
+function GenerateSpell(rootRing) {
+    if (!rootRing) return "";
+    return rootRing.Spell();
+}
