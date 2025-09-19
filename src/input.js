@@ -32,20 +32,25 @@ function InputInitialize()
 
 function MouseDownEvent()
 {
-    if (currentUiPanel) {
-        const panelRect = currentUiPanel.elt.getBoundingClientRect();
-        if (mouseX < panelRect.left || mouseX > panelRect.right || mouseY < panelRect.top || mouseY > panelRect.bottom) {
-            if (currentInputElement) {
-                finishTextInput(); 
-            } else {
-                currentUiPanel.remove();
-                currentUiPanel = null;
-                currentSelectElement = null;
-                editingItem = null;
-            }
-            return; 
-        }
-    }
+    if (isMouseOverPanel(currentUiPanel) || isMouseOverPanel(consolePanel)) {
+        return;
+    }
+    
+    if (currentUiPanel) {
+        const panelRect = currentUiPanel.elt.getBoundingClientRect();
+        if (mouseX < panelRect.left || mouseX > panelRect.right || mouseY < panelRect.top || mouseY > panelRect.bottom) {
+            if (currentInputElement) {
+                finishTextInput(); 
+            } else {
+                currentUiPanel.remove();
+                currentUiPanel = null;
+                currentSelectElement = null;
+                editingItem = null;
+            }
+            return;
+        }
+    }
+
 
     if (GetMouseX() > GetScreenSize()[0]) return;
     const ClickObj = CheckMouseObject();
@@ -89,37 +94,24 @@ function MouseDownEvent()
 
                     if (ringItemInfo && ringItemInfo.item) {
                         const itemInRing = ringItemInfo.item;
-                        if (itemInRing.type === 'joint') {
-                            createJointPanel(itemInRing);
-                        // --- ▼▼▼ ここから修正 ▼▼▼ ---
-                        } else if (itemInRing.type === 'sigil') {
-                            if (itemInRing.value === "RETURN" || itemInRing.value === "COMPLETE") {
-                                // RETURN/COMPLETEシジルがクリックされたら、親リングのパネルを開く
-                                createRingPanel(itemInRing.parentRing);
-                            } else {
-                                // それ以外のシジルはドロップダウンを開く
-                                createSigilDropdown(itemInRing);
-                            }
-                        // --- ▲▲▲ ここまで ▲▲▲ ---
-                        } else {
-                            createTextInput(itemInRing);
-                        }
-                    } else if (clickLocation === 'inner') { 
-                        createRingPanel(ringObject);
-                    }
+                        if (itemInRing.type === 'joint') { createJointPanel(itemInRing); }
+                         else if (itemInRing.type === 'sigil') {
+                            if (itemInRing.value === "RETURN" || itemInRing.value === "COMPLETE") {
+                                createRingPanel(itemInRing.parentRing);
+                            } else {
+                                createSigilDropdown(itemInRing);
+                            }
+                         }
+                         else { createTextInput(itemInRing); }
+                    } else if (clickLocation === 'inner') { createRingPanel(ringObject); }
                     break;
                 case "item": 
                     const fieldItem = fieldItems[ClickObj[1]];
-                    if (fieldItem.type === 'joint') {
-                        createJointPanel(fieldItem);
-                    } else if (fieldItem.type === 'sigil') {
-                        createSigilDropdown(fieldItem);
-                    } else {
-                        createTextInput(fieldItem);
-                    }
+                    if (fieldItem.type === 'joint') { createJointPanel(fieldItem); }
+                         else if (fieldItem.type === 'sigil') { createSigilDropdown(fieldItem); }
+                         else { createTextInput(fieldItem); }
                     break;
-                default :
-                    StartPan(GetMousePos());
+                default : StartPan(GetMousePos());
             }
             break;
     }
@@ -150,6 +142,7 @@ function MouseUpEvent()
     else if (isItemDragging) { EndDragItem(); }
     isAddRing = false;
 }
+
 
 function CheckMouseObject()
 {
@@ -188,9 +181,6 @@ function CheckMouseOnMenu()
     return GetMouseY() < config.menuHeight;
 }
 
-// ---------------------------------------------
-// Buttons
-// ---------------------------------------------
 function DrawButtons()
 {
     buttons.forEach (btn => { btn.Draw(); })
@@ -206,9 +196,6 @@ function CheckButtons()
     return isbutton;
 }
 
-// ---------------------------------------------
-// Ring Drag & Rotate (with child following logic)
-// ---------------------------------------------
 function StartDragRing(ring, pos)
 {
     isDragging = true;
@@ -224,7 +211,6 @@ function DragRing(ring, pos)
     const newY = pos.y + dragOffset.y;
     const dx = newX - oldPos.x;
     const dy = newY - oldPos.y;
-
     moveRingAndDescendants(ring, dx, dy, new Set());
 }
 
@@ -256,7 +242,6 @@ function RotateRing(ring, pos)
     const newAngle = mouseAngle + rotateOffset;
     const angleChange = newAngle - oldAngle;
     
-    // 回転をサブツリーに適用
     if (abs(angleChange) > 0.001) {
         const children = ring.items
             .filter(item => item && item.type === 'joint' && item.value instanceof MagicRing)
@@ -274,10 +259,6 @@ function EndRotateRing(ring)
     isRotating = false;
 }
 
-
-// ---------------------------------------------
-// Item Drag
-// ---------------------------------------------
 function StartDragItem(item, index)
 {
     isItemDragging = true;
@@ -346,9 +327,6 @@ function EndDragItem()
     }
 }
 
-// ---------------------------------------------
-// Panning
-// ---------------------------------------------
 function StartPan(mousePos)
 {
     isPanning = true;

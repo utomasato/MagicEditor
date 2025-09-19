@@ -37,6 +37,10 @@
             width: 100%;
             overflow: hidden; /* スクロールバーを完全に非表示 */
             font-family: Arial, sans-serif;
+            /* --- ▼▼▼ ここから修正 ▼▼▼ --- */
+            /* iOS Safariでのオーバースクロール（画面が引っ張られる現象）を防止 */
+            touch-action: none;
+            /* --- ▲▲▲ ここまで ▲▲▲ --- */
         }
 
         /* --- レイアウトの核となる部分 --- */
@@ -136,13 +140,13 @@
     <script src="./lib/engine.js"></script>
     <script src="./lib/gamelib.js"></script>
     <script src="./lib/touch.js"></script>  
-    <script src="./src/main.js"></script>
     <script src="./src/objects.js"></script>  
     <script src="./src/sigil.js"></script>  
     <script src="./src/input.js"></script>
     <script src="./src/ui.js"></script>  
     <script src="./src/layout.js"></script>  
-
+    <script src="./src/interpreter.js"></script>  
+    <script src="./src/main.js"></script>
 
     <script>
       // http:// 接続時に navigator.mediaDevices が未定義になる問題への対策
@@ -201,7 +205,9 @@
         // ドラッグ開始時の処理 (マウスとタッチ共通)
         const handleDragStart = (e) => {
             e.preventDefault();
-            // 移動と終了のイベントリスナーを登録
+            // リサイズ中はページ全体のテキスト選択を無効化
+            document.body.style.userSelect = 'none';
+            document.body.style.webkitUserSelect = 'none';
             window.addEventListener('mousemove', handleDragMove);
             window.addEventListener('mouseup', handleDragEnd);
             window.addEventListener('touchmove', handleDragMove, { passive: false });
@@ -210,15 +216,12 @@
 
         // ドラッグ中の処理 (マウスとタッチ共通)
         const handleDragMove = (e) => {
-            // イベントオブジェクトから座標を取得 (タッチイベントとマウスイベントで分岐)
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-
             const containerRect = mainContainer.getBoundingClientRect();
             let newLeftWidth = clientX - containerRect.left;
 
-            // パネルが極端に小さく/大きくなりすぎないように制限
-            const minWidth = containerRect.width * 0.1; // 最小幅10%
-            const maxWidth = containerRect.width * 0.9; // 最大幅90%
+            const minWidth = containerRect.width * 0.1;
+            const maxWidth = containerRect.width * 0.9;
 
             if (newLeftWidth < minWidth) newLeftWidth = minWidth;
             if (newLeftWidth > maxWidth) newLeftWidth = maxWidth;
@@ -229,13 +232,14 @@
 
         // ドラッグ終了時の処理 (マウスとタッチ共通)
         const handleDragEnd = () => {
-            // 登録したイベントリスナーを全て解除
+            // テキスト選択の無効化を解除
+            document.body.style.userSelect = '';
+            document.body.style.webkitUserSelect = '';
             window.removeEventListener('mousemove', handleDragMove);
             window.removeEventListener('mouseup', handleDragEnd);
             window.removeEventListener('touchmove', handleDragMove);
             window.removeEventListener('touchend', handleDragEnd);
             
-            // p5.jsやUnityにウィンドウサイズが変更されたことを通知
             window.dispatchEvent(new Event('resize'));
         };
 
@@ -245,3 +249,4 @@
     </script>
 </body>
 </html>
+

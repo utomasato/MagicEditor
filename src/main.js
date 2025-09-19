@@ -6,7 +6,7 @@ let fieldItems = [];
 let buttons = [];
 let cursormode = "grad";
 let debugMode;
-let globalIsClockwise = true;
+let globalIsClockwise = false;
 
 // =============================================
 // 入力と状態管理のためのグローバル変数
@@ -35,9 +35,27 @@ let currentSelectElement = null;
 let editingItem = null;
 let isFinishingText = false;
 
+// --- ▼▼▼ ここから追加 ▼▼▼ ---
+let interpreters = {};    // すべてのインタープリタのインスタンスを保持
+let activeInterpreter;    // 現在アクティブなインタープリタ
+
+let consolePanel = null;
+let consoleText = null;
+
+let isDraggingConsole = false;
+let consoleDragOffset = { x: 0, y: 0 };
+let isResizingConsole = false;
+// --- ▲▲▲ ここまで ▲▲▲ ---
+
 
 function Start() {
     debugMode = false;
+
+    // --- ▼▼▼ ここから追加 ▼▼▼ ---
+    interpreters['postscript'] = new PostscriptInterpreter();
+    interpreters['lisp'] = new LispInterpreter();
+    activeInterpreter = interpreters['postscript']; 
+    // --- ▲▲▲ ここまで ▲▲▲ ---
 
     let [width, height] = GetScreenSize();
     SetTitle("MagicEditor");
@@ -74,6 +92,26 @@ function Start() {
         new Button(190, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "str", function () { isAddStr = true; }),
         new Button(250, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "name", function () { isAddName = true; }),
         new Button(-10, 10, 50, 50, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "▶️", function () { CommitMagicSpell(); }),
+        // --- ▼▼▼ ここから追加 ▼▼▼ ---
+        new Button(-70, 10, 100, 50, color(200, 255, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "Execute", () => {
+            if (rings.length > 0) {
+                const mpsCode = GenerateSpell(rings[0]);
+                try {
+                    const result = activeInterpreter.execute(mpsCode);
+                    let consoleMessage = '';
+                    
+                    if (result.output) {
+                        consoleMessage += `Output:\n${result.output}\n\n`;
+                    }
+                    consoleMessage += `Final Stack:\n[${result.stack.join(', ')}]`;
+                    
+                    updateConsolePanel(consoleMessage);
+                } catch (e) {
+                    updateConsolePanel(`Execution Error:\n${e.message}`);
+                }
+            }
+        }),
+        // --- ▲▲▲ ここまで ▲▲▲ ---
         new Button(10, -10, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "-", function () { ZoomOut(); }),
         new Button(10, -60, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "=", function () { ZoomReset(); }),
         new Button(10, -110, 40, 40, color(200, 200, 200), { x: 0, y: 1 }, { x: 0, y: 1 }, "+", function () { ZoomIn(); }),
@@ -92,6 +130,10 @@ function Start() {
     InputInitialize();
 
     rings = [new MagicRing({ x: 0, y: 0 })];
+    
+    // --- ▼▼▼ ここから追加 ▼▼▼ ---
+    createConsolePanel(); // ui.jsで定義された関数を呼び出す
+    // --- ▲▲▲ ここまで ▲▲▲ ---
 }
 
 function Update() {
@@ -101,7 +143,6 @@ function Update() {
         y: (GetMouseY() - height / 2) / zoomSize + cameraPos.y
     };
 
-    // input.jsで定義された関数を呼び出す
     if (CheckMouseDown() || CheckTouchStart()) { MouseDownEvent(); }
     else if (CheckMouse() || CheckTouch()) { MouseHoldEvent(); }
     else if (CheckMouseUp() || CheckTouchEnded()) { MouseUpEvent(); }
@@ -125,7 +166,7 @@ function Draw() {
     if (draggingItem && draggingItem.item) { draggingItem.item.DrawByDrag(); }
 
     FillRect(0, 0, width, config.menuHeight, config.menuBgColor);
-    DrawButtons(); // input.jsで定義
+    DrawButtons();
     DrawText(12, "FPS: " + GetFPSText(), width - 10, height - 10, color(0, 0, 0), RIGHT);
     DrawText(12, "Size: " + zoomSize, width - 10, height - 30, color(0, 0, 0), RIGHT);
     if (debugMode) {
@@ -157,6 +198,24 @@ function ZoomIn() { zoomSize = min(5, zoomSize + 0.1); }
 function ZoomOut() { zoomSize = max(0.1, zoomSize - 0.1); }
 function ZoomReset() { zoomSize = 1; }
 
+// --- ▼▼▼ ここから追加 ▼▼▼ ---
+function updateConsolePanel(message) {
+    if (consoleText) {
+        // テキスト内の改行文字(\n)をHTMLの<br>タグに変換して表示
+        consoleText.html(message.replace(/\n/g, '<br>'));
+    }
+}
+
+function setInterpreter(name) {
+    if (interpreters[name]) {
+        activeInterpreter = interpreters[name];
+        updateConsolePanel(`Interpreter switched to: ${name}`);
+    } else {
+        console.error(`Interpreter not found: ${name}`);
+    }
+}
+// --- ▲▲▲ ここまで ▲▲▲ ---
+
 function CommitMagicSpell() {
     const magicSpell = GenerateSpell();
     const data = {
@@ -169,7 +228,6 @@ function CommitMagicSpell() {
 }
 
 function GenerateSpell() {
-    // ルートリングのSpell()を呼び出す
     if (rings.length > 0) {
         const spell = rings[0].Spell();
         return spell;

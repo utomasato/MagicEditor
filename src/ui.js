@@ -2,7 +2,22 @@
 // UI Panel Functions
 // =============================================
 
-function createBasePanel(titleText, closeCallback, deleteCallback) {
+/**
+ * Checks if the mouse cursor is currently over the given UI panel element.
+ * @param {p5.Element} panelElement The panel element to check.
+ * @returns {boolean} True if the mouse is over the panel, false otherwise.
+ */
+function isMouseOverPanel(panelElement) {
+    if (!panelElement || !panelElement.elt) return false;
+    const panelRect = panelElement.elt.getBoundingClientRect();
+    if (mouseX >= panelRect.left && mouseX <= panelRect.right &&
+        mouseY >= panelRect.top && mouseY <= panelRect.bottom) {
+        return true;
+    }
+    return false;
+}
+
+function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCallback) {
     if (currentUiPanel) return null;
     currentUiPanel = createDiv('');
     currentUiPanel.position(GetMouseX() + 15, GetMouseY() - 10);
@@ -14,6 +29,9 @@ function createBasePanel(titleText, closeCallback, deleteCallback) {
     currentUiPanel.style('display', 'flex');
     currentUiPanel.style('flex-direction', 'column');
     currentUiPanel.style('gap', '8px');
+    currentUiPanel.style('user-select', 'none'); // このパネル内でのテキスト選択を無効化
+    currentUiPanel.style('-webkit-user-select', 'none');
+
     const header = createDiv('');
     header.parent(currentUiPanel);
     header.style('display', 'flex');
@@ -34,47 +52,63 @@ function createBasePanel(titleText, closeCallback, deleteCallback) {
     closeButton.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); closeCallback(); });
     const contentArea = createDiv('');
     contentArea.parent(currentUiPanel);
-    if (deleteCallback) {
+    
+    if (deleteCallback || duplicateCallback) {
         const footer = createDiv('');
         footer.parent(currentUiPanel);
         footer.style('display', 'flex');
         footer.style('justify-content', 'flex-end');
+        footer.style('gap', '8px'); 
         footer.style('margin-top', '8px');
         footer.style('border-top', '1px solid #ddd');
         footer.style('padding-top', '8px');
-        const deleteButton = createButton('Delete');
-        deleteButton.parent(footer);
-        deleteButton.style('border', '1px solid #ff4d4d');
-        deleteButton.style('background', '#fff');
-        deleteButton.style('color', '#ff4d4d');
-        deleteButton.style('font-size', '12px');
-        deleteButton.style('cursor', 'pointer');
-        deleteButton.style('padding', '2px 8px');
-        deleteButton.style('border-radius', '4px');
-        deleteButton.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); deleteCallback(); });
+
+        if (duplicateCallback) {
+            const duplicateButton = createButton('複製');
+            duplicateButton.parent(footer);
+            duplicateButton.style('border', '1px solid #4d4dff');
+            duplicateButton.style('background', '#fff');
+            duplicateButton.style('color', '#4d4dff');
+            duplicateButton.style('font-size', '12px');
+            duplicateButton.style('cursor', 'pointer');
+            duplicateButton.style('padding', '2px 8px');
+            duplicateButton.style('border-radius', '4px');
+            duplicateButton.elt.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                duplicateCallback();
+            });
+        }
+
+        if (deleteCallback) {
+            const deleteButton = createButton('削除');
+            deleteButton.parent(footer);
+            deleteButton.style('border', '1px solid #ff4d4d');
+            deleteButton.style('background', '#fff');
+            deleteButton.style('color', '#ff4d4d');
+            deleteButton.style('font-size', '12px');
+            deleteButton.style('cursor', 'pointer');
+            deleteButton.style('padding', '2px 8px');
+            deleteButton.style('border-radius', '4px');
+            deleteButton.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); deleteCallback(); });
+        }
     }
     return { panel: currentUiPanel, contentArea: contentArea };
 }
 
-function finishTextInput() {
-    if (isFinishingText) return;
-    isFinishingText = true;
-    if (currentInputElement && editingItem) {
-        editingItem.value = currentInputElement.value();
-        if (editingItem.parentRing) {
-            editingItem.parentRing.CalculateLayout();
-        }
-    }
-    if (currentUiPanel) {
-        currentUiPanel.remove();
-        currentUiPanel = null;
-    }
-    currentInputElement = null;
-    editingItem = null;
-    setTimeout(() => { isFinishingText = false; }, 50);
-}
-
+/**
+ * テキスト編集可能なアイテム（Chars, StringToken, Name）のパネルを作成します。
+ * ブラウザ標準のpromptダイアログを使用します。
+ * @param {RingItem} item 編集対象のアイテム
+ */
 function createTextInput(item) {
+    const closePanel = () => {
+        if (currentUiPanel) {
+            currentUiPanel.remove();
+            currentUiPanel = null;
+        }
+        editingItem = null;
+    };
+    
     const handleDelete = () => {
         if (item.parentRing) {
             const ring = item.parentRing;
@@ -86,30 +120,65 @@ function createTextInput(item) {
         } else {
             fieldItems = fieldItems.filter(fItem => fItem !== item);
         }
-        finishTextInput();
+        closePanel();
     };
-    const panelResult = createBasePanel('Edit Value', finishTextInput, handleDelete);
+
+    const handleDuplicate = () => {
+        const newItem = item.clone();
+        if (item.parentRing) {
+            const ring = item.parentRing;
+            const index = ring.items.indexOf(item);
+            ring.InsertItem(newItem, index + 1);
+            ring.CalculateLayout();
+        } else {
+            const index = fieldItems.indexOf(item);
+            newItem.pos = { x: item.pos.x + 30, y: item.pos.y };
+            fieldItems.splice(index + 1, 0, newItem);
+        }
+        closePanel();
+    };
+
+    const panelResult = createBasePanel('Edit Value', closePanel, handleDelete, handleDuplicate);
     if (!panelResult) return;
+
     const { contentArea } = panelResult;
     editingItem = item;
-    currentInputElement = createInput(item.value);
-    currentInputElement.parent(contentArea);
-    currentInputElement.style('border', '1px solid #ccc');
-    currentInputElement.style('padding', '4px');
-    currentInputElement.style('font-size', '14px');
-    const inputEl = currentInputElement.elt;
-    inputEl.focus();
-    inputEl.selectionStart = inputEl.selectionEnd = inputEl.value.length;
-    const keyInterceptor = (e) => {
-        e.stopImmediatePropagation();
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            finishTextInput();
+
+    const valueContainer = createDiv('');
+    valueContainer.parent(contentArea);
+    valueContainer.style('display', 'flex');
+    valueContainer.style('align-items', 'center');
+    valueContainer.style('gap', '8px');
+
+    const valueDisplay = createP(item.value);
+    valueDisplay.parent(valueContainer);
+    valueDisplay.style('margin', '0');
+    valueDisplay.style('flex-grow', '1');
+    valueDisplay.style('padding', '4px');
+    valueDisplay.style('background', '#fff');
+    valueDisplay.style('border', '1px solid #ccc');
+    valueDisplay.style('border-radius', '4px');
+    valueDisplay.style('min-width', '100px');
+
+    const editButton = createButton('編集');
+    editButton.parent(valueContainer);
+    
+    editButton.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const newValue = prompt("新しい値を入力してください:", item.value || "");
+
+        if (newValue !== null) {
+            item.value = newValue;
+            valueDisplay.html(newValue);
+            if (item.parentRing) {
+                item.parentRing.CalculateLayout();
+            }
         }
-    };
-    inputEl.addEventListener('keydown', keyInterceptor, true);
-    inputEl.addEventListener('blur', finishTextInput);
+        
+        closePanel();
+    });
 }
+
 
 function createSigilDropdown(item) {
     const closeDropdown = () => {
@@ -124,13 +193,35 @@ function createSigilDropdown(item) {
         } else { fieldItems = fieldItems.filter(fItem => fItem !== item); }
         closeDropdown();
     };
-    const panelResult = createBasePanel('Select Sigil', closeDropdown, handleDelete);
+    const handleDuplicate = () => {
+        const newItem = item.clone();
+        if (item.parentRing) {
+            const ring = item.parentRing;
+            const index = ring.items.indexOf(item);
+            ring.InsertItem(newItem, index + 1);
+            ring.CalculateLayout();
+        } else {
+            const index = fieldItems.indexOf(item);
+            newItem.pos = { x: item.pos.x + 30, y: item.pos.y };
+            fieldItems.splice(index + 1, 0, newItem);
+        }
+        closeDropdown();
+    };
+
+    const panelResult = createBasePanel('Select Sigil', closeDropdown, handleDelete, handleDuplicate);
     if (!panelResult) return;
     const { contentArea } = panelResult;
     editingItem = item;
     currentSelectElement = createSelect();
     currentSelectElement.parent(contentArea);
-    const sigilOptions = ["pop", "exch", "dup", "copy", "index", "roll", "add", "sub", "mul", "div", "idiv", "mod", "abs", "neg", "sqrt", "atan", "cos", "sin", "rand", "srand", "rrand", "array", "string", "length", "get", "put", "getinterval", "putinterval", "forall", "dict", "begin", "end", "def", "eq", "ne", "ge", "gt", "le", "lt", "and", "not", "or", "xor", "true", "false", "exec", "if", "ifelse", "for", "repeat", "loop", "exit", "color", "setcolor", "currentcolor", "print", "stack"];
+    
+    const sigilOptions = [
+        "pop","exch","dup","copy","index", "roll", "add", "sub","mul","div","idiv","mod","abs","neg","sqrt",
+        "atan","cos","sin","rand","srand","rrand","length","get","put","getinterval","putinterval","forall",
+        "dict","def","eq","ne","ge","gt","le","lt","and","not","or","xor","true","false",
+        "exec","if","ifelse","for","repeat","loop","exit", "color", "print", "stack"
+    ];
+
     sigilOptions.forEach(opt => { currentSelectElement.option(opt); });
     currentSelectElement.selected(item.value);
     currentSelectElement.changed(() => {
@@ -155,8 +246,13 @@ function createRingPanel(ring) {
         rings = rings.filter(r => r !== ring);
         closePanel();
     };
+    const handleDuplicate = () => {
+        const newRing = ring.clone();
+        rings.push(newRing);
+        closePanel();
+    };
 
-    const panelResult = createBasePanel('Ring Settings', closePanel, handleDelete);
+    const panelResult = createBasePanel('Ring Settings', closePanel, handleDelete, handleDuplicate);
     if (!panelResult) return;
     const { contentArea } = panelResult;
 
@@ -212,8 +308,8 @@ function createRingPanel(ring) {
     jointButton.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         const newJoint = new Joint(ring.pos.x, ring.pos.y, ring, null);
-        newJoint.pos.x += (ring.outerradius + 40) * cos(ring.angle - HALF_PI);
-        newJoint.pos.y += (ring.outerradius + 40) * sin(ring.angle - HALF_PI);
+        newJoint.pos.x +=  (ring.radius + 70) * Math.sin(ring.angle + PI/20);
+        newJoint.pos.y -=  (ring.radius + 70) * Math.cos(ring.angle + PI/20);
         fieldItems.push(newJoint);
         closePanel();
     });
@@ -256,6 +352,7 @@ function createRingPanel(ring) {
     }
 }
 
+
 function createJointPanel(item) {
     const closePanel = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } editingItem = null; };
     const handleDelete = () => {
@@ -266,7 +363,22 @@ function createJointPanel(item) {
         } else { fieldItems = fieldItems.filter(fItem => fItem !== item); }
         closePanel();
     };
-    const panelResult = createBasePanel('Joint Settings', closePanel, handleDelete);
+    const handleDuplicate = () => {
+        const newItem = item.clone();
+        if (item.parentRing) {
+            const ring = item.parentRing;
+            const index = ring.items.indexOf(item);
+            ring.InsertItem(newItem, index + 1);
+            ring.CalculateLayout();
+        } else {
+            const index = fieldItems.indexOf(item);
+            newItem.pos = { x: item.pos.x + 30, y: item.pos.y };
+            fieldItems.splice(index + 1, 0, newItem);
+        }
+        closePanel();
+    };
+
+    const panelResult = createBasePanel('Joint Settings', closePanel, handleDelete, handleDuplicate);
     if (!panelResult) return;
     editingItem = item;
 
@@ -309,31 +421,21 @@ function createJointPanel(item) {
                     return;
                 }
                 
-                // --- ▼▼▼ ここから修正 ▼▼▼ ---
-                
-                // 1. 描画方向とJointのリング上の角度を取得
                 const direction = globalIsClockwise ? -1 : 1;
                 const jointLocalAngle = parentRing.layouts[jointIndex].angle;
 
-                // 2. Jointの出口のグローバルな角度を計算
                 const jointGlobalAngle = parentRing.angle + jointLocalAngle * direction;
 
-                // 3. 親リングと子リングの現在の距離を計算（これを維持する）
                 const currentDistance = dist(parentRing.pos.x, parentRing.pos.y, connectedRing.pos.x, connectedRing.pos.y);
                 
-                // 4. 子リングの新しい位置を計算 (p5.jsの角度系に補正)
                 const p5Angle = jointGlobalAngle - HALF_PI;
                 const newChildX = parentRing.pos.x + currentDistance * cos(p5Angle);
                 const newChildY = parentRing.pos.y + currentDistance * sin(p5Angle);
 
-                // 5. 子リングの新しい角度を計算（親を向くように）
                 const angleToParent = atan2(parentRing.pos.y - newChildY, parentRing.pos.x - newChildX);
                 const newChildAngle = angleToParent + HALF_PI;
 
-                // 6. 子リングのサブツリー全体を移動・回転させる
                 transformSubtree(connectedRing, newChildX, newChildY, newChildAngle);
-
-                // --- ▲▲▲ ここまで ▲▲▲ ---
 
                 closePanel();
             });
@@ -345,5 +447,133 @@ function createJointPanel(item) {
         message.style('margin', '0');
         message.style('color', '#888');
     }
+}
+
+function createConsolePanel() {
+    consolePanel = createDiv('');
+    consolePanel.position(60, GetScreenSize()[1] - 160);
+    consolePanel.size(300, 150);
+    consolePanel.style('z-index', '1000');
+    consolePanel.style('background-color', 'rgba(30, 30, 30, 0.85)');
+    consolePanel.style('border-radius', '6px');
+    consolePanel.style('box-shadow', '0 2px 5px rgba(0,0,0,0.2)');
+    consolePanel.style('display', 'flex');
+    consolePanel.style('flex-direction', 'column');
+    consolePanel.style('font-family', 'monospace');
+    consolePanel.style('color', '#eee');
+    consolePanel.style('position', 'absolute');
+
+    const header = createDiv('');
+    header.parent(consolePanel);
+    header.style('padding', '8px 8px');
+    header.style('background-color', 'rgba(50, 50, 50, 0.9)');
+    header.style('display', 'flex');
+    header.style('justify-content', 'space-between');
+    header.style('align-items', 'center');
+    header.style('cursor', 'move');
+
+    // --- ▼▼▼ ドラッグ処理の開始 ▼▼▼ ---
+    const startDrag = (e) => {
+        if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
+        e.preventDefault();
+        isDraggingConsole = true;
+        
+        const currentMouseX = e.touches ? e.touches[0].clientX : e.clientX;
+        const currentMouseY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        consoleDragOffset.x = currentMouseX - consolePanel.position().x;
+        consoleDragOffset.y = currentMouseY - consolePanel.position().y;
+
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchmove', doDrag, { passive: false });
+        window.addEventListener('touchend', stopDrag);
+    };
+
+    const doDrag = (e) => {
+        if (!isDraggingConsole) return;
+        const currentMouseX = e.touches ? e.touches[0].clientX : e.clientX;
+        const currentMouseY = e.touches ? e.touches[0].clientY : e.clientY;
+        consolePanel.position(currentMouseX - consoleDragOffset.x, currentMouseY - consoleDragOffset.y);
+    };
+
+    const stopDrag = () => {
+        isDraggingConsole = false;
+        window.removeEventListener('mousemove', doDrag);
+        window.removeEventListener('mouseup', stopDrag);
+        window.removeEventListener('touchmove', doDrag);
+        window.removeEventListener('touchend', stopDrag);
+    };
+
+    header.elt.addEventListener('mousedown', startDrag);
+    header.elt.addEventListener('touchstart', startDrag, { passive: false });
+    // --- ▲▲▲ ドラッグ処理の終了 ▲▲▲ ---
+    
+    const title = createP('Console');
+    title.parent(header);
+    title.style('margin', '0');
+
+    const languageSelect = createSelect();
+    languageSelect.parent(header);
+    languageSelect.option('postscript');
+    languageSelect.option('lisp');
+    languageSelect.changed(() => {
+        setInterpreter(languageSelect.value());
+    });
+
+    consoleText = createP('Ready.');
+    consoleText.parent(consolePanel);
+    consoleText.style('padding', '8px');
+    consoleText.style('margin', '0');
+    consoleText.style('flex-grow', '1');
+    consoleText.style('white-space', 'pre-wrap');
+    consoleText.style('word-wrap', 'break-word');
+    consoleText.style('overflow-y', 'auto');
+
+    const resizeHandle = createDiv('');
+    resizeHandle.parent(consolePanel);
+    resizeHandle.style('width', '20px');
+    resizeHandle.style('height', '20px');
+    resizeHandle.style('position', 'absolute');
+    resizeHandle.style('right', '0');
+    resizeHandle.style('bottom', '0');
+    resizeHandle.style('cursor', 'se-resize');
+
+    // --- ▼▼▼ リサイズ処理の開始 ▼▼▼ ---
+    const startResize = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isResizingConsole = true;
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        window.addEventListener('mousemove', doResize);
+        window.addEventListener('mouseup', stopResize);
+        window.addEventListener('touchmove', doResize, { passive: false });
+        window.addEventListener('touchend', stopResize);
+    };
+
+    const doResize = (e) => {
+        if (!isResizingConsole) return;
+        const currentMouseX = e.touches ? e.touches[0].clientX : e.clientX;
+        const currentMouseY = e.touches ? e.touches[0].clientY : e.clientY;
+        const panelPos = consolePanel.position();
+        const newWidth = currentMouseX - panelPos.x;
+        const newHeight = currentMouseY - panelPos.y;
+        consolePanel.size(max(150, newWidth), max(80, newHeight));
+    };
+
+    const stopResize = () => {
+        isResizingConsole = false;
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
+        window.removeEventListener('mousemove', doResize);
+        window.removeEventListener('mouseup', stopResize);
+        window.removeEventListener('touchmove', doResize);
+        window.removeEventListener('touchend', stopResize);
+    };
+
+    resizeHandle.elt.addEventListener('mousedown', startResize);
+    resizeHandle.elt.addEventListener('touchstart', startResize, { passive: false });
+    // --- ▲▲▲ リサイズ処理の終了 ▲▲▲ ---
 }
 
