@@ -32,6 +32,11 @@ function InputInitialize()
 
 function MouseDownEvent()
 {
+    if (isUIHidden)
+    {
+        isUIHidden = false;
+        return;
+    }
     if (isMouseOverPanel(currentUiPanel) || isMouseOverPanel(consolePanel)) {
         return;
     }
@@ -119,6 +124,7 @@ function MouseDownEvent()
 
 function MouseHoldEvent()
 {
+    if (isUIHidden) return;
     if (GetMouseX() > GetScreenSize()[0]) return;
     if (isAddRing) { if (!CheckMouseOnMenu()) { selectRing = new MagicRing(mousePos); selectRing.isNew = true; rings.push(selectRing); StartDragRing(selectRing, mousePos); isAddRing = false; } }
     else if (isAddArrayRing) { if (!CheckMouseOnMenu()){ selectRing = new ArrayRing(mousePos); selectRing.isNew = true; rings.push(selectRing); StartDragRing(selectRing, mousePos); isAddArrayRing = false; } }
@@ -135,6 +141,7 @@ function MouseHoldEvent()
 
 function MouseUpEvent()
 {
+    if (isUIHidden) return;
     if (GetMouseX() > GetScreenSize()[0]) return;
     if (isDragging) { EndDragRing(); }
     else if (isRotating) { EndRotateRing(); }

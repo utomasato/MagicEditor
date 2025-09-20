@@ -37,11 +37,19 @@
             width: 100%;
             overflow: hidden; /* スクロールバーを完全に非表示 */
             font-family: Arial, sans-serif;
-            /* --- ▼▼▼ ここから修正 ▼▼▼ --- */
             /* iOS Safariでのオーバースクロール（画面が引っ張られる現象）を防止 */
             touch-action: none;
-            /* --- ▲▲▲ ここまで ▲▲▲ --- */
         }
+
+        /* --- ▼▼▼ ここから追加 ▼▼▼ --- */
+        /* Erudaデバッグボタンを常に右下に配置 */
+        .eruda-entry-btn {
+            bottom: 10px !important;
+            right: 10px !important;
+            /* 他のUIに隠れないようにz-indexを高く設定 */
+            z-index: 99999 !important;
+        }
+        /* --- ▲▲▲ ここまで ▲▲▲ --- */
 
         /* --- レイアウトの核となる部分 --- */
         
@@ -144,9 +152,9 @@
     <script src="./src/sigil.js"></script>  
     <script src="./src/input.js"></script>
     <script src="./src/ui.js"></script>  
-    <script src="./src/layout.js"></script>  
-    <script src="./src/interpreter.js"></script>
+    <script src="./src/layout.js"></script>
     <script src="./src/io.js"></script>
+    <script src="./src/interpreter.js"></script>  
     <script src="./src/main.js"></script>
 
     <script>
@@ -250,3 +258,4 @@
     </script>
 </body>
 </html>
+
