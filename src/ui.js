@@ -594,6 +594,7 @@ function showXMLPanel(xmlContent) {
 
     // 1. オーバーレイを作成
     const overlay = createDiv('');
+    currentModalPanel = overlay;
     overlay.style('position', 'fixed');
     overlay.style('top', '0');
     overlay.style('left', '0');
@@ -608,6 +609,7 @@ function showXMLPanel(xmlContent) {
     // 2. パネル本体を作成
     const panel = createDiv('');
     panel.parent(overlay);
+    panel.addClass('modal-content');
     panel.style('width', '80vw');
     panel.style('height', '80vh');
     panel.style('max-width', '800px');
@@ -618,13 +620,6 @@ function showXMLPanel(xmlContent) {
     panel.style('display', 'flex');
     panel.style('flex-direction', 'column');
     panel.style('padding', '15px');
-
-    // パネルの外側をクリックしたら閉じる
-    overlay.elt.addEventListener('mousedown', (e) => {
-        if (e.target === overlay.elt) {
-            overlay.remove();
-        }
-    });
     
     // 3. ヘッダー
     const header = createDiv('');
@@ -648,7 +643,10 @@ function showXMLPanel(xmlContent) {
     closeButton.style('font-size', '24px');
     closeButton.style('cursor', 'pointer');
     closeButton.mousePressed(() => {
-        overlay.remove();
+        if (currentModalPanel) {
+            currentModalPanel.remove();
+            currentModalPanel = null;
+        }
     });
 
     // 4. テキストエリア
@@ -703,6 +701,7 @@ function showXMLInputPanel() {
     }
 
     const overlay = createDiv('');
+    currentModalPanel = overlay;
     overlay.style('position', 'fixed');
     overlay.style('top', '0');
     overlay.style('left', '0');
@@ -716,6 +715,7 @@ function showXMLInputPanel() {
 
     const panel = createDiv('');
     panel.parent(overlay);
+    panel.addClass('modal-content');
     panel.style('width', '80vw');
     panel.style('height', '80vh');
     panel.style('max-width', '800px');
@@ -726,12 +726,6 @@ function showXMLInputPanel() {
     panel.style('display', 'flex');
     panel.style('flex-direction', 'column');
     panel.style('padding', '15px');
-
-    overlay.elt.addEventListener('mousedown', (e) => {
-        if (e.target === overlay.elt) {
-            overlay.remove();
-        }
-    });
     
     const header = createDiv('');
     header.parent(panel);
@@ -754,7 +748,10 @@ function showXMLInputPanel() {
     closeButton.style('font-size', '24px');
     closeButton.style('cursor', 'pointer');
     closeButton.mousePressed(() => {
-        overlay.remove();
+        if (currentModalPanel) {
+            currentModalPanel.remove();
+            currentModalPanel = null;
+        }
     });
 
     const textArea = createElement('textarea', 'ここにXMLをペーストしてください...');
@@ -795,7 +792,10 @@ function showXMLInputPanel() {
         try {
             const xmlContent = textArea.value();
             importFromXML(xmlContent, mode);
-            overlay.remove();
+            if (currentModalPanel) {
+                currentModalPanel.remove();
+                currentModalPanel = null;
+            }
         } catch (e) {
             errorMsg.html(e.message);
             errorMsg.show();
@@ -823,4 +823,3 @@ function showXMLInputPanel() {
     overwriteButton.mousePressed(() => handleImport('overwrite'));
 }
 // --- ▲▲▲ ここまで ▲▲▲ ---
-

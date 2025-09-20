@@ -23,6 +23,7 @@ let mousePos = {};
 let selectRing;
 let draggingItem = {};
 let currentUiPanel = null;
+let currentModalPanel = null; // モーダルパネル(Import/Export)を管理
 let currentInputElement = null;
 let currentSelectElement = null;
 let editingItem = null;
@@ -242,4 +243,3 @@ function GenerateSpell() {
     }
     return "";
 }
-

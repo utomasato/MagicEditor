@@ -27,6 +27,24 @@ function MouseDownEvent()
         isUIHidden = false;
         return;
     }
+    
+    // モーダルパネル(Import/Export)が表示されている場合の処理
+    if (currentModalPanel) {
+        // 'modal-content'クラスを持つ要素（パネル本体）を取得
+        const contentPanelElement = currentModalPanel.elt.querySelector('.modal-content');
+        if (contentPanelElement) {
+            const panelRect = contentPanelElement.getBoundingClientRect();
+            // マウスがパネル本体の内側なら、以降の処理をブロックしてモーダルを維持
+            if (mouseX >= panelRect.left && mouseX <= panelRect.right && mouseY >= panelRect.top && mouseY <= panelRect.bottom) {
+                return;
+            }
+        }
+        // パネルの外側がクリックされたので、パネルを閉じる
+        currentModalPanel.remove();
+        currentModalPanel = null;
+        return; // パネルを閉じる操作をしたので、他の操作は行わない
+    }
+    
     if (isMouseOverPanel(currentUiPanel) || isMouseOverPanel(consolePanel)) {
         return;
     }
@@ -35,7 +53,7 @@ function MouseDownEvent()
         const panelRect = currentUiPanel.elt.getBoundingClientRect();
         if (mouseX < panelRect.left || mouseX > panelRect.right || mouseY < panelRect.top || mouseY > panelRect.bottom) {
             if (currentInputElement) {
-                finishTextInput(); 
+                // finishTextInput(); 
             } else {
                 currentUiPanel.remove();
                 currentUiPanel = null;
@@ -429,4 +447,3 @@ function EndPan()
     inputMode = "";
     SetMouseCursor('grab');
 }
-
