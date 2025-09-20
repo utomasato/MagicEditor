@@ -92,9 +92,8 @@ function Start() {
         new Button(130, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "num", function () { isAddNum = true; }),
         new Button(190, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "str", function () { isAddStr = true; }),
         new Button(250, 10, 50, 50, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, "name", function () { isAddName = true; }),
-        new Button(-10, 10, 50, 50, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "▶️", function () { CommitMagicSpell(); }),
-        new Button(-70, 10, 100, 50, color(200, 255, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "Execute", () => {
-            if (rings.length > 0) {
+        new Button(-10, 10, 50, 50, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, "▶️", function () {
+                if (rings.length > 0) {
                 const mpsCode = GenerateSpell(rings[0]);
                 console.log(mpsCode);
                 try {
