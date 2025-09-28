@@ -55,57 +55,53 @@ class PostscriptInterpreter {
                 let len;
                 if (typeof obj === 'object' && obj !== null && (obj.type === 'array' || obj.type === 'string') && Array.isArray(obj.value)) {
                     len = obj.value.length;
-                } else if (typeof obj === 'string') { // Fallback for native strings from variables
+                } else if (typeof obj === 'string') {
                     len = obj.length;
                 } else {
                     throw new Error("`length` requires an array or string.");
                 }
                 this.stack.push(len);
             },
+            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             get: () => {
                 const indexOrKey = this.stack.pop();
                 const collection = this.stack.pop();
                 let val = null;
 
-                if (typeof collection === 'object' && collection !== null && (collection.type === 'array' || collection.type === 'string') && Array.isArray(collection.value)) {
+                if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
                     val = collection.value[indexOrKey];
-                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict') {
-                     const dictTokens = collection.value;
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
+                    // 標準PostScript仕様: 文字のASCIIコード(整数)を返す
+                    val = collection.value[indexOrKey].charCodeAt(0);
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict' && Array.isArray(collection.value)) {
+                    const dictTokens = collection.value;
                     for (let i = 0; i < dictTokens.length; i += 2) {
                         const keyToken = dictTokens[i];
-                        if (keyToken === indexOrKey || (typeof keyToken === 'object' && keyToken.type ==='string' && keyToken.value.join('') === indexOrKey)) {
+                        if (keyToken === indexOrKey) { // 辞書のキーは整数
                             val = dictTokens[i + 1];
                             break;
                         }
                     }
-                } else if (typeof collection === 'string') { // Fallback for native strings from variables
-                    val = collection.charAt(indexOrKey);
                 } else {
                     throw new Error("`get` requires an array, dictionary, or string.");
                 }
                 this.stack.push(val);
             },
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             put: () => {
-                let value = this.stack.pop();
+                const value = this.stack.pop();
                 const indexOrKey = this.stack.pop();
                 const collection = this.stack.pop();
 
-                if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
-                    // If the value to put is a string object, extract its first character.
-                    if (typeof value === 'object' && value !== null && value.type === 'string' && value.value.length > 0) {
-                        value = value.value[0];
-                    }
-                    // Then convert the final value to its string representation.
-                    collection.value[indexOrKey] = String(value);
-                } else if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
+                if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
                     collection.value[indexOrKey] = value;
-                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict') {
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
+                    // 標準PostScript仕様: valueは文字コード(整数)であることを期待する
+                    collection.value[indexOrKey] = String.fromCharCode(value);
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict' && Array.isArray(collection.value)) {
                     const dictTokens = collection.value;
                     let keyFound = false;
                     for (let i = 0; i < dictTokens.length; i += 2) {
-                         const keyToken = dictTokens[i];
-                        if (keyToken === indexOrKey || (typeof keyToken === 'object' && keyToken.type ==='string' && keyToken.value.join('') === indexOrKey)) {
+                        if (dictTokens[i] === indexOrKey) {
                             dictTokens[i + 1] = value;
                             keyFound = true;
                             break;
@@ -121,9 +117,9 @@ class PostscriptInterpreter {
             // --- ▲▲▲ ここまで ▲▲▲ ---
             string: () => {
                 const n = this.stack.pop();
-                this.stack.push({ type: 'string', value: new Array(n).fill(null) });
+                this.stack.push({ type: 'string', value: new Array(n).fill('\0') }); // null文字で初期化
             },
-            cvi: (val) => {
+            cvi: () => {
                 const str = this.stack.pop();
                 let charCode = -1;
                 if (typeof str === 'object' && str !== null && str.type === 'string' && str.value.length > 0) {
@@ -131,17 +127,16 @@ class PostscriptInterpreter {
                 } else if (typeof str === 'string' && str.length > 0) {
                     charCode = str.charCodeAt(0);
                 } else {
-                    throw new Error("`cvi` requires a non-empty string.");
+                    throw new Error("`cvi` requires a string.");
                 }
                 this.stack.push(charCode);
             },
             chr: () => {
                 const charCode = this.stack.pop();
                 if (typeof charCode !== 'number') {
-                    throw new Error("`chr` requires a number (character code).");
+                    throw new Error("`chr` requires an integer.");
                 }
-                const char = String.fromCharCode(charCode);
-                this.stack.push({ type: 'string', value: [char] });
+                this.stack.push({ type: 'string', value: [String.fromCharCode(charCode)] });
             },
             getinterval: () => { const [count, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; this.stack.push(arr.slice(index, index + count)); },
             putinterval: () => { const [subArr, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; arr.splice(index, subArr.length, ...subArr); },
@@ -296,11 +291,7 @@ class PostscriptInterpreter {
             if (val.type === 'array') {
                 return `[${formattedInnerValue}]`;
             } else if (val.type === 'dict') {
-                 const pairs = [];
-                 for(let i=0; i < val.value.length; i+=2) {
-                    pairs.push(`${this.formatForOutput(val.value[i])} ${this.formatForOutput(val.value[i+1])}`);
-                 }
-                 return `<${pairs.join(' ')}>`;
+                return `<${formattedInnerValue}>`;
             } else if (val.type === 'string') {
                 return `(${formattedInnerValue})`;
             }

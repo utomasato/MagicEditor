@@ -16,7 +16,7 @@
       <Item type="sigil" value="exec" />
     </Items>
   </Ring>
-  <Ring id="1" type="MagicRing" x="-309.17" y="-502.13" angle="2.5897">
+  <Ring id="1" type="MagicRing" x="-227.92" y="-370.17" angle="2.5897">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="bf_code" />
@@ -27,7 +27,7 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="2" type="MagicRing" x="-544.93" y="46.38" angle="1.4859">
+  <Ring id="2" type="MagicRing" x="-537.98" y="45.79" angle="1.4859">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="tape" />
@@ -53,7 +53,7 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="3" type="MagicRing" x="-877.04" y="-30.11" angle="1.7972">
+  <Ring id="3" type="MagicRing" x="-870.09" y="-30.70" angle="1.7972">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="tape" />
@@ -62,7 +62,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="4" type="MagicRing" x="-573.14" y="1426.33" angle="0.3821">
+  <Ring id="4" type="MagicRing" x="-380.69" y="947.37" angle="0.3821">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="jump_table" />
@@ -85,7 +85,7 @@
       <Item type="sigil" value="for" />
     </Items>
   </Ring>
-  <Ring id="5" type="MagicRing" x="315.30" y="751.29" angle="4.0626">
+  <Ring id="5" type="MagicRing" x="356.94" y="386.91" angle="4.0626">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="i" />
@@ -95,7 +95,6 @@
       <Item type="chars" value="bf_code" />
       <Item type="chars" value="i" />
       <Item type="sigil" value="get" />
-      <Item type="sigil" value="cvi" />
       <Item type="sigil" value="def" />
       <Item type="chars" value="char_code" />
       <Item type="chars" value="91" />
@@ -109,7 +108,7 @@
       <Item type="sigil" value="if" />
     </Items>
   </Ring>
-  <Ring id="6" type="MagicRing" x="232.89" y="364.98" angle="2.9314">
+  <Ring id="6" type="MagicRing" x="315.14" y="3.18" angle="3.0331">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="jump_stack" />
@@ -123,7 +122,7 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="7" type="MagicRing" x="-241.06" y="823.27" angle="1.4421">
+  <Ring id="7" type="MagicRing" x="-192.18" y="443.29" angle="1.4685">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="stack_ptr" />
@@ -149,7 +148,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="8" type="MagicRing" x="1192.85" y="1355.34" angle="-0.7217">
+  <Ring id="8" type="MagicRing" x="996.96" y="1138.92" angle="-0.7217">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="command_table" />
@@ -213,7 +212,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="9" type="MagicRing" x="412.32" y="1113.61" angle="1.8711">
+  <Ring id="9" type="MagicRing" x="216.43" y="897.21" angle="1.8711">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="ptr" />
@@ -223,7 +222,7 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="10" type="MagicRing" x="378.53" y="1288.00" angle="1.6533">
+  <Ring id="10" type="MagicRing" x="182.64" y="1071.59" angle="1.6533">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="ptr" />
@@ -233,7 +232,7 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="11" type="MagicRing" x="364.81" y="1481.50" angle="1.4196">
+  <Ring id="11" type="MagicRing" x="168.92" y="1265.10" angle="1.4196">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="tape" />
@@ -246,7 +245,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="12" type="MagicRing" x="372.97" y="1687.49" angle="1.1859">
+  <Ring id="12" type="MagicRing" x="215.19" y="1455.65" angle="1.1859">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="tape" />
@@ -259,7 +258,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="13" type="MagicRing" x="498.26" y="1849.78" angle="0.9522">
+  <Ring id="13" type="MagicRing" x="309.71" y="1628.16" angle="0.9521">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="1" />
@@ -269,12 +268,11 @@
       <Item type="chars" value="tape" />
       <Item type="chars" value="ptr" />
       <Item type="sigil" value="get" />
-      <Item type="sigil" value="chr" />
       <Item type="sigil" value="put" />
       <Item type="sigil" value="print" />
     </Items>
   </Ring>
-  <Ring id="14" type="MagicRing" x="618.93" y="2011.74" angle="0.7184">
+  <Ring id="14" type="MagicRing" x="423.98" y="1794.29" angle="0.7184">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="val" />
@@ -286,7 +284,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="15" type="MagicRing" x="770.10" y="2299.08" angle="0.4211">
+  <Ring id="15" type="MagicRing" x="604.29" y="2015.53" angle="0.4211">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="tape" />
@@ -298,7 +296,7 @@
       <Item type="sigil" value="if" />
     </Items>
   </Ring>
-  <Ring id="16" type="MagicRing" x="1086.50" y="2209.55" angle="0.1239">
+  <Ring id="16" type="MagicRing" x="894.81" y="1959.42" angle="0.1239">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="tape" />
@@ -310,14 +308,14 @@
       <Item type="sigil" value="if" />
     </Items>
   </Ring>
-  <Ring id="17" type="MagicRing" x="536.15" y="-139.60" angle="4.4577">
+  <Ring id="17" type="MagicRing" x="828.18" y="-215.64" angle="4.4577">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="joint" value="18" />
       <Item type="sigil" value="loop" />
     </Items>
   </Ring>
-  <Ring id="18" type="MagicRing" x="814.60" y="209.27" angle="-0.6736">
+  <Ring id="18" type="MagicRing" x="1085.99" y="107.37" angle="-0.6736">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="pc" />
@@ -329,7 +327,6 @@
       <Item type="chars" value="bf_code" />
       <Item type="chars" value="pc" />
       <Item type="sigil" value="get" />
-      <Item type="sigil" value="cvi" />
       <Item type="sigil" value="def" />
       <Item type="chars" value="command_table" />
       <Item type="chars" value="current_char_code" />
@@ -347,25 +344,25 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="19" type="MagicRing" x="397.98" y="182.23" angle="1.6356">
+  <Ring id="19" type="MagicRing" x="677.76" y="92.51" angle="1.6072">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="sigil" value="exit" />
     </Items>
   </Ring>
-  <Ring id="20" type="MagicRing" x="1057.94" y="-129.98" angle="3.7638">
+  <Ring id="20" type="MagicRing" x="1338.54" y="-213.71" angle="3.8081">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="sigil" value="exec" />
     </Items>
   </Ring>
-  <Ring id="21" type="MagicRing" x="1098.07" y="-274.51" angle="3.6716">
+  <Ring id="21" type="MagicRing" x="1384.12" y="-356.61" angle="3.7127">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="sigil" value="pop" />
     </Items>
   </Ring>
-  <Ring id="22" type="MagicRing" x="958.67" y="2402.36" angle="-1.0697">
+  <Ring id="22" type="MagicRing" x="792.83" y="2118.85" angle="-1.0695">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="pc" />
@@ -375,7 +372,7 @@
       <Item type="sigil" value="def" />
     </Items>
   </Ring>
-  <Ring id="23" type="MagicRing" x="1297.05" y="2253.06" angle="-1.3670">
+  <Ring id="23" type="MagicRing" x="1105.30" y="2003.25" angle="-1.3655">
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="pc" />

@@ -297,6 +297,42 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(-0.25, 0.125, -0.25, -0.125);
             arc(-0.25, -0.5, 0.75, 0.75, 0, HALF_PI);
             break;
+        case "cvi": // 文字(Char)を整数(Integer)に変換
+            push();
+            Rotate(PI);
+            translate(0.65, 0);
+            sigil_parts("look");
+            pop();
+            arc(0.375, 0, 1, 1, HALF_PI, -HALF_PI);
+            ellipse(0, 0, -0.25);
+            line(0.475, 0.25, 0.35, 0.5);
+            line(0.35, 0.5, 0.225, 0.25);
+            line(0.4125, 0.375, 0.2875, 0.375);
+            arc(0.35, 0.1875, 0.25, 0.125, -HALF_PI, PI);
+            arc(0.35, 0.0625, 0.25, 0.125, HALF_PI, TWO_PI);
+            arc(0.35, -0.125, 0.25, 0.25, -PI*3/4, PI*3/4);
+            line(0.4125, -0.25, 0.4125, -0.5);
+            line(0.2875, -0.25, 0.2875, -0.5);
+            break;
+        case "chr": // 文字コード(Character code)から文字を生成
+            push();
+            translate(0.125, 0);
+            sigil_parts("look");
+            pop();
+            arc(0.375, 0, 1, 1, HALF_PI, -HALF_PI);
+            ellipse(0, 0, -0.25);
+            line(0.475, 0.25, 0.35, 0.5);
+            line(0.35, 0.5, 0.225, 0.25);
+            line(0.4125, 0.375, 0.2875, 0.375);
+            arc(0.35, 0.1875, 0.25, 0.125, -HALF_PI, PI);
+            arc(0.35, 0.0625, 0.25, 0.125, HALF_PI, TWO_PI);
+            arc(0.35, -0.125, 0.25, 0.25, -PI*3/4, PI*3/4);
+            line(0.4125, -0.25, 0.4125, -0.5);
+            line(0.2875, -0.25, 0.2875, -0.5);
+            break;        case "null":
+            ellipse(0, 0, 0.8);
+            line(-0.4, 0.4, 0.4, -0.4);
+            break;
         case "def":
             ellipse(0, 0, 1);
             line(0, 0.5, 0.433, -0.25);
