@@ -62,7 +62,6 @@ class PostscriptInterpreter {
                 }
                 this.stack.push(len);
             },
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             get: () => {
                 const indexOrKey = this.stack.pop();
                 const collection = this.stack.pop();
@@ -71,17 +70,19 @@ class PostscriptInterpreter {
                 if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
                     val = collection.value[indexOrKey];
                 } else if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
-                    // 標準PostScript仕様: 文字のASCIIコード(整数)を返す
                     val = collection.value[indexOrKey].charCodeAt(0);
+                // --- ▼▼▼ ここから修正 ▼▼▼ ---
                 } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict' && Array.isArray(collection.value)) {
                     const dictTokens = collection.value;
                     for (let i = 0; i < dictTokens.length; i += 2) {
                         const keyToken = dictTokens[i];
-                        if (keyToken === indexOrKey) { // 辞書のキーは整数
+                        // キー(文字列)を数値に変換してから比較する
+                        if (parseFloat(keyToken) === indexOrKey) {
                             val = dictTokens[i + 1];
                             break;
                         }
                     }
+                // --- ▲▲▲ ここまで ▲▲▲ ---
                 } else {
                     throw new Error("`get` requires an array, dictionary, or string.");
                 }
@@ -95,29 +96,31 @@ class PostscriptInterpreter {
                 if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
                     collection.value[indexOrKey] = value;
                 } else if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
-                    // 標準PostScript仕様: valueは文字コード(整数)であることを期待する
                     collection.value[indexOrKey] = String.fromCharCode(value);
+                // --- ▼▼▼ ここから修正 ▼▼▼ ---
                 } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict' && Array.isArray(collection.value)) {
                     const dictTokens = collection.value;
                     let keyFound = false;
                     for (let i = 0; i < dictTokens.length; i += 2) {
-                        if (dictTokens[i] === indexOrKey) {
+                        // キー(文字列)を数値に変換してから比較する
+                        if (parseFloat(dictTokens[i]) === indexOrKey) {
                             dictTokens[i + 1] = value;
                             keyFound = true;
                             break;
                         }
                     }
                     if (!keyFound) {
-                        dictTokens.push(indexOrKey, value);
+                        // 新しく追加するキーも文字列として保持する
+                        dictTokens.push(String(indexOrKey), value);
                     }
+                // --- ▲▲▲ ここまで ▲▲▲ ---
                 } else {
                     throw new Error("`put` requires an array, dictionary, or string.");
                 }
             },
-            // --- ▲▲▲ ここまで ▲▲▲ ---
             string: () => {
                 const n = this.stack.pop();
-                this.stack.push({ type: 'string', value: new Array(n).fill('\0') }); // null文字で初期化
+                this.stack.push({ type: 'string', value: new Array(n).fill('\0') });
             },
             cvi: () => {
                 const str = this.stack.pop();
