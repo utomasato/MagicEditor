@@ -305,10 +305,6 @@ class ArrayRing extends MagicRing {
         if (item.type === 'name') {
             return false;
         }
-        // --- ▼▼▼ 修正箇所 ▼▼▼ ---
-        // Jointに関する制限を削除
-        // if (item.type === 'joint') { ... }
-        // --- ▲▲▲ ここまで ▲▲▲ ---
 
         return true; 
     }

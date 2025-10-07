@@ -256,7 +256,6 @@ class PostscriptInterpreter {
                     key = this.stack.pop();
                 }
                 
-                // --- ▼▼▼ ここから修正 ▼▼▼ ---
                 const resolvedVal = this.resolveVariablesInStructure(val);
                 const data = {
                     isActive: true,
@@ -265,7 +264,6 @@ class PostscriptInterpreter {
                     name: key ? key.substring(1) : "",
                     text: this.formatForOutput(resolvedVal)
                 };
-                // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
                 if (key) {
@@ -281,14 +279,12 @@ class PostscriptInterpreter {
                     throw new Error("`transform` requires a Unity object reference on the stack.");
                 }
 
-                // --- ▼▼▼ ここから修正 ▼▼▼ ---
                 const resolvedDict = this.resolveVariablesInStructure(transformDict);
                 const data = {
                     message: "TransformObject",
                     name: unityObjectRef.name,
                     text: this.formatForOutput(resolvedDict)
                 };
-                // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
             },
@@ -314,7 +310,7 @@ class PostscriptInterpreter {
         };
     }
     
-    // --- ▼▼▼ 新規追加：データ構造内の変数を再帰的に評価するヘルパー関数 ▼▼▼ ---
+    // --- ▼▼▼ データ構造内の変数を再帰的に評価するヘルパー関数 ▼▼▼ ---
     /**
      * データ構造（配列や辞書）を受け取り、内部の変数を再帰的に評価して値に置き換えます。
      * @param {*} structure - 評価対象のデータ構造
@@ -351,7 +347,6 @@ class PostscriptInterpreter {
         // 上記のいずれにも当てはまらないオブジェクトはそのまま返す
         return structure;
     }
-    // --- ▲▲▲ ここまで新規追加 ▲▲▲ ---
 
     formatForOutput(val) {
         if (val === null) return 'null';
