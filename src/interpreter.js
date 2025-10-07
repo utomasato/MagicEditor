@@ -255,13 +255,18 @@ class PostscriptInterpreter {
                 if (this.stack.length > 0 && typeof this.stack[this.stack.length - 1] === 'string' && this.stack[this.stack.length - 1].startsWith('~')) {
                     key = this.stack.pop();
                 }
+                
+                // --- ▼▼▼ ここから修正 ▼▼▼ ---
+                const resolvedVal = this.resolveVariablesInStructure(val);
                 const data = {
                     isActive: true,
                     message: "MagicSpell",
                     value: 0,
                     name: key ? key.substring(1) : "",
-                    text: this.formatForOutput(val)
+                    text: this.formatForOutput(resolvedVal)
                 };
+                // --- ▲▲▲ ここまで修正 ▲▲▲ ---
+
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
                 if (key) {
                     const objectName = key.substring(1);
@@ -275,11 +280,16 @@ class PostscriptInterpreter {
                 if (typeof unityObjectRef !== 'object' || unityObjectRef === null || unityObjectRef.type !== 'unityObject') {
                     throw new Error("`transform` requires a Unity object reference on the stack.");
                 }
+
+                // --- ▼▼▼ ここから修正 ▼▼▼ ---
+                const resolvedDict = this.resolveVariablesInStructure(transformDict);
                 const data = {
                     message: "TransformObject",
                     name: unityObjectRef.name,
-                    text: this.formatForOutput(transformDict)
+                    text: this.formatForOutput(resolvedDict)
                 };
+                // --- ▲▲▲ ここまで修正 ▲▲▲ ---
+
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
             },
             print: () => {
@@ -304,34 +314,60 @@ class PostscriptInterpreter {
         };
     }
     
+    // --- ▼▼▼ 新規追加：データ構造内の変数を再帰的に評価するヘルパー関数 ▼▼▼ ---
     /**
-     * スタック上の任意の値を、mpsコード形式の文字列に変換します。
-     * この関数は、どのようなデータ構造が渡されてもエラーを起こさないように設計されています。
-     * @param {*} val - 文字列に変換する値
-     * @returns {string} - mpsコード形式の文字列
+     * データ構造（配列や辞書）を受け取り、内部の変数を再帰的に評価して値に置き換えます。
+     * @param {*} structure - 評価対象のデータ構造
+     * @returns {*} - 変数が評価された後のデータ構造
      */
+    resolveVariablesInStructure(structure) {
+        // プリミティブな値やリテラル名(~)、特殊オブジェクトはそのまま返す
+        if (typeof structure !== 'object' || structure === null) {
+            // 文字列の場合、それが実行名（変数）なら値を検索する
+            if (typeof structure === 'string' && !structure.startsWith('~') && isNaN(parseFloat(structure))) {
+                 const lookedUpValue = this.lookupVariable(structure);
+                 // 変数が見つかればその値を、見つからなければ元の名前を返す
+                 return lookedUpValue !== undefined ? lookedUpValue : structure;
+            }
+            return structure;
+        }
+
+        // JavaScriptのネイティブ配列（プロシージャなど）を再帰的に評価
+        if (Array.isArray(structure)) {
+            return structure.map(item => this.resolveVariablesInStructure(item));
+        }
+
+        // インタプリタ定義のオブジェクト（array, dict）を再帰的に評価
+        if (structure.type === 'array' || structure.type === 'dict') {
+            // valueプロパティが配列であることを確認
+            if (Array.isArray(structure.value)) {
+                // 新しいオブジェクトを作成して、評価済みのvalueをセットする
+                const newStructure = { ...structure };
+                newStructure.value = structure.value.map(item => this.resolveVariablesInStructure(item));
+                return newStructure;
+            }
+        }
+        
+        // 上記のいずれにも当てはまらないオブジェクトはそのまま返す
+        return structure;
+    }
+    // --- ▲▲▲ ここまで新規追加 ▲▲▲ ---
+
     formatForOutput(val) {
-        // 1. nullやプリミティブ型を最初に処理
         if (val === null) return 'null';
         const type = typeof val;
         if (type !== 'object') {
             return String(val);
         }
-
-        // 2. JavaScriptのネイティブ配列（PostScriptのプロシージャ {...} として扱う）を処理
         if (Array.isArray(val)) {
             return `{${val.map(item => this.formatForOutput(item)).join(' ')}}`;
         }
-
-        // 3. この時点で、valは非null、非配列のオブジェクトであることが確定。
         if (!val.type) {
             return '[Malformed Object]';
         }
-
-        // 4. typeプロパティを持つ、インタプリタ定義の特殊オブジェクトを処理
         switch (val.type) {
             case 'unityObject':
-                return `${val.name}(object)`;
+                return val.name;
             case 'string':
                 const stringContent = Array.isArray(val.value) ? val.value.join('') : '';
                 return `(${stringContent})`;
