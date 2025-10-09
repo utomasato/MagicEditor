@@ -75,9 +75,17 @@ class PostscriptInterpreter {
                     const dictTokens = collection.value;
                     for (let i = 0; i < dictTokens.length; i += 2) {
                         const keyToken = dictTokens[i];
-                        if (parseFloat(keyToken) === indexOrKey) {
-                            val = dictTokens[i + 1];
-                            break;
+                        // キーが数値か文字列かで比較方法を切り替える
+                        if (typeof indexOrKey === 'number') {
+                            if (parseFloat(keyToken) === indexOrKey) {
+                                val = dictTokens[i + 1];
+                                break;
+                            }
+                        } else { // 文字列の場合
+                            if (keyToken === indexOrKey) {
+                                val = dictTokens[i + 1];
+                                break;
+                            }
                         }
                     }
                 } else {
@@ -310,41 +318,27 @@ class PostscriptInterpreter {
         };
     }
     
-    // --- ▼▼▼ データ構造内の変数を再帰的に評価するヘルパー関数 ▼▼▼ ---
-    /**
-     * データ構造（配列や辞書）を受け取り、内部の変数を再帰的に評価して値に置き換えます。
-     * @param {*} structure - 評価対象のデータ構造
-     * @returns {*} - 変数が評価された後のデータ構造
-     */
     resolveVariablesInStructure(structure) {
-        // プリミティブな値やリテラル名(~)、特殊オブジェクトはそのまま返す
         if (typeof structure !== 'object' || structure === null) {
-            // 文字列の場合、それが実行名（変数）なら値を検索する
             if (typeof structure === 'string' && !structure.startsWith('~') && isNaN(parseFloat(structure))) {
                  const lookedUpValue = this.lookupVariable(structure);
-                 // 変数が見つかればその値を、見つからなければ元の名前を返す
                  return lookedUpValue !== undefined ? lookedUpValue : structure;
             }
             return structure;
         }
 
-        // JavaScriptのネイティブ配列（プロシージャなど）を再帰的に評価
         if (Array.isArray(structure)) {
             return structure.map(item => this.resolveVariablesInStructure(item));
         }
 
-        // インタプリタ定義のオブジェクト（array, dict）を再帰的に評価
         if (structure.type === 'array' || structure.type === 'dict') {
-            // valueプロパティが配列であることを確認
             if (Array.isArray(structure.value)) {
-                // 新しいオブジェクトを作成して、評価済みのvalueをセットする
                 const newStructure = { ...structure };
                 newStructure.value = structure.value.map(item => this.resolveVariablesInStructure(item));
                 return newStructure;
             }
         }
         
-        // 上記のいずれにも当てはまらないオブジェクトはそのまま返す
         return structure;
     }
 

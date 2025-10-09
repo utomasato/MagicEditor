@@ -119,7 +119,7 @@ function Start() {
                 const data = {isActive: true, message: "Reset", name: null, value: 0, text: null};
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
                 const mpsCode = GenerateSpell(rings[0]);
-                //console.log(mpsCode);
+                console.log(mpsCode);
                 try {
                     const result = activeInterpreter.execute(mpsCode);
                     let consoleMessage = '';
