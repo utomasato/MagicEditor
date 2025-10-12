@@ -1,5 +1,4 @@
 using UnityEngine;
-//using UnityEngine.SceneManagement;
 using TMPro;
 
 [System.Serializable]
@@ -59,7 +58,7 @@ public class JsCallbackHandler : MonoBehaviour
     void TestReceiveGeneralData()
     {
         // --- Test for MagicSpell ---
-        string spellText = "< ~main < ~startLifetime[0.5 1.0] ~startSpeed 0.5 ~startSize[0.2 0.4] ~startRotation[0 360] > ~emission < ~rateOverTime 50 > ~shape < ~angle 5 ~radius 0.0001 > ~colorOverLifetime < ~gradient < ~colorKeys[[1.0 0.6 0.0 1.0 0.0][1.0 0.0 0.0 1.0 1.0]] ~alphaKeys[[0.0 0.0][1.0 0.5][0.0 1.0]] > > ~rotationOverLifetime < (z)[-45 45] > ~renderer < ~materialName(Fire_1) > >";
+        string spellText = " <~main <~startLifetime [0.5 2] ~startSpeed 0.5 ~startSize [0.2 0.4] ~startRotation [0 360]> ~emission <~rateOverTime 50> ~shape <~angle 5 ~radius 0.0001> ~colorOverLifetime <~gradient <~colorKeys [[1.0 0.6 0.0 1.0 0.0] [1.0 0.0 0.0 1.0 0.6] [1.0 0.0 0.0 1.0 1.0]] ~alphaKeys [[0.0 0.0] [1.0 0.5] [0.0 1.0]]>> ~rotationOverLifetime <~z [-45 45]> ~renderer <~materialName (Fire_1)>>";
         string spellName = "testEffect1";
         systemManager.CreateAndSpawnParticleFromMps(spellText, spellName);
 

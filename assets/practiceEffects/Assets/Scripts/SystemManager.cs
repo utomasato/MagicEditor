@@ -68,10 +68,6 @@ public class SystemManager : MonoBehaviour
                 {
                     if (namedGeneratedObjects.ContainsKey(objectName))
                     {
-                        if (namedGeneratedObjects[objectName] != null)
-                        {
-                            //Destroy(namedGeneratedObjects[objectName]);
-                        }
                         namedGeneratedObjects.Remove(objectName);
                     }
                     namedGeneratedObjects.Add(objectName, newParticleObject);

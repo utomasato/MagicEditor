@@ -70,7 +70,7 @@
   <Ring id="6" type="DictRing" x="-391.19" y="481.22" angle="-0.9410">
     <Items>
       <Item type="sigil" value="COMPLETE" />
-      <Item type="string_token" value="z" />
+      <Item type="name" value="z" />
       <Item type="joint" value="12" />
     </Items>
   </Ring>
@@ -111,7 +111,7 @@
       <Item type="joint" value="14" />
     </Items>
   </Ring>
-  <Ring id="12" type="ArrayRing" x="-232.08" y="402.53" angle="-2.0301">
+  <Ring id="12" type="ArrayRing" x="-241.18" y="386.33" angle="4.1484">
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="chars" value="-45" />

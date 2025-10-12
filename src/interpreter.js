@@ -55,10 +55,12 @@ class PostscriptInterpreter {
                 let len;
                 if (typeof obj === 'object' && obj !== null && (obj.type === 'array' || obj.type === 'string') && Array.isArray(obj.value)) {
                     len = obj.value.length;
+                } else if (typeof obj === 'object' && obj !== null && obj.type === 'dict') {
+                    len = Object.keys(obj.value).length;
                 } else if (typeof obj === 'string') {
                     len = obj.length;
                 } else {
-                    throw new Error("`length` requires an array or string.");
+                    throw new Error("`length` requires an array, dictionary, or string.");
                 }
                 this.stack.push(len);
             },
@@ -71,27 +73,13 @@ class PostscriptInterpreter {
                     val = collection.value[indexOrKey];
                 } else if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
                     val = collection.value[indexOrKey].charCodeAt(0);
-                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict' && Array.isArray(collection.value)) {
-                    const dictTokens = collection.value;
-                    for (let i = 0; i < dictTokens.length; i += 2) {
-                        const keyToken = dictTokens[i];
-                        // キーが数値か文字列かで比較方法を切り替える
-                        if (typeof indexOrKey === 'number') {
-                            if (parseFloat(keyToken) === indexOrKey) {
-                                val = dictTokens[i + 1];
-                                break;
-                            }
-                        } else { // 文字列の場合
-                            if (keyToken === indexOrKey) {
-                                val = dictTokens[i + 1];
-                                break;
-                            }
-                        }
-                    }
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict') {
+                    // 連想配列として直接アクセス
+                    val = collection.value[String(indexOrKey)];
                 } else {
                     throw new Error("`get` requires an array, dictionary, or string.");
                 }
-                this.stack.push(val);
+                this.stack.push(val !== undefined ? val : null); // 見つからない場合はnullをpush
             },
             put: () => {
                 const value = this.stack.pop();
@@ -102,19 +90,9 @@ class PostscriptInterpreter {
                     collection.value[indexOrKey] = value;
                 } else if (typeof collection === 'object' && collection !== null && collection.type === 'string' && Array.isArray(collection.value)) {
                     collection.value[indexOrKey] = String.fromCharCode(value);
-                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict' && Array.isArray(collection.value)) {
-                    const dictTokens = collection.value;
-                    let keyFound = false;
-                    for (let i = 0; i < dictTokens.length; i += 2) {
-                        if (parseFloat(dictTokens[i]) === indexOrKey) {
-                            dictTokens[i + 1] = value;
-                            keyFound = true;
-                            break;
-                        }
-                    }
-                    if (!keyFound) {
-                        dictTokens.push(String(indexOrKey), value);
-                    }
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict') {
+                    // 連想配列として直接値を設定
+                    collection.value[String(indexOrKey)] = value;
                 } else {
                     throw new Error("`put` requires an array, dictionary, or string.");
                 }
@@ -154,28 +132,31 @@ class PostscriptInterpreter {
             },
             forall: () => {
                 const proc = this.stack.pop();
-                const arrObject = this.stack.pop();
+                const collection = this.stack.pop();
                 
                 const procedure = Array.isArray(proc) ? proc : (proc.value || []);
 
-                let itemsToIterate = [];
-                if (typeof arrObject === 'object' && arrObject !== null && arrObject.type === 'array' && Array.isArray(arrObject.value)) {
-                    itemsToIterate = arrObject.value;
-                     for (const token of itemsToIterate) {
-                        this.run([token]);
+                if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
+                     for (const token of collection.value) {
+                        this.stack.push(token); // 配列の要素をスタックに積む
                         this.run(procedure);
                     }
-                } else if (Array.isArray(arrObject)) {
-                    itemsToIterate = arrObject;
-                     for (const item of itemsToIterate) {
+                } else if (typeof collection === 'object' && collection !== null && collection.type === 'dict') {
+                    for (const [key, value] of Object.entries(collection.value)) {
+                        this.stack.push(key);
+                        this.stack.push(value);
+                        this.run(procedure);
+                    }
+                } else if (Array.isArray(collection)) { // 生の配列もサポート
+                     for (const item of collection) {
                         this.stack.push(item);
                         this.run(procedure);
                     }
                 } else {
-                    throw new Error("`forall` requires an array on the stack.");
+                    throw new Error("`forall` requires an array or dictionary on the stack.");
                 }
             },
-            dict: () => { this.stack.push({ type: 'dict', value: [] }); },
+            dict: () => { this.stack.push({ type: 'dict', value: {} }); }, // 修正: 空のオブジェクトを生成
             def: () => {
                 const value = this.stack.pop();
                 let key = this.stack.pop();
@@ -265,6 +246,7 @@ class PostscriptInterpreter {
                 }
                 
                 const resolvedVal = this.resolveVariablesInStructure(val);
+                console.log(resolvedVal);
                 const data = {
                     isActive: true,
                     message: "MagicSpell",
@@ -331,7 +313,7 @@ class PostscriptInterpreter {
             return structure.map(item => this.resolveVariablesInStructure(item));
         }
 
-        if (structure.type === 'array' || structure.type === 'dict') {
+        if (structure.type === 'array') {
             if (Array.isArray(structure.value)) {
                 const newStructure = { ...structure };
                 newStructure.value = structure.value.map(item => this.resolveVariablesInStructure(item));
@@ -339,11 +321,24 @@ class PostscriptInterpreter {
             }
         }
         
+        if (structure.type === 'dict') {
+            const newStructure = { ...structure, value: {} };
+            for (const key in structure.value) {
+                if (Object.hasOwnProperty.call(structure.value, key)) {
+                    // キーは変数解決しない（通常はリテラルのため）
+                    const resolvedValue = this.resolveVariablesInStructure(structure.value[key]);
+                    newStructure.value[key] = resolvedValue;
+                }
+            }
+            return newStructure;
+        }
+        
         return structure;
     }
-
+    
     formatForOutput(val) {
         if (val === null) return 'null';
+        if (val === undefined) return 'undefined';
         const type = typeof val;
         if (type !== 'object') {
             return String(val);
@@ -352,7 +347,8 @@ class PostscriptInterpreter {
             return `{${val.map(item => this.formatForOutput(item)).join(' ')}}`;
         }
         if (!val.type) {
-            return '[Malformed Object]';
+             // 一般的なオブジェクトの場合
+            return JSON.stringify(val);
         }
         switch (val.type) {
             case 'unityObject':
@@ -366,9 +362,9 @@ class PostscriptInterpreter {
                     : '';
                 return `[${arrayContent}]`;
             case 'dict':
-                const dictContent = Array.isArray(val.value)
-                    ? val.value.map(item => this.formatForOutput(item)).join(' ')
-                    : '';
+                const dictContent = Object.entries(val.value)
+                    .map(([key, value]) => `${key} ${this.formatForOutput(value)}`)
+                    .join(' ');
                 return `<${dictContent}>`;
             default:
                 return `[Unknown Type: ${val.type}]`;
@@ -386,9 +382,9 @@ class PostscriptInterpreter {
                 continue;
             }
 
-            if (char === '{' || char === '[' || char === '<') {
+            if (char === '{' || char === '[') {
                 const startBracket = char;
-                const endBracket = { '{': '}', '[': ']', '<': '>' }[startBracket];
+                const endBracket = { '{': '}', '[': ']' }[startBracket];
                 let level = 1;
                 let content = '';
                 i++;
@@ -416,11 +412,35 @@ class PostscriptInterpreter {
                 const innerTokens = this.parse(content);
                 if (startBracket === '{') {
                     tokens.push(innerTokens);
-                } else if (startBracket === '[') {
+                } else { // '['
                     tokens.push({ type: 'array', value: innerTokens });
-                } else {
-                    tokens.push({ type: 'dict', value: innerTokens });
                 }
+                continue;
+            }
+            
+            if (char === '<') {
+                let level = 1;
+                let content = '';
+                i++;
+                while (i < code.length && level > 0) {
+                    const current_char = code[i];
+                    if (current_char === '<') level++;
+                    if (current_char === '>') level--;
+                    if (level > 0) content += current_char;
+                    i++;
+                }
+                if (level !== 0) throw new Error("Mismatched angle brackets for dictionary.");
+
+                const innerTokens = this.parse(content);
+                const dictObject = {};
+                if (innerTokens.length % 2 !== 0) {
+                    throw new Error("Dictionary literal must have an even number of elements (key-value pairs).");
+                }
+                for (let j = 0; j < innerTokens.length; j += 2) {
+                    let key = innerTokens[j];
+                    dictObject[String(key)] = innerTokens[j + 1];
+                }
+                tokens.push({ type: 'dict', value: dictObject });
                 continue;
             }
 
@@ -474,7 +494,10 @@ class PostscriptInterpreter {
             } else if (Array.isArray(token)) {
                 this.stack.push(token);
             } else if (typeof token === 'object' && token !== null && token.type && (token.type === 'array' || token.type === 'dict')) {
-                this.stack.push(token);
+                // --- ▼▼▼ MODIFIED PART ▼▼▼ ---
+                const resolvedToken = this.resolveVariablesInStructure(token);
+                this.stack.push(resolvedToken);
+                // --- ▲▲▲ MODIFIED PART ▲▲▲ ---
             } else if (typeof token === 'string') {
                 const value = this.lookupVariable(token);
                 if (value !== undefined) {
@@ -531,4 +554,3 @@ class LispInterpreter {
         };
     }
 }
-

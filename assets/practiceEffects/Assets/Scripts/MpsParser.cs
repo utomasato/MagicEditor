@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System;
 using System.Globalization;
 
-// --- ▼▼▼ ここから追加 ▼▼▼ ---
 /// <summary>
 /// Transform情報を格納するための構造体。Nullable型を使い、指定されなかった項目は更新しないようにする。
 /// </summary>
@@ -13,7 +12,6 @@ public struct TransformData
     public Vector3? rotation;
     public Vector3? scale;
 }
-// --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
 
 /// <summary>
@@ -50,7 +48,7 @@ public static class MpsParser
         }
         public float ConsumeFloat() => float.Parse(Consume(), CultureInfo.InvariantCulture);
 
-        // --- ▼▼▼ ここから修正 ▼▼▼ ---
+
         /// <summary>
         /// '(' から ')' までのトークンを連結して1つの文字列として消費します。スペースを含む文字列に対応します。
         /// </summary>
@@ -65,10 +63,8 @@ public static class MpsParser
             Expect(")");
             return content.Trim();
         }
-        // --- ▲▲▲ ここまで修正 ▲▲▲ ---
     }
 
-    // --- ▼▼▼ ここから追加 ▼▼▼ ---
     /// <summary>
     /// Transform情報（位置、回転、スケール）のmpsコードを解析します。
     /// </summary>
@@ -110,7 +106,6 @@ public static class MpsParser
         scanner.Expect("]");
         return new Vector3(x, y, z);
     }
-    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
 
     /// <summary>
@@ -253,9 +248,15 @@ public static class MpsParser
         var rot = new RotationOverLifetimeModuleData { enabled = true };
         while (scanner.Peek() != ">")
         {
-            string keyInParens = scanner.ConsumeStringInParens();
-            if (keyInParens == "z") rot.z = ParseMinMaxCurveOrConstant(scanner);
-            else throw new Exception($"Unknown rotationOverLifetime axis: {keyInParens}");
+            string key = scanner.Consume().Substring(1);
+            switch (key)
+            {
+                case "x": rot.x = ParseMinMaxCurveOrConstant(scanner); break;
+                case "y": rot.y = ParseMinMaxCurveOrConstant(scanner); break;
+                case "z": rot.z = ParseMinMaxCurveOrConstant(scanner); break;
+                default: throw new Exception($"Unknown rotationOverLifetime axis: {key}");
+            }
+
         }
         return rot;
     }
