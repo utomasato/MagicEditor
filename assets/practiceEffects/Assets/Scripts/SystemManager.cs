@@ -131,6 +131,38 @@ public class SystemManager : MonoBehaviour
         }
     }
 
+    public void AnimationObjectById(string objectId, string animationCode)
+    {
+        if (string.IsNullOrEmpty(objectId) || !managedObjectsById.ContainsKey(objectId))
+        {
+            Debug.LogWarning($"Animation target object with ID '{objectId}' not found.");
+            return;
+        }
+
+        GameObject objToAnimation = managedObjectsById[objectId];
+        if (objToAnimation == null)
+        {
+            Debug.LogWarning($"Target object with ID '{objectId}' has already been destroyed.");
+            managedObjectsById.Remove(objectId);
+            return;
+        }
+
+        try
+        {
+            AnimationDatas animationDatas = MpsParser.ParseAnimation(animationCode);
+            TransformAnimation anim = null;
+            if (objToAnimation.GetComponent<TransformAnimation>() == null)
+                anim = objToAnimation.AddComponent<TransformAnimation>();
+            else
+                anim = objToAnimation.GetComponent<TransformAnimation>();
+            anim.Initialize(animationDatas);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error parsing Animation code: {e.Message}\n{e.StackTrace}");
+        }
+    }
+
     public void Reset()
     {
         foreach (GameObject obj in GeneratedObjects)

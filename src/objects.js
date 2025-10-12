@@ -363,16 +363,13 @@ class DictRing extends MagicRing {
     }
 
     CanAcceptItem(item) {
+        /*
         if (!item) return true;
 
         if (item.type === 'sigil' && item.value !== 'COMPLETE') {
             return false;
         }
-        // --- ▼▼▼ 修正箇所 ▼▼▼ ---
-        // Jointに関する制限を削除
-        // if (item.type === 'joint' && item.value instanceof MagicRing) { ... }
-        // --- ▲▲▲ ここまで ▲▲▲ ---
-
+        */
         return true;
     }
 

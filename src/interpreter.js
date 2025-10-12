@@ -281,6 +281,22 @@ class PostscriptInterpreter {
 
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
             },
+            animation: () => {
+                const animationDict = this.stack.pop();
+                const unityObjectRef = this.stack.pop();
+                if (typeof unityObjectRef !== 'object' || unityObjectRef === null || unityObjectRef.type !== 'unityObject' || !unityObjectRef.value) {
+                    throw new Error("`transform` requires a Unity object reference on the stack.");
+                }
+
+                const resolvedDict = this.resolveVariablesInStructure(animationDict);
+                const data = {
+                    message: "Animation",
+                    id: unityObjectRef.value, // Use the ID from the object reference
+                    text: this.formatForOutput(resolvedDict)
+                };
+
+                sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
+            },
             print: () => {
                 const val = this.stack.pop();
                 if (typeof val === 'object' && val !== null && val.type === 'string') {

@@ -222,7 +222,7 @@ function createSigilDropdown(item) {
         "pop","exch","dup","copy","index", "roll", "add", "sub","mul","div","idiv","mod","abs","neg","sqrt",
         "atan","cos","sin","rand","srand","rrand","array","string","length","get","put","getinterval","putinterval","forall",
         "dict","def","eq","ne","ge","gt","le","lt","and","not","or","xor","true","false",
-        "exec","if","ifelse","for","repeat","loop","exit","null", "magicactivate", "transform", "print", "stack", "cvi", "chr"
+        "exec","if","ifelse","for","repeat","loop","exit","null", "magicactivate", "transform", "animation", "print", "stack", "cvi", "chr"
     ];
 
     sigilOptions.forEach(opt => { currentSelectElement.option(opt); });

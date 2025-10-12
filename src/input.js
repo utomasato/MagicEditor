@@ -214,7 +214,8 @@ function MouseHoldEvent()
             DragRing(selectRing, mousePos);
             break;
         case "rotate":
-            RotateRing(selectRing, mousePos);RotateRing(selectRing, mousePos);
+            RotateRing(selectRing, mousePos);
+            //RotateRing(selectRing, mousePos);
             break;
         case "pan":
             Pan(GetMousePos());

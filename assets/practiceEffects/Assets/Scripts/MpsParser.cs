@@ -13,6 +13,29 @@ public struct TransformData
     public Vector3? scale;
 }
 
+[System.Serializable]
+public class AnimationDatas
+{
+    public bool isActive_pos = false;
+    public bool isActive_rot = false;
+    public bool isActive_scale = false;
+    public AnimationData posAnimData;
+    public AnimationData rotAnimData;
+    public AnimationData scaleAnimData;
+}
+
+[System.Serializable]
+public class AnimationData
+{
+    public Vector3 from = Vector3.zero;
+    public Vector3 to = Vector3.zero;
+    public float duration = 1000;
+    public bool loop = false;
+    public bool reverse = false;
+    public bool easeIn = false;
+    public bool easeOut = false;
+}
+
 
 /// <summary>
 /// p5.jsから送られてくるmpsコードを解析し、ParticlePresetオブジェクトに変換する静的クラスです。
@@ -47,7 +70,7 @@ public static class MpsParser
                 throw new Exception($"Parse Error: Expected '{token}' but got '{consumed}'.");
         }
         public float ConsumeFloat() => float.Parse(Consume(), CultureInfo.InvariantCulture);
-
+        public bool ConsumeBool() => bool.Parse(Consume());
 
         /// <summary>
         /// '(' から ')' までのトークンを連結して1つの文字列として消費します。スペースを含む文字列に対応します。
@@ -105,6 +128,64 @@ public static class MpsParser
         var z = scanner.ConsumeFloat();
         scanner.Expect("]");
         return new Vector3(x, y, z);
+    }
+
+    /// <summary>
+    /// Animation情報（位置、回転、スケール）のmpsコードを解析します。
+    /// </summary>
+    public static AnimationDatas ParseAnimation(string animationCode)
+    {
+        var scanner = new Scanner(animationCode);
+        var data = new AnimationDatas();
+
+        scanner.Expect("<");
+        while (scanner.Peek() != null && scanner.Peek() != ">")
+        {
+            string key = scanner.Consume().Substring(1); // '~' を取り除く
+            switch (key)
+            {
+                case "position":
+                    data.isActive_pos = true;
+                    data.posAnimData = ParseAnimElement(scanner);
+                    break;
+                case "rotate":
+                    data.isActive_rot = true;
+                    data.rotAnimData = ParseAnimElement(scanner);
+                    break;
+                case "scale":
+                    data.isActive_scale = true;
+                    data.scaleAnimData = ParseAnimElement(scanner);
+                    break;
+                default:
+                    throw new Exception($"Unknown animation key: {key}");
+            }
+        }
+        scanner.Expect(">");
+
+        return data;
+    }
+
+    private static AnimationData ParseAnimElement(Scanner scanner)
+    {
+        scanner.Expect("<");
+        var animData = new AnimationData();
+        while (scanner.Peek() != ">")
+        {
+            string key = scanner.Consume().Substring(1);
+            switch (key)
+            {
+                case "from": animData.from = ParseVector3(scanner); break;
+                case "to": animData.to = ParseVector3(scanner); break;
+                case "duration": animData.duration = scanner.ConsumeFloat(); break;
+                case "loop": animData.loop = scanner.ConsumeBool(); break;
+                case "reverse": animData.reverse = scanner.ConsumeBool(); break;
+                case "easeIn": animData.easeIn = scanner.ConsumeBool(); break;
+                case "easeOut": animData.easeOut = scanner.ConsumeBool(); break;
+                default: throw new Exception($"Unknown animation module key: {key}");
+            }
+        }
+        scanner.Expect(">");
+        return animData;
     }
 
 

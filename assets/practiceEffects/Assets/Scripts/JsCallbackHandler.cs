@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System;
 
 [System.Serializable]
 public class GeneralData
@@ -40,6 +41,7 @@ public class JsCallbackHandler : MonoBehaviour
 
     void Update()
     {
+
         // "R"キーを押すとシーンがリロードされる例
         if (Input.GetKeyDown(KeyCode.R))
         {
@@ -53,7 +55,13 @@ public class JsCallbackHandler : MonoBehaviour
         {
             TestTransform();
         }
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            TestAnimation();
+        }
+
     }
+
 
     // Note: Test methods will use name-based logic, update them if needed for ID-based testing.
     void TestReceiveGeneralData()
@@ -70,6 +78,14 @@ public class JsCallbackHandler : MonoBehaviour
         string testId = "test-id-from-csharp-1";
         systemManager.TransformObjectById(testId, transformText);
     }
+
+    void TestAnimation()
+    {
+        string animationText = "<~position <~from [0 0 0] ~to [5 5 5] ~duration 3000 ~loop true ~reverse true ~easeIn true ~easeOut true> ~rotate < ~from[0 0 0] ~to[0 360 0] ~duration 4000 ~loop true > ~scale < ~from[1 1 1] ~to[3 3 3] ~duration 5000 ~loop true ~easeIn true >> ";
+        string testId = "test-id-from-csharp-1";
+        systemManager.AnimationObjectById(testId, animationText);
+    }
+
 
 
     public void ReceiveGeneralData(string jsonString)
@@ -98,6 +114,9 @@ public class JsCallbackHandler : MonoBehaviour
                 break;
             case "TransformObject":
                 systemManager.TransformObjectById(data.id, data.text); // Use new method and pass ID
+                break;
+            case "Animation":
+                systemManager.AnimationObjectById(data.id, data.text);
                 break;
         }
     }
