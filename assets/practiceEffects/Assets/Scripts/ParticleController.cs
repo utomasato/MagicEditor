@@ -26,6 +26,7 @@ public class ParticleController : MonoBehaviour
             float minRotRad = preset.main.startRotation.min * Mathf.Deg2Rad;
             float maxRotRad = preset.main.startRotation.max * Mathf.Deg2Rad;
             main.startRotation = new ParticleSystem.MinMaxCurve(minRotRad, maxRotRad);
+            main.simulationSpace = preset.main.simulationSpace;
         }
         main.startColor = Color.white;
 

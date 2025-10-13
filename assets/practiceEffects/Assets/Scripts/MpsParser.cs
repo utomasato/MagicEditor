@@ -295,6 +295,18 @@ public static class MpsParser
                 case "startSpeed": main.startSpeed = ParseMinMaxCurveOrConstant(scanner); break;
                 case "startSize": main.startSize = ParseMinMaxCurveOrConstant(scanner); break;
                 case "startRotation": main.startRotation = ParseMinMaxCurveOrConstant(scanner); break;
+                case "simulationSpace":
+                    string spaceStr = scanner.ConsumeStringInParens();
+                    if (Enum.TryParse(spaceStr, true, out ParticleSystemSimulationSpace space))
+                    {
+                        main.simulationSpace = space;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Unknown simulation space '{spaceStr}'. Defaulting to Local.");
+                        main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                    }
+                    break;
                 default: throw new Exception($"Unknown main module key: {key}");
             }
         }
@@ -726,3 +738,4 @@ public static class MpsParser
         return keyList;
     }
 }
+

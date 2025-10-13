@@ -74,7 +74,7 @@ public class JsCallbackHandler : MonoBehaviour
     // Note: Test methods will use name-based logic, update them if needed for ID-based testing.
     void TestReceiveGeneralData()
     {
-        string spellText = " <~main <~startLifetime [0.5 2] ~startSpeed 0.5 ~startSize [0.2 0.4] ~startRotation [0 360]> ~emission <~rateOverTime 50> ~shape <~angle 5 ~radius 0.0001> ~colorOverLifetime <~gradient <~colorKeys [[1.0 0.6 0.0 1.0 0.0] [1.0 0.0 0.0 1.0 0.6] [1.0 0.0 0.0 1.0 1.0]] ~alphaKeys [[0.0 0.0] [1.0 0.5] [0.0 1.0]]>> ~rotationOverLifetime <~z [-45 45]> ~renderer <~materialName (Fire_1)>>";
+        string spellText = " <~main <~startLifetime [0.5 2] ~startSpeed 0.5 ~startSize [0.2 0.4] ~startRotation [0 360] ~simulationSpace (World)> ~emission <~rateOverTime 50> ~shape <~angle 5 ~radius 0.0001> ~colorOverLifetime <~gradient <~colorKeys [[1.0 0.6 0.0 1.0 0.0] [1.0 0.0 0.0 1.0 0.6] [1.0 0.0 0.0 1.0 1.0]] ~alphaKeys [[0.0 0.0] [1.0 0.5] [0.0 1.0]]>> ~rotationOverLifetime <~z [-45 45]> ~renderer <~materialName (Fire_1)>>";
         // ID is now generated in JS, so we pass an empty string or a test ID here.
         string testId = "test-id-from-csharp-1";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
