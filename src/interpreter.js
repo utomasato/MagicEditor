@@ -265,6 +265,33 @@ class PostscriptInterpreter {
                     this.dictStack[this.dictStack.length - 1][variableName] = unityObjectRef;
                 }
             },
+            spawnobj: () => {
+                const val = this.stack.pop();
+                let key = null;
+                if (this.stack.length > 0 && typeof this.stack[this.stack.length - 1] === 'string' && this.stack[this.stack.length - 1].startsWith('~')) {
+                    key = this.stack.pop();
+                }
+                
+                const id = crypto.randomUUID(); // Generate a unique ID
+                const resolvedVal = this.resolveVariablesInStructure(val);
+                
+                const data = {
+                    isActive: true,
+                    message: "CreateObject",
+                    value: 0,
+                    id: id, // Changed from 'name'
+                    text: this.formatForOutput(resolvedVal)
+                };
+
+                sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
+
+                if (key) {
+                    const variableName = key.substring(1);
+                    // Store the reference with the ID
+                    const unityObjectRef = { type: 'unityObject', value: id }; 
+                    this.dictStack[this.dictStack.length - 1][variableName] = unityObjectRef;
+                }
+            },
             transform: () => {
                 const transformDict = this.stack.pop();
                 const unityObjectRef = this.stack.pop();
@@ -277,6 +304,22 @@ class PostscriptInterpreter {
                     message: "TransformObject",
                     id: unityObjectRef.value, // Use the ID from the object reference
                     text: this.formatForOutput(resolvedDict)
+                };
+
+                sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
+            },
+            attachtoparent: () => {
+                const parentObjRef = this.stack.pop();
+                const childObjRef = this.stack.pop();
+                if ((typeof parentObjRef !== 'object' || parentObjRef === null || parentObjRef.type !== 'unityObject' || !parentObjRef.value)
+                    && (typeof childObjRef !== 'object' || childObjRef === null || childObjRef.type !== 'unityObject' || !childObjRef.value)) {
+                    throw new Error("`attachtoparent` requires a Unity object reference on the stack.");
+                }
+
+                const data = {
+                    message: "AttachToParent",
+                    id: childObjRef.value, // Use the ID from the object reference
+                    text: parentObjRef.value
                 };
 
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
@@ -297,6 +340,7 @@ class PostscriptInterpreter {
 
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
             },
+            
             print: () => {
                 const val = this.stack.pop();
                 if (typeof val === 'object' && val !== null && val.type === 'string') {

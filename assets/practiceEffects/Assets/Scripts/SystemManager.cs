@@ -9,6 +9,13 @@ public class MaterialEntry
     public Material material;
 }
 
+[System.Serializable]
+public class MeshEntry
+{
+    public string name;
+    public Mesh mesh;
+}
+
 /// <summary>
 /// ゲーム全体の設定を管理し、各機能（ParticleGeneratorなど）に指示を出す司令塔クラス。
 /// </summary>
@@ -24,8 +31,13 @@ public class SystemManager : MonoBehaviour
     [Tooltip("名前とマテリアルを紐付けて登録します")]
     public List<MaterialEntry> materialList;
 
+    [Header("メッシュリスト")]
+    [Tooltip("名前とメッシュを紐付けて登録します")]
+    public List<MeshEntry> meshList;
+
     // --- Private Fields ---
     private Dictionary<string, Material> materialDictionary;
+    private Dictionary<string, Mesh> meshDictionary;
     // Manages generated objects by their unique ID
     private Dictionary<string, GameObject> managedObjectsById = new Dictionary<string, GameObject>();
 
@@ -42,6 +54,19 @@ public class SystemManager : MonoBehaviour
                 }
             }
         }
+        // --- ▼▼▼ ここから修正 ▼▼▼ ---
+        meshDictionary = new Dictionary<string, Mesh>();
+        foreach (var entry in meshList)
+        {
+            if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.mesh != null)
+            {
+                if (!meshDictionary.ContainsKey(entry.name))
+                {
+                    meshDictionary.Add(entry.name, entry.mesh);
+                }
+            }
+        }
+        // --- ▲▲▲ ここまで修正 ▲▲▲ ---
     }
 
     /// <summary>
@@ -70,7 +95,11 @@ public class SystemManager : MonoBehaviour
                     // If an object with the same ID already exists, destroy the old one.
                     if (managedObjectsById.TryGetValue(objectId, out GameObject oldObject))
                     {
-                        if (oldObject != null) Destroy(oldObject);
+                        if (oldObject != null)
+                        {
+                            GeneratedObjects.Remove(oldObject);
+                            Destroy(oldObject);
+                        }
                         managedObjectsById.Remove(objectId);
                     }
                     managedObjectsById.Add(objectId, newParticleObject);
@@ -86,6 +115,130 @@ public class SystemManager : MonoBehaviour
             Debug.LogError($"Error parsing MPS code: {e.Message}\n{e.StackTrace}");
         }
     }
+
+    // --- ▼▼▼ ここから修正 ▼▼▼ ---
+    /// <summary>
+    /// mpsコードに基づいてGameObjectを生成します。
+    /// </summary>
+    /// <param name="mpsCode">オブジェクトのタイプを指定するmpsコード（例: "<~type (Cube)>"）</param>
+    /// <param name="objectId">オブジェクトの一意のID</param>
+    public void CreateObjectFromMps(string mpsCode, string objectId)
+    {
+        if (string.IsNullOrEmpty(mpsCode))
+        {
+            Debug.LogWarning("Received empty mps code for object creation. Skipped.");
+            return;
+        }
+
+        try
+        {
+            ObjectCreationData creationData = MpsParser.ParseObjectCreation(mpsCode);
+            GameObject newObject = null;
+
+            // objectTypeに基づいてGameObjectを生成
+            switch (creationData.objectType.ToLower()) // 小文字に変換して比較
+            {
+                case "empty":
+                    newObject = new GameObject("Empty Object");
+                    break;
+                case "cube":
+                    newObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    break;
+                case "sphere":
+                    newObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    break;
+                case "capsule":
+                    newObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                    break;
+                case "cylinder":
+                    newObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                    break;
+                case "plane":
+                    newObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                    break;
+                case "quad":
+                    newObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    break;
+                default:
+                    Debug.LogWarning($"Unknown object type: '{creationData.objectType}'. Creating an empty object instead.");
+                    newObject = new GameObject(creationData.objectType);
+                    break;
+            }
+
+            // 生成したオブジェクトをリストと辞書に追加
+            if (newObject != null)
+            {
+                GeneratedObjects.Add(newObject);
+
+                if (!string.IsNullOrEmpty(objectId))
+                {
+                    // 同じIDのオブジェクトが既に存在する場合は、古いものを破棄
+                    if (managedObjectsById.TryGetValue(objectId, out GameObject oldObject))
+                    {
+                        if (oldObject != null)
+                        {
+                            GeneratedObjects.Remove(oldObject);
+                            Destroy(oldObject);
+                        }
+                        managedObjectsById.Remove(objectId);
+                    }
+                    managedObjectsById.Add(objectId, newObject);
+                    newObject.name = $"{creationData.objectType}_{objectId}"; // オブジェクト名をわかりやすく設定
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error parsing object creation code: {e.Message}\n{e.StackTrace}");
+        }
+    }
+    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
+
+    // --- ▼▼▼ ここから追加 ▼▼▼ ---
+    /// <summary>
+    /// 指定されたIDのオブジェクトを、別の指定されたIDのオブジェクトの子にします。
+    /// </summary>
+    /// <param name="childId">子にするオブジェクトのID</param>
+    /// <param name="parentId">親にするオブジェクトのID</param>
+    public void AttachToParent(string childId, string parentId)
+    {
+        if (string.IsNullOrEmpty(childId) || string.IsNullOrEmpty(parentId))
+        {
+            Debug.LogWarning("Child ID or Parent ID is null or empty. Cannot attach.");
+            return;
+        }
+
+        if (!managedObjectsById.TryGetValue(childId, out GameObject childObject))
+        {
+            Debug.LogWarning($"Child object with ID '{childId}' not found.");
+            return;
+        }
+
+        if (!managedObjectsById.TryGetValue(parentId, out GameObject parentObject))
+        {
+            Debug.LogWarning($"Parent object with ID '{parentId}' not found.");
+            return;
+        }
+
+        if (childObject == null)
+        {
+            Debug.LogWarning($"Child object with ID '{childId}' has been destroyed.");
+            managedObjectsById.Remove(childId);
+            return;
+        }
+
+        if (parentObject == null)
+        {
+            Debug.LogWarning($"Parent object with ID '{parentId}' has been destroyed.");
+            managedObjectsById.Remove(parentId);
+            return;
+        }
+
+        // Set the parent
+        childObject.transform.SetParent(parentObject.transform);
+        Debug.Log($"Attached object '{childId}' to parent '{parentId}'.");
+    }
+    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
     /// <summary>
     /// Updates the Transform of a GameObject specified by its ID.
@@ -118,7 +271,7 @@ public class SystemManager : MonoBehaviour
             }
             if (transformData.rotation.HasValue)
             {
-                objToTransform.transform.eulerAngles = transformData.rotation.Value;
+                objToTransform.transform.localEulerAngles = transformData.rotation.Value;
             }
             if (transformData.scale.HasValue)
             {
@@ -173,3 +326,4 @@ public class SystemManager : MonoBehaviour
         managedObjectsById.Clear();
     }
 }
+

@@ -98,7 +98,7 @@ public class TransformAnimation : MonoBehaviour
             fx = Mathf.Sin(t * Mathf.PI / 2);
         else fx = t;
 
-        transform.eulerAngles = Vector3.Lerp(animData_rot.from, animData_rot.to, fx);
+        transform.localEulerAngles = Vector3.Lerp(animData_rot.from, animData_rot.to, fx);
 
         rotTimer += Time.deltaTime;
         if (animData_rot.loop && rotTimer * 1000 >= animData_rot.duration)

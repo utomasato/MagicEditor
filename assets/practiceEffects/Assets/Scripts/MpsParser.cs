@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System;
 using System.Globalization;
 
+
+
 /// <summary>
 /// Transform情報を格納するための構造体。Nullable型を使い、指定されなかった項目は更新しないようにする。
 /// </summary>
@@ -12,6 +14,17 @@ public struct TransformData
     public Vector3? rotation;
     public Vector3? scale;
 }
+
+// --- ▼▼▼ ここから追加 ▼▼▼ ---
+/// <summary>
+/// オブジェクト生成情報を格納するための構造体
+/// </summary>
+public struct ObjectCreationData
+{
+    public string objectType;
+}
+// --- ▲▲▲ ここまで追加 ▲▲▲ ---
+
 
 [System.Serializable]
 public class AnimationDatas
@@ -87,6 +100,33 @@ public static class MpsParser
             return content.Trim();
         }
     }
+    // --- ▼▼▼ ここから追加 ▼▼▼ ---
+    /// <summary>
+    /// オブジェクト生成用のmpsコードを解析します。
+    /// </summary>
+    public static ObjectCreationData ParseObjectCreation(string mpsCode)
+    {
+        var scanner = new Scanner(mpsCode);
+        var data = new ObjectCreationData();
+
+        scanner.Expect("<");
+        while (scanner.Peek() != null && scanner.Peek() != ">")
+        {
+            string key = scanner.Consume().Substring(1); // '~' を取り除く
+            switch (key)
+            {
+                case "shape":
+                    data.objectType = scanner.ConsumeStringInParens();
+                    break;
+                default:
+                    throw new Exception($"Unknown object creation key: {key}");
+            }
+        }
+        scanner.Expect(">");
+
+        return data;
+    }
+    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
     /// <summary>
     /// Transform情報（位置、回転、スケール）のmpsコードを解析します。
@@ -686,4 +726,3 @@ public static class MpsParser
         return keyList;
     }
 }
-

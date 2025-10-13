@@ -59,6 +59,14 @@ public class JsCallbackHandler : MonoBehaviour
         {
             TestAnimation();
         }
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            TestObject();
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            TestAttack();
+        }
 
     }
 
@@ -84,6 +92,22 @@ public class JsCallbackHandler : MonoBehaviour
         string animationText = "<~position <~from [0 0 0] ~to [5 5 5] ~duration 3000 ~loop true ~reverse true ~easeIn true ~easeOut true> ~rotate < ~from[0 0 0] ~to[0 360 0] ~duration 4000 ~loop true > ~scale < ~from[1 1 1] ~to[3 3 3] ~duration 5000 ~loop true ~easeIn true >> ";
         string testId = "test-id-from-csharp-1";
         systemManager.AnimationObjectById(testId, animationText);
+    }
+
+    void TestObject()
+    {
+        string objectText = "<~shape (cube)>";
+        string testId = "test-id-from-csharp-100";
+        systemManager.CreateObjectFromMps(objectText, testId);
+        testId = "test-id-from-csharp-200";
+        systemManager.CreateObjectFromMps(objectText, testId);
+    }
+
+    void TestAttack()
+    {
+        string parentId = "test-id-from-csharp-100";
+        string childId = "test-id-from-csharp-200";
+        systemManager.AttachToParent(childId, parentId);
     }
 
 
@@ -117,6 +141,12 @@ public class JsCallbackHandler : MonoBehaviour
                 break;
             case "Animation":
                 systemManager.AnimationObjectById(data.id, data.text);
+                break;
+            case "CreateObject":
+                systemManager.CreateObjectFromMps(data.text, data.id);
+                break;
+            case "AttachToParent":
+                systemManager.AttachToParent(data.id, data.text);
                 break;
         }
     }
