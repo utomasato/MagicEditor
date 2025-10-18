@@ -247,6 +247,10 @@ function createRingPanel(ring) {
             });
         });
         rings = rings.filter(r => r !== ring);
+        if (ring === startRing) {
+            startRing = rings.find(r => isRingStartable(r)) || (rings.length > 0 ? rings[0] : null);
+            if(startRing) startRing.isStartPoint = true;
+        }
         closePanel();
     };
     const handleDuplicate = () => {
@@ -315,6 +319,38 @@ function createRingPanel(ring) {
         fieldItems.push(newJoint);
         closePanel();
     });
+
+    const isStartable = isRingStartable(ring);
+    const isCurrentStart = (ring === startRing);
+
+    if (isCurrentStart) {
+        const startIndicator = createP('This is the starting ring.');
+        startIndicator.parent(contentArea);
+        startIndicator.style('margin', '5px 0 0 0');
+        startIndicator.style('padding', '4px');
+        startIndicator.style('font-size', '12px');
+        startIndicator.style('font-style', 'italic');
+        startIndicator.style('color', '#333');
+        startIndicator.style('background-color', '#fffbe6');
+        startIndicator.style('border', '1px solid #ffe58f');
+        startIndicator.style('border-radius', '4px');
+        startIndicator.style('text-align', 'center');
+    } else if (isStartable) {
+        const setStartButton = createButton('Set as Start Point');
+        setStartButton.parent(buttonContainer);
+        setStartButton.style('width', '100%');
+        setStartButton.style('padding', '5px');
+        setStartButton.style('cursor', 'pointer');
+        setStartButton.elt.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            if (startRing) {
+                startRing.isStartPoint = false;
+            }
+            startRing = ring;
+            ring.isStartPoint = true;
+            closePanel();
+        });
+    }
 
     if (ring.isNew) {
         const typeLabel = createP('Ring Type:');
@@ -811,4 +847,3 @@ function showXMLInputPanel() {
     overwriteButton.style('cursor', 'pointer');
     overwriteButton.mousePressed(() => handleImport('overwrite'));
 }
-

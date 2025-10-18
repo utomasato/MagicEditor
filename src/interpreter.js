@@ -597,6 +597,7 @@ class PostscriptInterpreter {
         
         return {
             stack: this.stack,
+            dictStack: this.dictStack,
             output: this.output.join('\n')
         };
     }

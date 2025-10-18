@@ -9,6 +9,7 @@ let debugMode;
 let isUIHidden;
 let screenshotRequest = false;
 let globalIsClockwise = false;
+let startRing = null;
 
 // =============================================
 // 入力と状態管理のためのグローバル変数
@@ -70,6 +71,28 @@ function formatStackForDisplay(stack) {
   return `[${formattedItems.join(', ')}]`;
 }
 
+/**
+ * Checks if a ring can be set as the starting point.
+ * @param {MagicRing} targetRing The ring to check.
+ * @returns {boolean} True if the ring can be a start point, false otherwise.
+ */
+function isRingStartable(targetRing) {
+    // Must be a MagicRing, not ArrayRing or DictRing
+    if (!targetRing || targetRing.constructor.name !== 'MagicRing') {
+        return false;
+    }
+
+    // Must not be connected from another ring
+    for (const r of rings) {
+        for (const item of r.items) {
+            if (item && item.type === 'joint' && item.value === targetRing) {
+                return false; // Found a connection to this ring
+            }
+        }
+    }
+    return true; // Conditions met
+}
+
 
 function Start() {
     debugMode = false;
@@ -115,10 +138,10 @@ function Start() {
         new Button(145, 10, 40, 40, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "string", function () { AddObjectMode = "str"; },true),
         new Button(190, 10, 40, 40, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "name", function () { AddObjectMode = "name"; },true),
         new Button(-5, 10, 40, 40, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Run", function () {
-            if (rings.length > 0) {
+            if (startRing) {
                 const data = {isActive: true, message: "Reset", name: null, value: 0, text: null};
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
-                const mpsCode = GenerateSpell(rings[0]);
+                const mpsCode = GenerateSpell(startRing);
                 console.log(mpsCode);
                 try {
                     const result = activeInterpreter.execute(mpsCode);
@@ -130,8 +153,8 @@ function Start() {
                     }
                     console.log("==================")
                     consoleMessage += `Final Stack:\n${formatStackForDisplay(result.stack)}`;
-                    //console.log(`Final Stack:\n${formatStackForDisplay(result.stack)}`);
-                    
+                    console.log(`Final Stack:\n${formatStackForDisplay(result.stack)}`);
+                    console.log(`Final dictStack:\n${formatStackForDisplay(result.dictStack)}`)
                     updateConsolePanel(consoleMessage);
                 } catch (e) {
                     updateConsolePanel(`Execution Error:\n${e.message}`);
@@ -152,8 +175,8 @@ function Start() {
         new Button(10, 60, 40, 40, color(200, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🖐️", function () { cursormode = "grad"; SetMouseCursor('grab'); }),
         new Button(55, 60, 40, 40, color(200, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🪶", function () { cursormode = "default"; SetMouseCursor('default'); }),
         new Button(100, 60, 65, 40, color(200, 220, 255), { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Align", () => {
-            if (rings.length > 0) {
-                alignConnectedRings(rings[0]);
+            if (startRing) {
+                alignConnectedRings(startRing);
             }
         }),
         new Button(-10, 60, 40, 40, color(200, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, 20, "👁️", function () { isUIHidden = true; }),
@@ -169,6 +192,10 @@ function Start() {
     InputInitialize();
 
     rings = [new MagicRing({ x: 0, y: 0 })];
+    if (rings.length > 0) {
+        startRing = rings[0];
+        startRing.isStartPoint = true;
+    }
     
     createConsolePanel(); // ui.jsで定義された関数を呼び出す
 }
@@ -265,7 +292,7 @@ function setInterpreter(name) {
 }
 
 function CommitMagicSpell() {
-    const magicSpell = GenerateSpell();
+    const magicSpell = GenerateSpell(startRing);
     const data = {
         isActive: true,
         message: "MagicSpell",
@@ -275,12 +302,11 @@ function CommitMagicSpell() {
     sendJsonToUnity('JsReceiver', 'ReceiveGeneralData', data);
 }
 
-function GenerateSpell() {
-    if (rings.length > 0) {
-        const spell = rings[0].Spell();
+function GenerateSpell(ringToStart) {
+    if (ringToStart) {
+        const spell = ringToStart.Spell();
         // return spell;
         return spell.slice(1, -1) // 一番外側の{}を外す
     }
     return "";
 }
-

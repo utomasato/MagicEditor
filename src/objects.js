@@ -14,6 +14,7 @@ class MagicRing
         this.layouts = [];
         this.angle = 0;
         this.effectiveRadius = 0; // 実効半径を保持するプロパティを追加
+        this.isStartPoint = false;
         
         this.spellstart = "{ ";
         this.spellend = "}";
@@ -150,7 +151,6 @@ class MagicRing
         {
             FillCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, color(200,200,200,100));
 
-            // --- ▼▼▼ ここから追加 ▼▼▼ ---
             // 実効半径をデバッグ表示
             if (this.effectiveRadius > 0) {
                 noFill();
@@ -158,7 +158,6 @@ class MagicRing
                 strokeWeight(1.5 / zoomSize); // ズームに合わせて線の太さを調整
                 ellipse(0, 0, this.effectiveRadius * 2);
             }
-            // --- ▲▲▲ ここまで ▲▲▲ ---
         }
         
         this.DrawRingShape();
@@ -182,6 +181,10 @@ class MagicRing
     DrawRingShape() {
         DrawCircle(0, 0, this.innerradius, color(0,0,0)); 
         DrawCircle(0, 0, this.outerradius, color(0,0,0));
+        if (this.isStartPoint)
+        {
+            DrawCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, color(0,0,0));
+        }
     }
 
     DrawRingStar()
@@ -900,4 +903,3 @@ class Button
         return false;
     }
 }
-

@@ -66,10 +66,12 @@ function exportToXML() {
     rings.forEach((ring, index) => {
         ringIdMap.set(ring, index);
     });
+    
+    const startRingId = startRing ? ringIdMap.get(startRing) : -1;
 
     // 2. XML文字列の構築を開始
     let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xmlString += '<MagicCircleLayout>\n';
+    xmlString += `<MagicCircleLayout startRingId="${startRingId}">\n`;
 
     // 3. すべてのリングをXMLに変換
     xmlString += ' <Rings>\n';
@@ -107,6 +109,9 @@ function importFromXML(xmlString, mode) {
     if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
         throw new Error("Invalid XML format.");
     }
+
+    const layoutElement = xmlDoc.getElementsByTagName('MagicCircleLayout')[0];
+    const startRingId = layoutElement ? layoutElement.getAttribute('startRingId') : null;
 
     if (mode === 'overwrite') {
         rings = [];
@@ -211,7 +216,28 @@ function importFromXML(xmlString, mode) {
         }
     });
     
-    // --- ステップ5: すべてのリングのレイアウトを再計算 ---
+    // --- ステップ5: 開始リングを設定 ---
+    if (startRing) {
+        startRing.isStartPoint = false; // Reset old start ring flag
+    }
+    startRing = null;
+
+    if (startRingId !== null && tempRingMap.has(startRingId)) {
+        startRing = tempRingMap.get(startRingId);
+    }
+
+    // Fallback if start ring not found or not specified
+    if (!startRing && rings.length > 0) {
+        // Find a suitable start ring or default to the first one
+        startRing = rings.find(r => isRingStartable(r)) || rings[0];
+    }
+
+    // Set the start point flag
+    if (startRing) {
+        rings.forEach(r => r.isStartPoint = (r === startRing));
+    }
+
+
+    // --- ステップ6: すべてのリングのレイアウトを再計算 ---
     rings.forEach(ring => ring.CalculateLayout());
 }
-
