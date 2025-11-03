@@ -14,7 +14,6 @@ public class ParticlePresetCollection
 // 汎用的なデータ構造 (Unityの構造体を再現)
 // -------------------------------------------------------------------
 
-// --- ▼▼▼ ここから追加 ▼▼▼ ---
 /// <summary>
 /// AnimationCurveのキーフレームを表現するためのクラス。
 /// </summary>
@@ -33,7 +32,6 @@ public class CurveData
 {
     public List<KeyframeData> keys = new List<KeyframeData>();
 }
-// --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
 
 /// <summary>
@@ -44,9 +42,7 @@ public class MinMaxCurveData
 {
     public float min;
     public float max;
-    // --- ▼▼▼ ここから追加 ▼▼▼ ---
     public CurveData curve;
-    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 }
 
 
@@ -485,11 +481,9 @@ public class RendererModuleData
     public float speedScale = 0f;
     public float lengthScale = 2f;
 
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     // Mesh
     public List<Mesh> meshes = new List<Mesh>();
     public ParticleSystemMeshDistribution meshDistribution = ParticleSystemMeshDistribution.UniformRandom;
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
     public bool useCustomVertexStreams = false;
     public int vertexStreamCount = 0;
 }

@@ -211,7 +211,7 @@ function createSigilDropdown(item) {
         closeDropdown();
     };
 
-    const panelResult = createBasePanel('Select Mark', closeDropdown, handleDelete, handleDuplicate);
+    const panelResult = createBasePanel('Select Sigil', closeDropdown, handleDelete, handleDuplicate);
     if (!panelResult) return;
     const { contentArea } = panelResult;
     editingItem = item;
@@ -221,7 +221,7 @@ function createSigilDropdown(item) {
     const sigilOptions = [
         "pop","exch","dup","copy","index", "roll", "add", "sub","mul","div","idiv","mod","abs","neg","sqrt",
         "atan","cos","sin","rand","srand","rrand","array","string","length","get","put","getinterval","putinterval","forall",
-        "dict","def","eq","ne","ge","gt","le","lt","and","not","or","xor","true","false",
+        "dict","begin","end","def","eq","ne","ge","gt","le","lt","and","not","or","xor","true","false",
         "exec","if","ifelse","for","repeat","loop","exit","null", "magicactivate", "spawnobj", "transform", "attachtoparent", "animation", "print", "stack", "cvi", "chr"
     ];
 

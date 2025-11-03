@@ -719,3 +719,23 @@ function DrawIcon(a, x, y, size)
     }
     pop();
 }
+
+function DrawElement(e, x, y, size=1.0)
+{
+    push();
+    translate(x, y);
+    scale(config.sigilSize * size);
+    stroke(config.sigilColor);
+    strokeWeight(config.sigilLineWidth/size);
+    noFill();
+    switch(e)
+    {
+      case "fire":
+          arc(0, 0.1, 0.6, 0.6, -PI/4 ,5/4*PI);
+          bezier(0.2121, -0.1121, 0, -0.2242, 0, -0.3, 0.05, -0.4);
+          bezier(0.05, -0.4, -0.15, -0.35, -0.15, -0.15, -0.1, 0);
+          bezier(-0.1, 0, 0, 0.2, -0.3, 0.15, -0.2121, -0.1121);
+          break;
+    }
+    pop();
+}

@@ -138,6 +138,9 @@ function importFromXML(xmlString, mode) {
             case 'DictRing':
                 newRing = new DictRing({ x, y });
                 break;
+            case 'TemplateRing':
+                newRing = new TemplateRing({ x, y });
+                break;
             case 'MagicRing':
             default:
                 newRing = new MagicRing({ x, y });

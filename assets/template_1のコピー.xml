@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MagicCircleLayout startRingId="1">
+ <Rings>
+  <Ring id="0" type="TemplateRing" x="447.99" y="270.62" angle="4.0354">
+    <Items>
+      <Item type="sigil" value="RETURN" />
+    </Items>
+  </Ring>
+  <Ring id="1" type="MagicRing" x="0.00" y="0.00" angle="0.0000">
+    <Items>
+      <Item type="sigil" value="RETURN" />
+      <Item type="chars" value="0" />
+      <Item type="chars" value="1" />
+      <Item type="chars" value="5" />
+      <Item type="joint" value="2" />
+      <Item type="sigil" value="for" />
+    </Items>
+  </Ring>
+  <Ring id="2" type="MagicRing" x="223.78" y="450.81" angle="-0.4608">
+    <Items>
+      <Item type="sigil" value="RETURN" />
+      <Item type="chars" value="60" />
+      <Item type="sigil" value="mul" />
+      <Item type="sigil" value="dup" />
+      <Item type="sigil" value="sin" />
+      <Item type="name" value="y" />
+      <Item type="sigil" value="exch" />
+      <Item type="sigil" value="def" />
+      <Item type="sigil" value="cos" />
+      <Item type="name" value="x" />
+      <Item type="sigil" value="exch" />
+      <Item type="sigil" value="def" />
+      <Item type="joint" value="0" />
+      <Item type="sigil" value="exec" />
+      <Item type="joint" value="3" />
+      <Item type="sigil" value="transform" />
+    </Items>
+  </Ring>
+  <Ring id="3" type="DictRing" x="307.91" y="153.71" angle="3.4175">
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="name" value="position" />
+      <Item type="joint" value="4" />
+    </Items>
+  </Ring>
+  <Ring id="4" type="ArrayRing" x="146.34" y="80.25" angle="1.9975">
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="chars" value="x" />
+      <Item type="chars" value="y" />
+      <Item type="chars" value="0" />
+    </Items>
+  </Ring>
+ </Rings>
+ <FieldItems>
+ </FieldItems>
+</MagicCircleLayout>

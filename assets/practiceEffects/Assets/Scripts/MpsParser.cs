@@ -15,7 +15,6 @@ public struct TransformData
     public Vector3? scale;
 }
 
-// --- ▼▼▼ ここから追加 ▼▼▼ ---
 /// <summary>
 /// オブジェクト生成情報を格納するための構造体
 /// </summary>
@@ -23,7 +22,6 @@ public struct ObjectCreationData
 {
     public string objectType;
 }
-// --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
 
 [System.Serializable]
@@ -100,7 +98,6 @@ public static class MpsParser
             return content.Trim();
         }
     }
-    // --- ▼▼▼ ここから追加 ▼▼▼ ---
     /// <summary>
     /// オブジェクト生成用のmpsコードを解析します。
     /// </summary>
@@ -126,7 +123,6 @@ public static class MpsParser
 
         return data;
     }
-    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
     /// <summary>
     /// Transform情報（位置、回転、スケール）のmpsコードを解析します。
@@ -232,26 +228,20 @@ public static class MpsParser
     /// <summary>
     /// mpsコード文字列をParticlePresetオブジェクトに変換するメイン関数
     /// </summary>
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     public static ParticlePreset Parse(string mpsCode, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict)
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
     {
         var scanner = new Scanner(mpsCode);
         var preset = new ParticlePreset();
 
         scanner.Expect("<");
-        // --- ▼▼▼ ここから修正 ▼▼▼ ---
         ParseObjectContent(scanner, preset, materialDict, meshDict);
-        // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         scanner.Expect(">");
 
         return preset;
     }
 
     // オブジェクト '<' ... '>' の中身を解析
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     private static void ParseObjectContent(Scanner scanner, ParticlePreset preset, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict)
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
     {
         while (scanner.Peek() != null && scanner.Peek() != ">")
         {
@@ -282,9 +272,7 @@ public static class MpsParser
                 case "lights": preset.lights = new LightsModuleData { enabled = true }; break;
                 case "trails": preset.trails = ParseTrailsModule(scanner); break;
                 case "customData": preset.customData = new CustomDataModuleData { enabled = true }; break;
-                // --- ▼▼▼ ここから修正 ▼▼▼ ---
                 case "renderer": preset.renderer = ParseRendererModule(scanner, materialDict, meshDict); break;
-                // --- ▲▲▲ ここまで修正 ▲▲▲ ---
                 default: throw new Exception($"Unknown preset key: {key}");
             }
             scanner.Expect(">");
@@ -457,7 +445,6 @@ public static class MpsParser
         return col;
     }
 
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     private static RotationOverLifetimeModuleData ParseRotationOverLifetimeModule(Scanner scanner)
     {
         var rot = new RotationOverLifetimeModuleData { enabled = true };
@@ -475,7 +462,6 @@ public static class MpsParser
         }
         return rot;
     }
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
     private static LimitVelocityOverLifetimeModuleData ParseLimitVelocityOverLifetimeModule(Scanner scanner)
     {
@@ -704,9 +690,7 @@ public static class MpsParser
         return sol;
     }
 
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     private static RendererModuleData ParseRendererModule(Scanner scanner, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict)
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
     {
         var renderer = new RendererModuleData { enabled = true };
         while (scanner.Peek() != ">")
@@ -726,7 +710,6 @@ public static class MpsParser
                         renderer.renderMode = ParticleSystemRenderMode.Billboard;
                     }
                     break;
-                // --- ▼▼▼ ここから追加 ▼▼▼ ---
                 case "meshDistribution":
                     string distStr = scanner.ConsumeStringInParens();
                     if (Enum.TryParse(distStr, true, out ParticleSystemMeshDistribution dist))
@@ -794,7 +777,6 @@ public static class MpsParser
         return renderer;
     }
 
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     private static MinMaxCurveData ParseMinMaxCurveOrConstant(Scanner scanner)
     {
         var data = new MinMaxCurveData();
@@ -853,7 +835,6 @@ public static class MpsParser
         return gradient;
     }
 
-    // --- ▼▼▼ ここから追加 ▼▼▼ ---
     private static CurveData ParseCurve(Scanner scanner)
     {
         var curve = new CurveData();
@@ -889,7 +870,6 @@ public static class MpsParser
         scanner.Expect("]");
         return keyList;
     }
-    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
     private static List<ColorKeyData> ParseColorKeysList(Scanner scanner)
     {

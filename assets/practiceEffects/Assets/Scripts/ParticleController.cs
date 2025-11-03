@@ -10,7 +10,6 @@ public class ParticleController : MonoBehaviour
     private ParticleSystem ps;
 
 
-    // --- ▼▼▼ ここから修正 ▼▼▼ ---
     /// <summary>
     /// MinMaxCurveDataからParticleSystem.MinMaxCurveを生成する汎用ヘルパー関数
     /// </summary>
@@ -38,7 +37,6 @@ public class ParticleController : MonoBehaviour
             return new ParticleSystem.MinMaxCurve(data.min * multiplier, data.max * multiplier);
         }
     }
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
 
     public void CustomizeAndPlay(ParticlePreset preset)
@@ -55,7 +53,6 @@ public class ParticleController : MonoBehaviour
         if (preset.main != null && preset.main.enabled)
         {
             main.duration = preset.main.duration;
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             main.startLifetime = CreatePsMinMaxCurveFromData(preset.main.startLifetime);
             main.startSpeed = CreatePsMinMaxCurveFromData(preset.main.startSpeed);
 
@@ -82,7 +79,6 @@ public class ParticleController : MonoBehaviour
             {
                 main.startRotation = CreatePsMinMaxCurveFromData(preset.main.startRotation, Mathf.Deg2Rad); // Z
             }
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
             main.simulationSpace = preset.main.simulationSpace;
 
@@ -116,9 +112,7 @@ public class ParticleController : MonoBehaviour
         emission.enabled = preset.emission != null && preset.emission.enabled;
         if (emission.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             emission.rateOverTime = CreatePsMinMaxCurveFromData(preset.emission.rateOverTime);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
             if (preset.emission.maxBurstCount > 0)
             {
                 emission.rateOverTime = 0;
@@ -142,11 +136,9 @@ public class ParticleController : MonoBehaviour
         velocityOverLifetime.enabled = preset.velocityOverLifetime != null && preset.velocityOverLifetime.enabled;
         if (velocityOverLifetime.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             velocityOverLifetime.x = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.x);
             velocityOverLifetime.y = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.y);
             velocityOverLifetime.z = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.z);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Limit Velocity over Lifetime Module ---
@@ -154,9 +146,7 @@ public class ParticleController : MonoBehaviour
         limitVelocityOverLifetime.enabled = preset.limitVelocityOverLifetime != null && preset.limitVelocityOverLifetime.enabled;
         if (limitVelocityOverLifetime.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             limitVelocityOverLifetime.limit = CreatePsMinMaxCurveFromData(preset.limitVelocityOverLifetime.limit);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
             limitVelocityOverLifetime.dampen = preset.limitVelocityOverLifetime.dampen;
         }
 
@@ -166,9 +156,7 @@ public class ParticleController : MonoBehaviour
         if (inheritVelocity.enabled)
         {
             inheritVelocity.mode = preset.inheritVelocity.mode;
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             inheritVelocity.curve = CreatePsMinMaxCurveFromData(preset.inheritVelocity.curve);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Force over Lifetime Module ---
@@ -176,11 +164,9 @@ public class ParticleController : MonoBehaviour
         forceOverLifetime.enabled = preset.forceOverLifetime != null && preset.forceOverLifetime.enabled;
         if (forceOverLifetime.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             forceOverLifetime.x = CreatePsMinMaxCurveFromData(preset.forceOverLifetime.x);
             forceOverLifetime.y = CreatePsMinMaxCurveFromData(preset.forceOverLifetime.y);
             forceOverLifetime.z = CreatePsMinMaxCurveFromData(preset.forceOverLifetime.z);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Color over Lifetime Module ---
@@ -214,9 +200,7 @@ public class ParticleController : MonoBehaviour
         sizeBySpeed.enabled = preset.sizeBySpeed != null && preset.sizeBySpeed.enabled;
         if (sizeBySpeed.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             sizeBySpeed.size = CreatePsMinMaxCurveFromData(preset.sizeBySpeed.size);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
             sizeBySpeed.range = preset.sizeBySpeed.range;
         }
 
@@ -225,9 +209,7 @@ public class ParticleController : MonoBehaviour
         rotationBySpeed.enabled = preset.rotationBySpeed != null && preset.rotationBySpeed.enabled;
         if (rotationBySpeed.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             rotationBySpeed.z = CreatePsMinMaxCurveFromData(preset.rotationBySpeed.z, Mathf.Deg2Rad);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
             rotationBySpeed.range = preset.rotationBySpeed.range;
         }
 
@@ -244,9 +226,7 @@ public class ParticleController : MonoBehaviour
         sizeOverLifetime.enabled = preset.sizeOverLifetime != null && preset.sizeOverLifetime.enabled;
         if (sizeOverLifetime.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             sizeOverLifetime.size = CreatePsMinMaxCurveFromData(preset.sizeOverLifetime.size);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Rotation over Lifetime Module ---
@@ -257,7 +237,6 @@ public class ParticleController : MonoBehaviour
             rotationOverLifetime.separateAxes = preset.rotationOverLifetime.separateAxes;
             if (rotationOverLifetime.separateAxes)
             {
-                // --- ▼▼▼ ここから修正 ▼▼▼ ---
                 // 3D (XYZ分離)
                 rotationOverLifetime.x = CreatePsMinMaxCurveFromData(preset.rotationOverLifetime.x, Mathf.Deg2Rad);
                 rotationOverLifetime.y = CreatePsMinMaxCurveFromData(preset.rotationOverLifetime.y, Mathf.Deg2Rad);
@@ -267,7 +246,6 @@ public class ParticleController : MonoBehaviour
             {
                 // 1D (Z軸のみ)
                 rotationOverLifetime.z = CreatePsMinMaxCurveFromData(preset.rotationOverLifetime.z, Mathf.Deg2Rad);
-                // --- ▲▲▲ ここまで修正 ▲▲▲ ---
             }
         }
 
@@ -276,11 +254,9 @@ public class ParticleController : MonoBehaviour
         noise.enabled = preset.noise != null && preset.noise.enabled;
         if (noise.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             noise.strength = CreatePsMinMaxCurveFromData(preset.noise.strength);
             noise.frequency = preset.noise.frequency;
             noise.scrollSpeed = CreatePsMinMaxCurveFromData(preset.noise.scrollSpeed);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Collision Module ---
@@ -290,11 +266,9 @@ public class ParticleController : MonoBehaviour
         {
             collision.type = ParticleSystemCollisionType.World; // World固定
             collision.mode = ParticleSystemCollisionMode.Collision3D;
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             collision.dampen = CreatePsMinMaxCurveFromData(preset.collision.dampen);
             collision.bounce = CreatePsMinMaxCurveFromData(preset.collision.bounce);
             collision.lifetimeLoss = CreatePsMinMaxCurveFromData(preset.collision.lifetimeLoss);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Triggers Module ---
@@ -313,9 +287,7 @@ public class ParticleController : MonoBehaviour
             textureSheetAnimation.mode = ParticleSystemAnimationMode.Grid;
             textureSheetAnimation.numTilesX = preset.textureSheetAnimation.numTilesX;
             textureSheetAnimation.numTilesY = preset.textureSheetAnimation.numTilesY;
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             textureSheetAnimation.frameOverTime = CreatePsMinMaxCurveFromData(preset.textureSheetAnimation.frameOverTime);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- Lights Module ---
@@ -327,10 +299,8 @@ public class ParticleController : MonoBehaviour
         trails.enabled = preset.trails != null && preset.trails.enabled;
         if (trails.enabled)
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             trails.lifetime = CreatePsMinMaxCurveFromData(preset.trails.lifetime);
             trails.widthOverTrail = CreatePsMinMaxCurveFromData(preset.trails.widthOverTrail);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
         }
 
         // --- CustomData Module ---
@@ -345,14 +315,12 @@ public class ParticleController : MonoBehaviour
         {
             renderer.renderMode = preset.renderer.renderMode;
 
-            // --- ▼▼▼ ここから追加 ▼▼▼ ---
             if (renderer.renderMode == ParticleSystemRenderMode.Mesh && preset.renderer.meshes.Count > 0)
             {
                 renderer.meshDistribution = preset.renderer.meshDistribution;
                 // SetMeshesは配列を受け取るため、ListをArrayに変換
                 renderer.SetMeshes(preset.renderer.meshes.ToArray());
             }
-            // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
             if (preset.renderer.material != null)
             {

@@ -82,9 +82,7 @@ public class SystemManager : MonoBehaviour
 
         try
         {
-            // --- ▼▼▼ ここから修正 ▼▼▼ ---
             ParticlePreset preset = MpsParser.Parse(mpsCode, materialDictionary, meshDictionary);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
             if (particleGenerator != null)
             {

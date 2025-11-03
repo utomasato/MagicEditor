@@ -191,7 +191,8 @@ function Start() {
 
     InputInitialize();
 
-    rings = [new MagicRing({ x: 0, y: 0 })];
+    //rings = [new TemplateRing({ x: 0, y: 0 }), ];
+    rings = [new MagicRing({ x: 0, y: 0 }), ];
     if (rings.length > 0) {
         startRing = rings[0];
         startRing.isStartPoint = true;

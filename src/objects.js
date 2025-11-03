@@ -183,7 +183,7 @@ class MagicRing
         DrawCircle(0, 0, this.outerradius, color(0,0,0));
         if (this.isStartPoint)
         {
-            DrawCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, color(0,0,0));
+            DrawCircle(0, 0, this.outerradius + 3, color(0,0,0));
         }
     }
 
@@ -381,6 +381,33 @@ class DictRing extends MagicRing {
             return false;
         }
         return super.CheckPosIsOn(pos);
+    }
+}
+
+class TemplateRing extends MagicRing {
+    constructor(pos) {
+        super(pos);
+        this.items = [new Sigil(0, 0, "RETURN", this)]; 
+        //this.spellstart = "< ";
+        //this.spellend = ">";
+        this.magic = "fire"
+        this.CalculateLayout();
+    }
+    
+    DrawRingStar() {
+        //super.DrawRingStar();
+        DrawElement("fire", 0, 0, this.innerradius/30)
+    }
+    
+    Spell()
+    {
+        let spell = "";
+        this.items.slice(1).forEach( item =>
+        {
+            if (item) spell += item.SpellToken() + " ";
+        });
+        // 大きさ　勢い　収束度　色 揺らぎ
+        return `{ dict begin ~preset < ~main < ~startLifetime [ 0.5 2 ] ~startSpeed 0.5 ~startSize [ 0.2 0.4 ] ~startRotation [ 0 360 ] > ~emission < ~rateOverTime 50 > ~shape < ~angle 5 ~radius 0.0001 > ~colorOverLifetime < ~gradient < ~colorKeys [ [ 1.0 0.6 0.0 1.0 0.0 ] [ 1.0 0.0 0.0 1.0 0.6 ] [ 1.0 0.0 0.0 1.0 1.0 ] ] ~alphaKeys [ [ 0.0 0.0 ] [ 1.0 0.5 ] [ 0.0 1.0 ] ] > > ~rotationOverLifetime < ~z [ -45 45 ] > ~renderer < ~materialName (Fire_1) > > def ~magic preset magicactivate magic dup < ~rotation [ -90 0 0 ] ~scale [ 1 1 1 ] > transform end }`;
     }
 }
 
@@ -857,6 +884,7 @@ class Joint extends RingItem {
         return "joint";
     }
 }
+
 class Button
 {
     constructor(x, y, w, h, color, anchor, pivot, size, text, pressed, isIcon = false)

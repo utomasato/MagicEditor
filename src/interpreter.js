@@ -9,7 +9,7 @@
 class PostscriptInterpreter {
     constructor() {
         this.stack = [];
-        this.dictStack = [{}];
+        this.dictStack = [{}]; // 0番目はグローバル辞書
         this.commandLoopLevel = 0;
         this.output = [];
 
@@ -156,13 +156,28 @@ class PostscriptInterpreter {
                     throw new Error("`forall` requires an array or dictionary on the stack.");
                 }
             },
-            dict: () => { this.stack.push({ type: 'dict', value: {} }); }, // 修正: 空のオブジェクトを生成
+            dict: () => { this.stack.push({ type: 'dict', value: {} }); },
+            begin: () => {
+                const dict = this.stack.pop();
+                if (typeof dict !== 'object' || dict === null || dict.type !== 'dict') {
+                    throw new Error("`begin` requires a dictionary on the stack.");
+                }
+                this.dictStack.push(dict.value);
+            },
+            end: () => {
+                if (this.dictStack.length > 1) {
+                    this.dictStack.pop();
+                } else {
+                    throw new Error("Cannot `end` the base dictionary.");
+                }
+            },
             def: () => {
                 const value = this.stack.pop();
                 let key = this.stack.pop();
                 if (typeof key !== 'string' || !key.startsWith('~')) {
                     throw new Error("`def` requires a literal name (e.g., ~myVar) as a key.");
                 }
+                // 現在の辞書（dictStackの末尾）に定義
                 this.dictStack[this.dictStack.length - 1][key.substring(1)] = value;
             },
             eq: () => { const [b, a] = [this.stack.pop(), this.stack.pop()]; this.stack.push(a === b); },
@@ -535,6 +550,7 @@ class PostscriptInterpreter {
 
 
     lookupVariable(key) {
+        // dictStackの上から（最後に追加されたものから）順番に探す
         for (let i = this.dictStack.length - 1; i >= 0; i--) {
             if (key in this.dictStack[i]) {
                 return this.dictStack[i][key];
