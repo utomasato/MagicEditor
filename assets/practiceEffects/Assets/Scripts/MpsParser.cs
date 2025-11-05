@@ -145,7 +145,16 @@ public static class MpsParser
                     data.rotation = ParseVector3(scanner);
                     break;
                 case "scale":
-                    data.scale = ParseVector3(scanner);
+                    //data.scale = ParseVector3(scanner);
+                    if (scanner.Peek() == "[")
+                    {
+                        data.scale = ParseVector3(scanner);
+                    }
+                    else
+                    {
+                        float x = scanner.ConsumeFloat();
+                        data.scale = new Vector3(x, x, x);
+                    }
                     break;
                 default:
                     throw new Exception($"Unknown transform key: {key}");

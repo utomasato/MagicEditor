@@ -11719,6 +11719,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 600054214890509469, guid: fe1564045392d4ab28c81f19a422202b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 793065760778396368, guid: fe1564045392d4ab28c81f19a422202b, type: 3}
       propertyPath: m_RenderMode
       value: 4
@@ -11947,9 +11951,21 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7611369359641062836, guid: fe1564045392d4ab28c81f19a422202b, type: 3}
+      propertyPath: RotationModule.enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7611369359641062836, guid: fe1564045392d4ab28c81f19a422202b, type: 3}
+      propertyPath: RotationModule.curve.scalar
+      value: -13.962634
+      objectReference: {fileID: 0}
     - target: {fileID: 7788712466213764387, guid: fe1564045392d4ab28c81f19a422202b, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7811309883695662830, guid: fe1564045392d4ab28c81f19a422202b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
