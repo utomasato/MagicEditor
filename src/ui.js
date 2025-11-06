@@ -352,7 +352,7 @@ function createRingPanel(ring) {
         });
     }
 
-    if (ring.isNew) {
+    if (true || ring.isNew) {
         const typeLabel = createP('Ring Type:');
         typeLabel.parent(contentArea);
         typeLabel.style('margin', '10px 0 2px 0');
@@ -375,6 +375,8 @@ function createRingPanel(ring) {
                 if (newType === 'MagicRing') { newRing = new MagicRing(ring.pos); }
                 else if (newType === 'ArrayRing') { newRing = new ArrayRing(ring.pos); }
                 else { newRing = new DictRing(ring.pos); }
+                newRing.items = newRing.items.concat(ring.items.slice(1));
+                newRing.CalculateLayout();
                 newRing.isNew = false;
                 rings[ringIndex] = newRing;
                 rings.forEach(r => {
