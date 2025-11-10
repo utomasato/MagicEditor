@@ -213,6 +213,12 @@ function MouseHoldEvent()
                 fieldItems.push(newItem);
                 StartDragItem(newItem, fieldItems.length-1);
                 break;
+            case "tRing":
+                selectRing = new TemplateRing(mousePos);
+                selectRing.isNew = true;
+                rings.push(selectRing);
+                StartDragRing(selectRing, mousePos);
+                break;
         }
         AddObjectMode = "";
     }

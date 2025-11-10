@@ -78,7 +78,7 @@ function formatStackForDisplay(stack) {
  */
 function isRingStartable(targetRing) {
     // Must be a MagicRing, not ArrayRing or DictRing
-    if (!targetRing || targetRing.constructor.name !== 'MagicRing') {
+    if (!targetRing || (targetRing.constructor.name !== 'MagicRing' && targetRing.constructor.name !== 'TemplateRing')) {
         return false;
     }
 
@@ -137,6 +137,7 @@ function Start() {
         new Button(100, 10, 40, 40, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "num", function () { AddObjectMode = "num"; },true),
         new Button(145, 10, 40, 40, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "string", function () { AddObjectMode = "str"; },true),
         new Button(190, 10, 40, 40, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "name", function () { AddObjectMode = "name"; },true),
+        new Button(235, 10, 40, 40, color(255, 200, 200), { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "・", function () { AddObjectMode = "tRing"; },true),
         new Button(-5, 10, 40, 40, color(255, 200, 200), { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Run", function () {
             if (startRing) {
                 const data = {isActive: true, message: "Reset", name: null, value: 0, text: null};

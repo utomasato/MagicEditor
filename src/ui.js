@@ -352,7 +352,41 @@ function createRingPanel(ring) {
         });
     }
 
-    if (true || ring.isNew) {
+    // --- Ring Type or Magic Type selection ---
+    // TemplateRing の場合は magic プロパティを変更するUI
+    if (ring instanceof TemplateRing) {
+        const magicLabel = createP('Magic Type:');
+        magicLabel.parent(contentArea);
+        magicLabel.style('margin', '10px 0 2px 0');
+        magicLabel.style('border-top', '1px solid #ddd');
+        magicLabel.style('padding-top', '8px');
+
+        const magicSelect = createSelect();
+        magicSelect.parent(contentArea);
+        
+        const magicOptions = [
+            "fire", "bullet", 
+        ];
+        magicOptions.forEach(opt => { magicSelect.option(opt); });
+        //magicSelect.option('fire');
+        //magicSelect.option('bullet');
+        /*
+        // 現在設定されている値がリストになければ追加（将来的な拡張のため）
+        const currentMagic = ring.magic;
+        if (currentMagic !== 'fire' && currentMagic !== 'bullet') {
+            magicSelect.option(currentMagic);
+        }*/
+        magicSelect.selected(ring.magic);
+        
+        magicSelect.changed(() => {
+            ring.magic = magicSelect.value();
+            // objects.js の DrawRingStar が this.magic を参照するよう修正済み
+            closePanel(); // パネルを閉じる
+        });
+
+    } 
+    // TemplateRing 以外の場合、または isNew フラグが立っている場合
+    else if (true || ring.isNew) { 
         const typeLabel = createP('Ring Type:');
         typeLabel.parent(contentArea);
         typeLabel.style('margin', '10px 0 2px 0');
@@ -364,6 +398,7 @@ function createRingPanel(ring) {
         typeSelect.option('MagicRing');
         typeSelect.option('ArrayRing');
         typeSelect.option('DictRing');
+        typeSelect.option('TemplateRing'); // TemplateRing を選択肢に追加
         typeSelect.selected(ring.constructor.name);
 
         typeSelect.changed(() => {
@@ -372,13 +407,24 @@ function createRingPanel(ring) {
 
             if (ringIndex !== -1 && ring.constructor.name !== newType) {
                 let newRing;
+                // 新しいタイプのリングインスタンスを作成
                 if (newType === 'MagicRing') { newRing = new MagicRing(ring.pos); }
                 else if (newType === 'ArrayRing') { newRing = new ArrayRing(ring.pos); }
-                else { newRing = new DictRing(ring.pos); }
+                else if (newType === 'DictRing') { newRing = new DictRing(ring.pos); }
+                else if (newType === 'TemplateRing') { newRing = new TemplateRing(ring.pos); } // TemplateRing の分岐を追加
+                else { newRing = new MagicRing(ring.pos); } // デフォルト
+
+                // 既存のアイテムを引き継ぐ (先頭の 'RETURN' or 'COMPLETE' は除く)
                 newRing.items = newRing.items.concat(ring.items.slice(1));
+                
                 newRing.CalculateLayout();
-                newRing.isNew = false;
-                rings[ringIndex] = newRing;
+                newRing.isNew = false; // isNew フラグを倒す
+                newRing.angle = ring.angle; // 角度を引き継ぐ
+                newRing.isStartPoint = ring.isStartPoint; // 開始点フラグを引き継ぐ
+
+                rings[ringIndex] = newRing; // 配列内のインスタンスを置き換え
+                
+                // 既存の Joint があれば接続先を新しいリングインスタンスに更新
                 rings.forEach(r => {
                     r.items.forEach(item => {
                         if (item && item.type === 'joint' && item.value === ring) {
@@ -386,6 +432,11 @@ function createRingPanel(ring) {
                         }
                     });
                 });
+                
+                // startRing だった場合も更新
+                if (startRing === ring) {
+                    startRing = newRing;
+                }
             }
             closePanel();
         });

@@ -396,7 +396,8 @@ class TemplateRing extends MagicRing {
     
     DrawRingStar() {
         //super.DrawRingStar();
-        DrawElement("fire", 0, 0, this.innerradius/30)
+        // "fire" ハードコードをやめ、this.magic を使用する
+        DrawElement(this.magic, 0, 0, this.innerradius/30)
     }
     
     Spell()
@@ -406,8 +407,7 @@ class TemplateRing extends MagicRing {
         {
             if (item) spell += item.SpellToken() + " ";
         });
-        // 大きさ　勢い　収束度　色 揺らぎ
-        return `{ dict begin ~preset < ~main < ~startLifetime [ 0.5 2 ] ~startSpeed 0.5 ~startSize [ 0.2 0.4 ] ~startRotation [ 0 360 ] > ~emission < ~rateOverTime 50 > ~shape < ~angle 5 ~radius 0.0001 > ~colorOverLifetime < ~gradient < ~colorKeys [ [ 1.0 0.6 0.0 1.0 0.0 ] [ 1.0 0.0 0.0 1.0 0.6 ] [ 1.0 0.0 0.0 1.0 1.0 ] ] ~alphaKeys [ [ 0.0 0.0 ] [ 1.0 0.5 ] [ 0.0 1.0 ] ] > > ~rotationOverLifetime < ~z [ -45 45 ] > ~renderer < ~materialName (Fire_1) > > def ~magic preset magicactivate magic dup < ~rotation [ -90 0 0 ] ~scale [ 1 1 1 ] > transform end }`;
+        return magicTemplates(this.magic, spell);
     }
 }
 
