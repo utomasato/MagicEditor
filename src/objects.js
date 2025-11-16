@@ -895,20 +895,20 @@ class Joint extends RingItem {
 
 class Button
 {
-    constructor(x, y, w, h, color, anchor, pivot, size, text, pressed, isIcon = false)
+    constructor(x, y, w, h, colorFunc, anchor, pivot, size, text, pressedFunc, isIcon = false)
     {
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
-        this.color = color;
+        this.colorFunc = colorFunc;
         this.anchor = anchor;
         this.pivot = pivot;
         this.size = size;
         this.text = text;
-        this.pressed = pressed;
+        this.pressedFunc = pressedFunc;
         this.isIcon = isIcon;
-        //console.log(isIcon)
+        this.isPressed = false;
     }
     
     Draw()
@@ -917,8 +917,7 @@ class Button
         const x = width * this.anchor.x + this.x - this.w * this.pivot.x;
         const y = height * this.anchor.y + this.y - this.h * this.pivot.y;
         DrawRoundRect(x, y, this.w, this.h, 10, color(0,0,0), 3); 
-        FillRoundRect(x, y, this.w, this.h, 10, this.color);
-        //DrawText(this.size, this.text, x + this.w/2, y + this.h/2, color(0, 0, 0), CENTER);
+        FillRoundRect(x, y, this.w, this.h, 10, this.colorFunc(this));
         DrawIcon(this.text, x + this.w/2, y + this.h/2, this.size);
     }
     
@@ -932,5 +931,18 @@ class Button
             return this;
         }
         return false;
+    }
+    
+    Down()
+    {
+        this.pressedFunc();
+        this.isPressed = true;
+        lastPressedButton = this;
+    }
+    
+    Up()
+    {
+        this.isPressed = false;
+        lastPressedButton = null;
     }
 }

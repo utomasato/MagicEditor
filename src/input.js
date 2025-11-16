@@ -22,6 +22,7 @@ function InputInitialize()
 
 function MouseDownEvent()
 {
+    lastPressedButton = null;
     if (isUIHidden)
     {
         isUIHidden = false;
@@ -69,7 +70,7 @@ function MouseDownEvent()
     const ClickObj = CheckMouseObject();
     if (AddObjectMode != "") 
     {
-        if (ClickObj[0] == "button") ClickObj[1].pressed();
+        if (ClickObj[0] == "button") ClickObj[1].Down();
         return;
     }
     switch (cursormode)
@@ -80,7 +81,7 @@ function MouseDownEvent()
                 case "menu":
                     break;
                 case "button":
-                    ClickObj[1].pressed();
+                    ClickObj[1].Down();
                     break;
                 case "ring":
                     selectRing = ClickObj[1][0];
@@ -136,13 +137,13 @@ function MouseDownEvent()
                     AddObjectMode = "";
             }
             break;
-        case "default":
+        case "edit":
             switch (ClickObj[0])
             {
                 case "menu":
                     break;
                 case "button":
-                    ClickObj[1].pressed();
+                    ClickObj[1].Down();
                     break;
                 case "ring": 
                     const ringObject = ClickObj[1][0];
@@ -259,6 +260,7 @@ function MouseUpEvent()
             break;
     }
     inputMode = "";
+    if (lastPressedButton) lastPressedButton.Up();
 }
 
 

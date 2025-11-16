@@ -368,14 +368,6 @@ function createRingPanel(ring) {
             "fire", "bullet", 
         ];
         magicOptions.forEach(opt => { magicSelect.option(opt); });
-        //magicSelect.option('fire');
-        //magicSelect.option('bullet');
-        /*
-        // 現在設定されている値がリストになければ追加（将来的な拡張のため）
-        const currentMagic = ring.magic;
-        if (currentMagic !== 'fire' && currentMagic !== 'bullet') {
-            magicSelect.option(currentMagic);
-        }*/
         magicSelect.selected(ring.magic);
         
         magicSelect.changed(() => {
