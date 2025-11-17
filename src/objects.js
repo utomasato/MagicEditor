@@ -349,14 +349,15 @@ class DictRing extends MagicRing {
         }
         endShape(CLOSE);
 
+        const　correctedOuterRadius = this.outerradius / cos(PI / numVertices);
         beginShape();
         for (let i = 0; i < numVertices; i++) {
             const angle = i * angleStep;
-            vertex(this.outerradius * sin(angle), -this.outerradius * cos(angle));
+            vertex(correctedOuterRadius * sin(angle), -correctedOuterRadius * cos(angle));
         }
         endShape(CLOSE);
         
-        const secondOuterRadius = this.outerradius - doubleLineOffset;
+        const secondOuterRadius = correctedOuterRadius - doubleLineOffset;
         beginShape();
         for (let i = 0; i < numVertices; i++) {
             const angle = i * angleStep;
