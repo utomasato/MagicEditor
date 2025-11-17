@@ -399,6 +399,9 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled":
+                    emission.enabled = scanner.ConsumeBool();
+                    break;
                 case "rateOverTime":
                     emission.rateOverTime = ParseMinMaxCurveOrConstant(scanner);
                     break;
@@ -422,6 +425,9 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled":
+                    shape.enabled = scanner.ConsumeBool();
+                    break;
                 case "shape":
                     string shapeTypeStr = scanner.ConsumeStringInParens();
                     if (Enum.TryParse(shapeTypeStr, true, out ParticleSystemShapeType shapeType))
@@ -448,8 +454,12 @@ public static class MpsParser
         while (scanner.Peek() != ">")
         {
             string key = scanner.Consume().Substring(1);
-            if (key == "gradient") col.color = ParseGradient(scanner);
-            else throw new Exception($"Unknown colorOverLifetime module key: {key}");
+            switch (key)
+            {
+                case "enabled": col.enabled = scanner.ConsumeBool(); break;
+                case "gradient": col.color = ParseGradient(scanner); break;
+                default: throw new Exception($"Unknown colorOverLifetime module key: {key}");
+            }
         }
         return col;
     }
@@ -462,6 +472,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": rot.enabled = scanner.ConsumeBool(); break;
                 case "separateAxes": rot.separateAxes = scanner.ConsumeBool(); break;
                 case "x": rot.x = ParseMinMaxCurveOrConstant(scanner); break;
                 case "y": rot.y = ParseMinMaxCurveOrConstant(scanner); break;
@@ -480,6 +491,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": lvol.enabled = scanner.ConsumeBool(); break;
                 case "limit": lvol.limit = ParseMinMaxCurveOrConstant(scanner); break;
                 case "dampen": lvol.dampen = scanner.ConsumeFloat(); break;
                 default: throw new Exception($"Unknown limitVelocityOverLifetime module key: {key}");
@@ -496,6 +508,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": iv.enabled = scanner.ConsumeBool(); break;
                 case "mode":
                     string modeStr = scanner.Consume();
                     if (Enum.TryParse(modeStr, true, out ParticleSystemInheritVelocityMode mode))
@@ -516,6 +529,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": cbs.enabled = scanner.ConsumeBool(); break;
                 case "color": cbs.color = ParseGradient(scanner); break;
                 case "range":
                     scanner.Expect("[");
@@ -536,6 +550,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": sbs.enabled = scanner.ConsumeBool(); break;
                 case "size": sbs.size = ParseMinMaxCurveOrConstant(scanner); break;
                 case "range":
                     scanner.Expect("[");
@@ -556,6 +571,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": rbs.enabled = scanner.ConsumeBool(); break;
                 case "z": rbs.z = ParseMinMaxCurveOrConstant(scanner); break;
                 case "range":
                     scanner.Expect("[");
@@ -574,8 +590,12 @@ public static class MpsParser
         while (scanner.Peek() != ">")
         {
             string key = scanner.Consume().Substring(1);
-            if (key == "multiplier") ef.multiplier = ParseMinMaxCurveOrConstant(scanner);
-            else throw new Exception($"Unknown externalForces module key: {key}");
+            switch (key)
+            {
+                case "enabled": ef.enabled = scanner.ConsumeBool(); break;
+                case "multiplier": ef.multiplier = ParseMinMaxCurveOrConstant(scanner); break;
+                default: throw new Exception($"Unknown externalForces module key: {key}");
+            }
         }
         return ef;
     }
@@ -588,6 +608,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": collision.enabled = scanner.ConsumeBool(); break;
                 case "dampen": collision.dampen = ParseMinMaxCurveOrConstant(scanner); break;
                 case "bounce": collision.bounce = ParseMinMaxCurveOrConstant(scanner); break;
                 case "lifetimeLoss": collision.lifetimeLoss = ParseMinMaxCurveOrConstant(scanner); break;
@@ -639,6 +660,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": noise.enabled = scanner.ConsumeBool(); break;
                 case "strength": noise.strength = ParseMinMaxCurveOrConstant(scanner); break;
                 case "frequency": noise.frequency = scanner.ConsumeFloat(); break;
                 case "scrollSpeed": noise.scrollSpeed = ParseMinMaxCurveOrConstant(scanner); break;
@@ -656,6 +678,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": tsa.enabled = scanner.ConsumeBool(); break;
                 case "tilesX": tsa.numTilesX = (int)scanner.ConsumeFloat(); break;
                 case "tilesY": tsa.numTilesY = (int)scanner.ConsumeFloat(); break;
                 case "frameOverTime": tsa.frameOverTime = ParseMinMaxCurveOrConstant(scanner); break;
@@ -673,6 +696,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": trails.enabled = scanner.ConsumeBool(); break;
                 case "lifetime": trails.lifetime = ParseMinMaxCurveOrConstant(scanner); break;
                 case "widthOverTrail": trails.widthOverTrail = ParseMinMaxCurveOrConstant(scanner); break;
                 default: throw new Exception($"Unknown trails module key: {key}");
@@ -687,13 +711,12 @@ public static class MpsParser
         while (scanner.Peek() != ">")
         {
             string key = scanner.Consume().Substring(1);
-            if (key == "size")
+            switch (key)
             {
-                sol.size = ParseMinMaxCurveOrConstant(scanner);
-            }
-            else
-            {
-                throw new Exception($"Unknown sizeOverLifetime module key: {key}");
+                case "enabled": sol.enabled = scanner.ConsumeBool(); break;
+                case "size": sol.size = ParseMinMaxCurveOrConstant(scanner); break;
+                default:
+                    throw new Exception($"Unknown sizeOverLifetime module key: {key}");
             }
         }
         return sol;
@@ -707,6 +730,7 @@ public static class MpsParser
             string key = scanner.Consume().Substring(1);
             switch (key)
             {
+                case "enabled": renderer.enabled = scanner.ConsumeBool(); break;
                 case "renderMode":
                     string renderModeStr = scanner.ConsumeStringInParens();
                     if (Enum.TryParse(renderModeStr, true, out ParticleSystemRenderMode mode))
@@ -745,7 +769,6 @@ public static class MpsParser
                         }
                     }
                     break;
-                // --- ▲▲▲ ここまで追加 ▲▲▲ ---
                 case "materialName":
                     string materialName = scanner.ConsumeStringInParens();
                     if (materialDict.TryGetValue(materialName, out Material mat))
@@ -810,7 +833,6 @@ public static class MpsParser
         }
         return data;
     }
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
     private static MinMaxCurveData ParseMinMaxCurve(Scanner scanner)
     {

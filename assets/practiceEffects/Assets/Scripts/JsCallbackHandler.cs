@@ -39,7 +39,7 @@ public class JsCallbackHandler : MonoBehaviour
         //TestReceiveGeneralData();
     }
 
-    /*
+    //*
     void Update()
     {
         // "R"キーを押すとシーンがリロードされる例
@@ -98,8 +98,9 @@ public class JsCallbackHandler : MonoBehaviour
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         childId = "test-id-from-csharp-3";
         systemManager.AttachToParent(childId, parentId);
+        // col.enabled = scanner.ConsumeBool(); break;
 
-        spellText = "< ~main < ~duration 1 ~startLifetime 2 ~startSpeed 10 ~startSize 0.1 ~startColor [1 0.5 0 1] > ~emission < ~rateOverTime 0 ~burstCount 2> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.05] [1 0.95] [0 1]]>> ~trails < ~lifetime 0.2 > ~renderer < ~materialName (Grow_1) ~trailMaterialName (Trail) >>";
+        spellText = "< ~main < ~duration 1 ~startLifetime 2 ~startSpeed 10 ~startSize 0.1 ~startColor [1 0.5 0 1] > ~emission < ~rateOverTime 0 ~burstCount 2> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.05] [1 0.95] [0 1]]>> ~trails < ~lifetime 0.2 ~enabled false > ~renderer < ~materialName (Grow_1) ~trailMaterialName (Trail) >>";
         testId = "test-id-from-csharp-4";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         childId = "test-id-from-csharp-4";
