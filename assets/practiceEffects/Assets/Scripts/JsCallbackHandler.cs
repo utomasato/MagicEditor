@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System;
+using UnityEngine.SceneManagement; // ReloadSceneのために追加
 
 [System.Serializable]
 public class GeneralData
@@ -100,7 +101,7 @@ public class JsCallbackHandler : MonoBehaviour
         systemManager.AttachToParent(childId, parentId);
         // col.enabled = scanner.ConsumeBool(); break;
 
-        spellText = "< ~main < ~duration 1 ~startLifetime 2 ~startSpeed 10 ~startSize 0.1 ~startColor [1 0.5 0 1] > ~emission < ~rateOverTime 0 ~burstCount 2> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.05] [1 0.95] [0 1]]>> ~trails < ~lifetime 0.2 ~enabled false > ~renderer < ~materialName (Grow_1) ~trailMaterialName (Trail) >>";
+        spellText = "< ~main < ~duration 1 ~startLifetime 2 ~startSpeed 10 ~startSize 0.1 ~startColor [1 0.5 0 1] > ~emission < ~rateOverTime 0 ~burstCount 2> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.05] [1 0.95] [0 1]]>> ~trail < ~lifetime 0.2 > ~renderer < ~materialName (Grow_1) ~trailMaterialName (Trail) >>";
         testId = "test-id-from-csharp-4";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         childId = "test-id-from-csharp-4";
@@ -144,40 +145,69 @@ public class JsCallbackHandler : MonoBehaviour
 
     public void ReceiveGeneralData(string jsonString)
     {
-        GeneralData data = JsonUtility.FromJson<GeneralData>(jsonString);
-
-        Debug.Log("====== JavaScriptからのデータ受信 ======");
-        Debug.Log("message: " + data.message);
-        Debug.Log("id: " + data.id); // Changed from 'name'
-        Debug.Log("text: " + data.text);
-        Debug.Log("=====================================");
-
-        if (systemManager == null)
+        // ▼▼▼ 修正 ▼▼▼
+        // メソッド全体をtry...catchで囲み、JSONのパースエラーや
+        // SystemManagerで捕捉されなかった予期せぬエラーをキャッチする
+        try
         {
-            Debug.LogError("SystemManagerへの参照が設定されていません。", this);
-            return;
-        }
+            GeneralData data = JsonUtility.FromJson<GeneralData>(jsonString);
 
-        switch (data.message)
-        {
-            case "Reset":
-                systemManager.Reset();
-                break;
-            case "MagicSpell":
-                systemManager.CreateAndSpawnParticleFromMps(data.text, data.id); // Pass ID
-                break;
-            case "TransformObject":
-                systemManager.TransformObjectById(data.id, data.text); // Use new method and pass ID
-                break;
-            case "Animation":
-                systemManager.AnimationObjectById(data.id, data.text);
-                break;
-            case "CreateObject":
-                systemManager.CreateObjectFromMps(data.text, data.id);
-                break;
-            case "AttachToParent":
-                systemManager.AttachToParent(data.id, data.text);
-                break;
+            Debug.Log("====== JavaScriptからのデータ受信 ======");
+            Debug.Log("message: " + data.message);
+            Debug.Log("id: " + data.id); // Changed from 'name'
+            Debug.Log("text: " + data.text);
+            Debug.Log("=====================================");
+
+            if (systemManager == null)
+            {
+                Debug.LogError("SystemManagerへの参照が設定されていません。", this);
+                return;
+            }
+
+            switch (data.message)
+            {
+                case "Reset":
+                    systemManager.Reset();
+                    break;
+                case "MagicSpell":
+                    systemManager.CreateAndSpawnParticleFromMps(data.text, data.id); // Pass ID
+                    break;
+                case "TransformObject":
+                    systemManager.TransformObjectById(data.id, data.text); // Use new method and pass ID
+                    break;
+                case "Animation":
+                    systemManager.AnimationObjectById(data.id, data.text);
+                    break;
+                case "CreateObject":
+                    systemManager.CreateObjectFromMps(data.text, data.id);
+                    break;
+                case "AttachToParent":
+                    // AttachToParentのdata.textはparentIdを想定
+                    systemManager.AttachToParent(data.id, data.text);
+                    break;
+            }
         }
+        catch (System.Exception e)
+        {
+            // ここでキャッチされるのは、JsonUtilityの失敗か、
+            // SystemManagerが（try...catchしているにも関わらず）
+            // 握りつぶさずにスローした重大な例外
+            Debug.LogError($"[JsCallbackHandler] 致命的なエラーが発生しました: {e.Message}\n{e.StackTrace}");
+
+            // ユーザーの提案に基づき、致命的なエラーが発生した場合は
+            // シーンをリロードして復旧を試みる
+            if (systemManager != null)
+            {
+                Debug.LogWarning("致命的なエラーを検出。復旧のためシーンをリロードします。");
+                systemManager.ReloadScene();
+            }
+            else
+            {
+                // SystemManagerが見つからない場合でもリロードを実行
+                Debug.LogWarning("SystemManagerがnullですが、復旧のためシーンをリロードします。");
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
+        }
+        // ▲▲▲ 修正 ▲▲▲
     }
 }

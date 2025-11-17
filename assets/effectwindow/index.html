@@ -8,6 +8,33 @@
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
   <body>
+    <script>
+      // 元々のアラート機能を保存しておく
+      var originalAlert = window.alert;
+
+      // アラート機能を上書きする
+      window.alert = function(message) {
+        // エラーメッセージを文字列化
+        var msgString = String(message);
+
+        // Unityのよくあるエラーキーワードが含まれていたらリロード
+        if (msgString.indexOf("Exception") !== -1 || 
+        msgString.indexOf("Error") !== -1 || 
+        msgString.indexOf("memory access") !== -1) {
+      
+          console.error("Unityの致命的エラーを検知しました。リロードします。", msgString);
+      
+          // 強制的にページをリロード
+          window.location.reload();
+      
+          // デフォルトのアラート（ポップアップ）は出さない（＝処理を止める）
+          return;
+        }
+
+        // Unityのエラー以外なら普通にアラートを出す
+        originalAlert(message);
+      };
+    </script>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
       <div id="unity-loading-bar">

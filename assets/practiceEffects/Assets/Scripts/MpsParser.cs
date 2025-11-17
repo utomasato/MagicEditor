@@ -80,8 +80,55 @@ public static class MpsParser
             if (consumed != token)
                 throw new Exception($"Parse Error: Expected '{token}' but got '{consumed}'.");
         }
-        public float ConsumeFloat() => float.Parse(Consume(), CultureInfo.InvariantCulture);
-        public bool ConsumeBool() => bool.Parse(Consume());
+
+        // ▼▼▼ 修正 ▼▼▼
+        /// <summary>
+        /// トークンをfloatとして消費します。パースに失敗した場合は警告を出し、0.0fを返します。
+        /// </summary>
+        public float ConsumeFloat()
+        {
+            string token = Consume();
+            if (token == null) // コードの終端に達した場合
+            {
+                Debug.LogWarning($"Parse Warning: Expected a number (float) but reached end of code. Defaulting to 0.0f.");
+                return 0.0f;
+            }
+
+            if (float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out float result))
+            {
+                return result;
+            }
+            else
+            {
+                Debug.LogWarning($"Parse Warning: Expected a number (float) but got '{token}'. Defaulting to 0.0f.");
+                return 0.0f; // デフォルト値を返す
+            }
+        }
+
+        /// <summary>
+        /// トークンをboolとして消費します。パースに失敗した場合は警告を出し、falseを返します。
+        /// </summary>
+        public bool ConsumeBool()
+        {
+            string token = Consume();
+            if (token == null) // コードの終端に達した場合
+            {
+                Debug.LogWarning($"Parse Warning: Expected a boolean (true/false) but reached end of code. Defaulting to false.");
+                return false;
+            }
+
+            if (bool.TryParse(token, out bool result))
+            {
+                return result;
+            }
+            else
+            {
+                Debug.LogWarning($"Parse Warning: Expected a boolean (true/false) but got '{token}'. Defaulting to false.");
+                return false; // デフォルト値を返す
+            }
+        }
+        // ▲▲▲ 修正 ▲▲▲
+
 
         /// <summary>
         /// '(' から ')' までのトークンを連結して1つの文字列として消費します。スペースを含む文字列に対応します。
@@ -116,7 +163,11 @@ public static class MpsParser
                     data.objectType = scanner.ConsumeStringInParens();
                     break;
                 default:
-                    throw new Exception($"Unknown object creation key: {key}");
+                    // ▼▼▼ 修正 ▼▼▼ (不明なキーをスキップ)
+                    Debug.LogWarning($"Unknown object creation key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner); // このキーの値をスキップ
+                    break;
+                    // ▲▲▲ 修正 ▲▲▲
             }
         }
         scanner.Expect(">");
@@ -157,7 +208,11 @@ public static class MpsParser
                     }
                     break;
                 default:
-                    throw new Exception($"Unknown transform key: {key}");
+                    // ▼▼▼ 修正 ▼▼▼ (不明なキーをスキップ)
+                    Debug.LogWarning($"Unknown transform key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner); // このキーの値をスキップ
+                    break;
+                    // ▲▲▲ 修正 ▲▲▲
             }
         }
         scanner.Expect(">");
@@ -190,19 +245,29 @@ public static class MpsParser
             switch (key)
             {
                 case "position":
+                    scanner.Expect("<");
                     data.isActive_pos = true;
                     data.posAnimData = ParseAnimElement(scanner);
+                    scanner.Expect(">");
                     break;
                 case "rotate":
+                    scanner.Expect("<");
                     data.isActive_rot = true;
                     data.rotAnimData = ParseAnimElement(scanner);
+                    scanner.Expect(">");
                     break;
                 case "scale":
+                    scanner.Expect("<");
                     data.isActive_scale = true;
                     data.scaleAnimData = ParseAnimElement(scanner);
+                    scanner.Expect(">");
                     break;
                 default:
-                    throw new Exception($"Unknown animation key: {key}");
+                    // ▼▼▼ 修正 ▼▼▼ (不明なキーをスキップ)
+                    Debug.LogWarning($"Unknown animation key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner); // このキーの値をスキップ
+                    break;
+                    // ▲▲▲ 修正 ▲▲▲
             }
         }
         scanner.Expect(">");
@@ -212,7 +277,7 @@ public static class MpsParser
 
     private static AnimationData ParseAnimElement(Scanner scanner)
     {
-        scanner.Expect("<");
+        // scanner.Expect("<"); // 呼び出し元で < を消費するように変更
         var animData = new AnimationData();
         while (scanner.Peek() != ">")
         {
@@ -226,10 +291,15 @@ public static class MpsParser
                 case "reverse": animData.reverse = scanner.ConsumeBool(); break;
                 case "easeIn": animData.easeIn = scanner.ConsumeBool(); break;
                 case "easeOut": animData.easeOut = scanner.ConsumeBool(); break;
-                default: throw new Exception($"Unknown animation module key: {key}");
+                default:
+                    // ▼▼▼ 修正 ▼▼▼ (不明なキーをスキップ)
+                    Debug.LogWarning($"Unknown animation module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner); // このキーの値をスキップ
+                    break;
+                    // ▲▲▲ 修正 ▲▲▲
             }
         }
-        scanner.Expect(">");
+        // scanner.Expect(">"); // 呼び出し元で > を消費
         return animData;
     }
 
@@ -275,18 +345,123 @@ public static class MpsParser
                 case "externalForces": preset.externalForces = ParseExternalForcesModule(scanner); break;
                 case "noise": preset.noise = ParseNoiseModule(scanner); break;
                 case "collision": preset.collision = ParseCollisionModule(scanner); break;
-                case "triggers": preset.triggers = new TriggersModuleData { enabled = true }; break;
-                case "subEmitters": preset.subEmitters = new SubEmittersModuleData { enabled = true }; break;
+                case "triggers": preset.triggers = new TriggersModuleData { enabled = true }; SkipModuleContent(scanner); break; // triggersは中身をパースしない
+                case "subEmitters": preset.subEmitters = new SubEmittersModuleData { enabled = true }; SkipModuleContent(scanner); break; // 同上
                 case "textureSheetAnimation": preset.textureSheetAnimation = ParseTextureSheetAnimationModule(scanner); break;
-                case "lights": preset.lights = new LightsModuleData { enabled = true }; break;
+                case "lights": preset.lights = new LightsModuleData { enabled = true }; SkipModuleContent(scanner); break; // 同上
                 case "trails": preset.trails = ParseTrailsModule(scanner); break;
-                case "customData": preset.customData = new CustomDataModuleData { enabled = true }; break;
+                case "customData": preset.customData = new CustomDataModuleData { enabled = true }; SkipModuleContent(scanner); break; // 同上
                 case "renderer": preset.renderer = ParseRendererModule(scanner, materialDict, meshDict); break;
-                default: throw new Exception($"Unknown preset key: {key}");
+                // ▼▼▼ 修正 ▼▼▼
+                // default: throw new Exception($"Unknown preset key: {key}");
+                default:
+                    // 例外をスローせず、警告を出して不明なモジュールをスキップする
+                    Debug.LogWarning($"Unknown MPS module key: '~{key}'. Skipping this module.");
+                    SkipModuleContent(scanner); // このモジュールの < ... > の中身を読み飛ばす
+                    break;
+                    // ▲▲▲ 修正 ▲▲▲
             }
             scanner.Expect(">");
         }
     }
+
+    // ▼▼▼ 追加 ▼▼▼
+    /// <summary>
+    /// 不明なキーに続く値を安全に読み飛ばします。
+    /// 値がブロック（<...> or [...] or (...)）の場合はそれを読み飛ばし、
+    /// 単一の値（数値や文字列）の場合はそれを1つ消費します。
+    /// </summary>
+    private static void SkipUnknownValue(Scanner scanner)
+    {
+        string next = scanner.Peek();
+        if (next == "<")
+        {
+            scanner.Consume(); // < を消費
+            SkipModuleContent(scanner);
+            scanner.Consume(); // > を消費
+        }
+        else if (next == "[")
+        {
+            scanner.Consume(); // [ を消費
+            SkipBracketContent(scanner); // [ ... ] の中身を読み飛ばす
+            scanner.Consume(); // ] を消費
+        }
+        else if (next == "(")
+        {
+            scanner.Consume(); // ( を消費
+            while (scanner.Peek() != null && scanner.Peek() != ")")
+            {
+                scanner.Consume(); // ( ... ) の中身を読み飛ばす
+            }
+            scanner.Consume(); // ) を消費
+        }
+        else
+        {
+            // 単一の値（数値、true/falseなど）
+            scanner.Consume();
+        }
+    }
+
+    /// <summary>
+    /// 不明なモジュールの内容 < ... > を安全に読み飛ばします。
+    /// '<' を読み取った直後から呼び出され、
+    /// 対応する '>' の直前まで読み進めます（ネストされた < > にも対応）。
+    /// </summary>
+    private static void SkipModuleContent(Scanner scanner)
+    {
+        int depth = 0;
+        while (scanner.Peek() != null)
+        {
+            string token = scanner.Peek();
+
+            if (token == "<")
+            {
+                depth++;
+            }
+            else if (token == ">")
+            {
+                if (depth == 0)
+                {
+                    // 探していた閉じタグ '>' を見つけた
+                    // この '>' は switch 文の外側にある Expect(">"); で消費されるため、ここでは消費しない
+                    return;
+                }
+                depth--;
+            }
+
+            // トークンを消費して次に進む
+            scanner.Consume();
+        }
+        Debug.LogWarning("Parse Error: Reached end of code while skipping module. Missing '>'.");
+    }
+
+    /// <summary>
+    /// 不明な配列 [ ... ] の内容を安全に読み飛ばします。
+    /// </summary>
+    private static void SkipBracketContent(Scanner scanner)
+    {
+        int depth = 0;
+        while (scanner.Peek() != null)
+        {
+            string token = scanner.Peek();
+            if (token == "[")
+            {
+                depth++;
+            }
+            else if (token == "]")
+            {
+                if (depth == 0)
+                {
+                    return; // 閉じる ] を見つけた
+                }
+                depth--;
+            }
+            scanner.Consume();
+        }
+        Debug.LogWarning("Parse Error: Reached end of code while skipping bracket content. Missing ']'.");
+    }
+    // ▲▲▲ 追加 ▲▲▲
+
 
     private static MainModuleData ParseMainModule(Scanner scanner)
     {
@@ -339,7 +514,8 @@ public static class MpsParser
                             }
                             else
                             {
-                                throw new Exception($"Invalid number of arguments for startSize. Expected 2 for a range or 3 for a 3D constant, but got {values.Count}.");
+                                // 値の数が不正だが、例外は投げない
+                                Debug.LogWarning($"Invalid number of arguments for startSize. Expected 2 or 3, but got {values.Count}.");
                             }
                         }
                     }
@@ -385,7 +561,10 @@ public static class MpsParser
                         main.simulationSpace = ParticleSystemSimulationSpace.Local;
                     }
                     break;
-                default: throw new Exception($"Unknown main module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown main module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return main;
@@ -411,7 +590,9 @@ public static class MpsParser
                     emission.maxBurstCount = (int)curve.max;
                     break;
                 default:
-                    throw new Exception($"Unknown emission module key: {key}");
+                    Debug.LogWarning($"Unknown emission module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return emission;
@@ -442,7 +623,10 @@ public static class MpsParser
                     break;
                 case "angle": shape.angle = scanner.ConsumeFloat(); break;
                 case "radius": shape.radius = scanner.ConsumeFloat(); break;
-                default: throw new Exception($"Unknown shape module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown shape module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return shape;
@@ -458,7 +642,10 @@ public static class MpsParser
             {
                 case "enabled": col.enabled = scanner.ConsumeBool(); break;
                 case "gradient": col.color = ParseGradient(scanner); break;
-                default: throw new Exception($"Unknown colorOverLifetime module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown colorOverLifetime module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return col;
@@ -477,7 +664,10 @@ public static class MpsParser
                 case "x": rot.x = ParseMinMaxCurveOrConstant(scanner); break;
                 case "y": rot.y = ParseMinMaxCurveOrConstant(scanner); break;
                 case "z": rot.z = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown rotationOverLifetime module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown rotationOverLifetime module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return rot;
@@ -494,7 +684,10 @@ public static class MpsParser
                 case "enabled": lvol.enabled = scanner.ConsumeBool(); break;
                 case "limit": lvol.limit = ParseMinMaxCurveOrConstant(scanner); break;
                 case "dampen": lvol.dampen = scanner.ConsumeFloat(); break;
-                default: throw new Exception($"Unknown limitVelocityOverLifetime module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown limitVelocityOverLifetime module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return lvol;
@@ -515,7 +708,10 @@ public static class MpsParser
                         iv.mode = mode;
                     break;
                 case "curve": iv.curve = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown inheritVelocity module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown inheritVelocity module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return iv;
@@ -536,7 +732,10 @@ public static class MpsParser
                     cbs.range = new Vector2(scanner.ConsumeFloat(), scanner.ConsumeFloat());
                     scanner.Expect("]");
                     break;
-                default: throw new Exception($"Unknown colorBySpeed module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown colorBySpeed module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return cbs;
@@ -557,7 +756,10 @@ public static class MpsParser
                     sbs.range = new Vector2(scanner.ConsumeFloat(), scanner.ConsumeFloat());
                     scanner.Expect("]");
                     break;
-                default: throw new Exception($"Unknown sizeBySpeed module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown sizeBySpeed module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return sbs;
@@ -578,7 +780,10 @@ public static class MpsParser
                     rbs.range = new Vector2(scanner.ConsumeFloat(), scanner.ConsumeFloat());
                     scanner.Expect("]");
                     break;
-                default: throw new Exception($"Unknown rotationBySpeed module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown rotationBySpeed module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return rbs;
@@ -594,7 +799,10 @@ public static class MpsParser
             {
                 case "enabled": ef.enabled = scanner.ConsumeBool(); break;
                 case "multiplier": ef.multiplier = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown externalForces module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown externalForces module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return ef;
@@ -612,7 +820,10 @@ public static class MpsParser
                 case "dampen": collision.dampen = ParseMinMaxCurveOrConstant(scanner); break;
                 case "bounce": collision.bounce = ParseMinMaxCurveOrConstant(scanner); break;
                 case "lifetimeLoss": collision.lifetimeLoss = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown collision module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown collision module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return collision;
@@ -629,7 +840,10 @@ public static class MpsParser
                 case "x": vol.x = ParseMinMaxCurveOrConstant(scanner); break;
                 case "y": vol.y = ParseMinMaxCurveOrConstant(scanner); break;
                 case "z": vol.z = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown velocityOverLifetime axis: {axis}");
+                default:
+                    Debug.LogWarning($"Unknown velocityOverLifetime axis: '{axis}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return vol;
@@ -646,7 +860,10 @@ public static class MpsParser
                 case "x": fol.x = ParseMinMaxCurveOrConstant(scanner); break;
                 case "y": fol.y = ParseMinMaxCurveOrConstant(scanner); break;
                 case "z": fol.z = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown forceOverLifetime axis: {axis}");
+                default:
+                    Debug.LogWarning($"Unknown forceOverLifetime axis: '{axis}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return fol;
@@ -664,7 +881,10 @@ public static class MpsParser
                 case "strength": noise.strength = ParseMinMaxCurveOrConstant(scanner); break;
                 case "frequency": noise.frequency = scanner.ConsumeFloat(); break;
                 case "scrollSpeed": noise.scrollSpeed = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown noise module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown noise module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return noise;
@@ -682,7 +902,10 @@ public static class MpsParser
                 case "tilesX": tsa.numTilesX = (int)scanner.ConsumeFloat(); break;
                 case "tilesY": tsa.numTilesY = (int)scanner.ConsumeFloat(); break;
                 case "frameOverTime": tsa.frameOverTime = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown textureSheetAnimation module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown textureSheetAnimation module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return tsa;
@@ -699,7 +922,10 @@ public static class MpsParser
                 case "enabled": trails.enabled = scanner.ConsumeBool(); break;
                 case "lifetime": trails.lifetime = ParseMinMaxCurveOrConstant(scanner); break;
                 case "widthOverTrail": trails.widthOverTrail = ParseMinMaxCurveOrConstant(scanner); break;
-                default: throw new Exception($"Unknown trails module key: {key}");
+                default:
+                    Debug.LogWarning($"Unknown trails module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return trails;
@@ -716,7 +942,9 @@ public static class MpsParser
                 case "enabled": sol.enabled = scanner.ConsumeBool(); break;
                 case "size": sol.size = ParseMinMaxCurveOrConstant(scanner); break;
                 default:
-                    throw new Exception($"Unknown sizeOverLifetime module key: {key}");
+                    Debug.LogWarning($"Unknown sizeOverLifetime module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return sol;
@@ -803,7 +1031,9 @@ public static class MpsParser
                     }
                     break;
                 default:
-                    throw new Exception($"Unknown renderer module key: {key}");
+                    Debug.LogWarning($"Unknown renderer module key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         return renderer;
@@ -859,7 +1089,9 @@ public static class MpsParser
                     gradient.alphaKeys = ParseAlphaKeysList(scanner);
                     break;
                 default:
-                    throw new Exception($"Unknown gradient key: {key}");
+                    Debug.LogWarning($"Unknown gradient key: '~{key}'. Skipping.");
+                    SkipUnknownValue(scanner);
+                    break;
             }
         }
         scanner.Expect(">");
@@ -879,7 +1111,8 @@ public static class MpsParser
             }
             else
             {
-                throw new Exception($"Unknown curve key: {key}");
+                Debug.LogWarning($"Unknown curve key: '~{key}'. Skipping.");
+                SkipUnknownValue(scanner);
             }
         }
         scanner.Expect(">");
