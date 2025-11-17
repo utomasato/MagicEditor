@@ -260,14 +260,15 @@ class PostscriptInterpreter {
                     key = this.stack.pop();
                 }
                 
-                const id = crypto.randomUUID(); // Generate a unique ID
+                // --- 変更点: ヘルパーメソッド generateUUID() を使用 ---
+                const id = this.generateUUID(); 
                 const resolvedVal = this.resolveVariablesInStructure(val);
                 
                 const data = {
                     isActive: true,
                     message: "MagicSpell",
                     value: 0,
-                    id: id, // Changed from 'name'
+                    id: id,
                     text: this.formatForOutput(resolvedVal)
                 };
 
@@ -275,7 +276,6 @@ class PostscriptInterpreter {
 
                 if (key) {
                     const variableName = key.substring(1);
-                    // Store the reference with the ID
                     const unityObjectRef = { type: 'unityObject', value: id }; 
                     this.dictStack[this.dictStack.length - 1][variableName] = unityObjectRef;
                 }
@@ -287,14 +287,15 @@ class PostscriptInterpreter {
                     key = this.stack.pop();
                 }
                 
-                const id = crypto.randomUUID(); // Generate a unique ID
+                // --- 変更点: ヘルパーメソッド generateUUID() を使用 ---
+                const id = this.generateUUID(); 
                 const resolvedVal = this.resolveVariablesInStructure(val);
                 
                 const data = {
                     isActive: true,
                     message: "CreateObject",
                     value: 0,
-                    id: id, // Changed from 'name'
+                    id: id,
                     text: this.formatForOutput(resolvedVal)
                 };
 
@@ -302,7 +303,6 @@ class PostscriptInterpreter {
 
                 if (key) {
                     const variableName = key.substring(1);
-                    // Store the reference with the ID
                     const unityObjectRef = { type: 'unityObject', value: id }; 
                     this.dictStack[this.dictStack.length - 1][variableName] = unityObjectRef;
                 }
@@ -376,6 +376,22 @@ class PostscriptInterpreter {
                 this.stack.push(['color', r, g, b]);
             }
         };
+    }
+
+    /**
+     * UUIDを生成します。
+     * crypto.randomUUID が使える場合はそれを使用し（セキュアコンテキスト）、
+     * 使えない場合（HTTPなどの非セキュアコンテキスト）は Math.random() ベースの代替機能を使用します。
+     */
+    generateUUID() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
     
     // --- 修正された resolveVariablesInStructure ---
