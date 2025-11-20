@@ -40,7 +40,7 @@ public class JsCallbackHandler : MonoBehaviour
         //TestReceiveGeneralData();
     }
 
-    //*
+    /*
     void Update()
     {
         // "R"キーを押すとシーンがリロードされる例

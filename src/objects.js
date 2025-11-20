@@ -24,6 +24,8 @@ class MagicRing
         this.configMinCircumference = config.minRingCircumference;
 
         this.CalculateLayout();
+        
+        this.marker = null;
     }
 
     clone(clonedMap = new Map()) {
@@ -925,7 +927,7 @@ class Joint extends RingItem {
 
 class Button
 {
-    constructor(x, y, w, h, colorFunc, anchor, pivot, size, text, pressedFunc, isIcon = false)
+    constructor(x, y, w, h, colorFunc, anchor, pivot, size, text, pressedFunc, isIcon = false, shouldDrawRect = true, textPosition = CENTER)
     {
         this.x = x;
         this.y = y;
@@ -939,6 +941,8 @@ class Button
         this.pressedFunc = pressedFunc;
         this.isIcon = isIcon;
         this.isPressed = false;
+        this.shouldDrawRect = shouldDrawRect;
+        this.textPosition = textPosition;
     }
     
     Draw()
@@ -946,9 +950,15 @@ class Button
         let [width, height] = GetScreenSize();
         const x = width * this.anchor.x + this.x - this.w * this.pivot.x;
         const y = height * this.anchor.y + this.y - this.h * this.pivot.y;
-        DrawRoundRect(x, y, this.w, this.h, 10, color(0,0,0), 3); 
-        FillRoundRect(x, y, this.w, this.h, 10, this.colorFunc(this));
-        DrawIcon(this.text, x + this.w/2, y + this.h/2, this.size);
+        if (this.shouldDrawRect)
+        {
+            DrawRoundRect(x, y, this.w, this.h, 10, color(0,0,0), 3); 
+            FillRoundRect(x, y, this.w, this.h, 10, this.colorFunc(this));
+        }
+        if (this.isIcon)
+            DrawIcon(this.text, x + this.w/2, y + this.h/2, this.size);
+        else
+            DrawText(this.size, this.text, x + this.w/2, y + this.h/2, color(0,0,0), this.textPosition);
     }
     
     CheckPressed()
