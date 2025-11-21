@@ -15,6 +15,7 @@ class MagicRing
         this.angle = 0;
         this.effectiveRadius = 0; // 実効半径を保持するプロパティを追加
         this.isStartPoint = false;
+        this.comments = [];
         
         this.spellstart = "{ ";
         this.spellend = "}";
@@ -44,6 +45,7 @@ class MagicRing
             }
             return null;
         });
+        newRing.comments = [...this.comments];
         newRing.CalculateLayout();
         return newRing;
     }
@@ -177,6 +179,7 @@ class MagicRing
         if(debugMode){
             this.DrawDebugLine();
         }
+        this.DrawComments();
         PopTransform();
     }
     
@@ -202,6 +205,38 @@ class MagicRing
             Rotate(onesteprad);
         }
         PopTransform();
+    }
+    
+    DrawComments()
+    {
+        this.comments.forEach(comment => {
+            let radius = this.outerradius + config.fontSize;
+            let charDegWidth = (config.charWidth + config.charSpacing) / radius * 360; // 一文字ごとにずらす角度
+            let totalRotation = 0;
+            //function applyRotation(deg) { Rotate(-deg/180*PI); totalRotation += deg; }
+            
+            PushTransform();
+            Rotate((-comment.angle1 / 180 + 1) * PI);
+            PushTransform();
+            const chars = comment.text.split('');
+            chars.forEach(char => {
+                DrawText(config.fontSize, char, 0, radius , config.fontColor, CENTER);
+                //applyRotation(charDegWidth);
+                Rotate(-charDegWidth/180*PI);
+                totalRotation += charDegWidth;
+                if (totalRotation > comment.angle2 || char == "\n")
+                {
+                    PopTransform();
+                    PushTransform();
+                    totalRotation = 0;
+                    radius += config.fontSize;
+                    charDegWidth = (config.charWidth + config.charSpacing) / radius * 360;
+
+                }
+            });
+            PopTransform();
+            PopTransform();
+        });
     }
     
     DrawDebugLine()

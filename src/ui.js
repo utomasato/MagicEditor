@@ -19,8 +19,13 @@ function isMouseOverPanel(panelElement) {
 
 function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCallback) {
     if (currentUiPanel) return null;
+
+    // 初期位置を保存
+    const initialX = GetMouseX() + 15;
+    const initialY = GetMouseY() - 10;
+
     currentUiPanel = createDiv('');
-    currentUiPanel.position(GetMouseX() + 15, GetMouseY() - 10);
+    currentUiPanel.position(initialX, initialY);
     currentUiPanel.style('z-index', '1000');
     currentUiPanel.style('background-color', 'rgba(240, 240, 240, 0.95)');
     currentUiPanel.style('padding', '8px');
@@ -29,7 +34,7 @@ function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCall
     currentUiPanel.style('display', 'flex');
     currentUiPanel.style('flex-direction', 'column');
     currentUiPanel.style('gap', '8px');
-    currentUiPanel.style('user-select', 'none'); // このパネル内でのテキスト選択を無効化
+    currentUiPanel.style('user-select', 'none');
     currentUiPanel.style('-webkit-user-select', 'none');
 
     const header = createDiv('');
@@ -92,6 +97,42 @@ function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCall
             deleteButton.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); deleteCallback(); });
         }
     }
+
+    // setTimeout(..., 0) を使うことで、呼び出し元の関数（createRingPanelなど）が
+    // コンテンツを追加し終わった「後」にサイズ計算を実行させる
+    setTimeout(() => {
+        if (!currentUiPanel) return;
+
+        const elt = currentUiPanel.elt;
+        const rect = elt.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let newX = initialX;
+        let newY = initialY;
+        let needsUpdate = false;
+
+        if (rect.right > viewportWidth - 10) {
+            newX = viewportWidth - rect.width - 10;
+            needsUpdate = true;
+        }
+        if (newX < 10) {
+            newX = 10;
+            needsUpdate = true;
+        }
+        if (rect.bottom > viewportHeight - 10) {
+            newY = viewportHeight - rect.height - 10;
+            needsUpdate = true;
+        }
+        if (newY < 10) {
+            newY = 10;
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            currentUiPanel.position(newX, newY);
+        }
+    }, 0);
     return { panel: currentUiPanel, contentArea: contentArea };
 }
 
@@ -197,17 +238,6 @@ function createTextInput(item) {
 
         // キャンセルされなかった (newValue が null でない) 場合のみ値を更新
         if (newValue !== null) {
-            
-            // --- 変更：入力時のエスケープ処理を削除 ---
-            // let finalValue = newValue;
-            // if (!isStringToken) {
-            //    const specialChars = /[~{}<>()\[\]\\]/g; 
-            //    finalValue = newValue.replace(specialChars, (match) => '\\' + match);
-            // }
-            // item.value = finalValue;
-            // valueDisplay.html(finalValue); 
-            // ---
-
             // --- 変更：エスケープされていない元の値をそのまま保存・表示 ---
             item.value = newValue;
             valueDisplay.html(newValue); // 表示もエスケープされていない値にする
@@ -277,6 +307,205 @@ function createSigilDropdown(item) {
     });
 }
 
+function createCommentPanel(ring) {
+    const closePanel = () => { 
+        if (currentUiPanel) { 
+            currentUiPanel.remove(); 
+            currentUiPanel = null; 
+        } 
+        editingItem = null; 
+    };
+
+    const panelResult = createBasePanel('Edit Comments', closePanel, null, null);
+    if (!panelResult) return;
+    const { contentArea } = panelResult;
+
+    // 数値入力取得用のヘルパー関数
+    const getNumberInput = (message, defaultValue) => {
+        let input = prompt(message, defaultValue);
+        while (input !== null) {
+            const num = parseFloat(input);
+            if (!isNaN(num)) {
+                return num;
+            }
+            alert("数値ではありません。正しい数値を入力してください。");
+            input = prompt(message, defaultValue); // 再試行
+        }
+        return null; // キャンセルされた場合
+    };
+    
+    // メインのコンテナ
+    const container = createDiv('');
+    container.parent(contentArea);
+    container.style('display', 'flex');
+    container.style('flex-direction', 'column');
+    container.style('gap', '5px');
+    container.style('max-height', '300px');
+    container.style('overflow-y', 'auto');
+
+    // ヘッダー行
+    const headerRow = createDiv('');
+    headerRow.parent(container);
+    headerRow.style('display', 'grid');
+    headerRow.style('grid-template-columns', '2fr 1fr 1fr 100px'); // text, angle1, angle2, buttons
+    headerRow.style('gap', '5px');
+    headerRow.style('font-weight', 'bold');
+    headerRow.style('border-bottom', '1px solid #ccc');
+    headerRow.style('padding-bottom', '5px');
+    headerRow.style('margin-bottom', '5px');
+    
+    createDiv('Text').parent(headerRow);
+    createDiv('Ang1').parent(headerRow);
+    createDiv('Ang2').parent(headerRow);
+    createDiv('').parent(headerRow);
+
+    // コメントリスト表示
+    const renderComments = () => {
+        // 既存のコメント行をクリア（ヘッダーは残す）
+        const children = container.elt.children;
+        while (children.length > 1) {
+            container.elt.removeChild(children[1]);
+        }
+
+        ring.comments.forEach((comment, index) => {
+            const row = createDiv('');
+            row.parent(container);
+            row.style('display', 'grid');
+            row.style('grid-template-columns', '2fr 1fr 1fr 100px');
+            row.style('gap', '5px');
+            row.style('align-items', 'center');
+            row.style('padding', '4px 0');
+            row.style('border-bottom', '1px solid #eee');
+
+            // Text
+            const textDiv = createDiv(comment.text);
+            textDiv.parent(row);
+            textDiv.style('white-space', 'nowrap');
+            textDiv.style('overflow', 'hidden');
+            textDiv.style('text-overflow', 'ellipsis');
+            textDiv.attribute('title', comment.text);
+            textDiv.style('font-size', '12px');
+            // テキストボックス風スタイル
+            textDiv.style('background', '#fff');
+            textDiv.style('border', '1px solid #ccc');
+            textDiv.style('border-radius', '4px');
+            textDiv.style('padding', '4px');
+            textDiv.style('height', '24px');
+            textDiv.style('line-height', '16px');
+
+            // Angle1
+            const ang1Div = createDiv(comment.angle1);
+            ang1Div.parent(row);
+            ang1Div.style('font-size', '12px');
+            // テキストボックス風スタイル
+            ang1Div.style('background', '#fff');
+            ang1Div.style('border', '1px solid #ccc');
+            ang1Div.style('border-radius', '4px');
+            ang1Div.style('padding', '4px');
+            ang1Div.style('height', '24px');
+            ang1Div.style('line-height', '16px');
+
+            // Angle2
+            const ang2Div = createDiv(comment.angle2);
+            ang2Div.parent(row);
+            ang2Div.style('font-size', '12px');
+            // テキストボックス風スタイル
+            ang2Div.style('background', '#fff');
+            ang2Div.style('border', '1px solid #ccc');
+            ang2Div.style('border-radius', '4px');
+            ang2Div.style('padding', '4px');
+            ang2Div.style('height', '24px');
+            ang2Div.style('line-height', '16px');
+
+            // Buttons
+            const btnContainer = createDiv('');
+            btnContainer.parent(row);
+            btnContainer.style('display', 'flex');
+            btnContainer.style('gap', '4px');
+
+            const editBtn = createButton('編集');
+            editBtn.parent(btnContainer);
+            editBtn.style('padding', '2px 6px');
+            editBtn.style('font-size', '10px');
+            editBtn.style('cursor', 'pointer');
+            editBtn.elt.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                // 編集フロー
+                const newText = prompt("テキストを入力してください:", comment.text);
+                if (newText === null) return;
+
+                const newAngle1 = getNumberInput("Angle1 (開始角度) を入力してください:", comment.angle1);
+                if (newAngle1 === null) return;
+
+                const newAngle2 = getNumberInput("Angle2 (範囲角度) を入力してください:", comment.angle2);
+                if (newAngle2 === null) return;
+
+                comment.text = newText;
+                comment.angle1 = newAngle1;
+                comment.angle2 = newAngle2;
+                
+                // UI更新（再描画）
+                closePanel();
+                setTimeout(() => createCommentPanel(ring), 10);
+            });
+
+            const delBtn = createButton('削除');
+            delBtn.parent(btnContainer);
+            delBtn.style('padding', '2px 6px');
+            delBtn.style('font-size', '10px');
+            delBtn.style('color', 'white');
+            delBtn.style('background-color', '#ff4d4d');
+            delBtn.style('border', 'none');
+            delBtn.style('border-radius', '3px');
+            delBtn.style('cursor', 'pointer');
+            delBtn.elt.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                if (confirm("このコメントを削除しますか？")) {
+                    ring.comments.splice(index, 1);
+                    // UI更新（再描画）
+                    closePanel();
+                    setTimeout(() => createCommentPanel(ring), 10);
+                }
+            });
+        });
+    };
+
+    renderComments();
+
+    // 追加ボタン
+    const addBtn = createButton('＋ コメントを追加');
+    addBtn.parent(contentArea);
+    addBtn.style('width', '100%');
+    addBtn.style('margin-top', '10px');
+    addBtn.style('padding', '6px');
+    addBtn.style('cursor', 'pointer');
+    addBtn.style('background-color', '#f0f0f0');
+    addBtn.style('border', '1px dashed #999');
+    
+    addBtn.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        // 新規作成ダイアログフロー
+        const defaultText = "New Comment";
+        const newText = prompt("新しいコメントのテキスト:", defaultText);
+        if (newText === null) return;
+
+        const newAngle1 = getNumberInput("Angle1 (開始角度):", "0");
+        if (newAngle1 === null) return;
+
+        const newAngle2 = getNumberInput("Angle2 (範囲角度):", "45");
+        if (newAngle2 === null) return;
+        
+        ring.comments.push({
+            text: newText,
+            angle1: newAngle1,
+            angle2: newAngle2
+        });
+        // UI更新
+        closePanel();
+        setTimeout(() => createCommentPanel(ring), 10);
+    });
+}
+
 function createRingPanel(ring) {
     const closePanel = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } editingItem = null; };
     const handleDelete = () => {
@@ -316,14 +545,14 @@ function createRingPanel(ring) {
     markerContainer.style('display', 'flex');
     markerContainer.style('align-items', 'center');
     markerContainer.style('gap', '8px');
-    markerContainer.style('margin-top', '10px');
+    markerContainer.style('margin-top', '0px');
     markerContainer.style('border-top', '1px solid #ddd');
-    markerContainer.style('padding-top', '8px');
+    markerContainer.style('padding-top', '0px');
 
     const markerLabel = createP('Marker:');
     markerLabel.parent(markerContainer);
-    markerLabel.style('margin', '0');
-    markerLabel.style('font-size', '14px');
+    //markerLabel.style('margin', '0');
+    //markerLabel.style('font-size', '14px');
 
     // Display current value (Read-only)
     const markerDisplay = createP(ring.marker || '');
@@ -453,6 +682,21 @@ function createRingPanel(ring) {
             closePanel();
         });
     }
+    
+    const commentButton = createButton('コメントを編集する');
+    commentButton.parent(buttonContainer);
+    commentButton.style('width', '100%');
+    commentButton.style('padding', '5px');
+    commentButton.style('cursor', 'pointer');
+    commentButton.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        // 既存のパネルを閉じてからコメントパネルを開く
+        closePanel();
+        // パネルが完全に閉じるのを少し待つ（DOM処理の安全のため）
+        setTimeout(() => {
+            createCommentPanel(ring);
+        }, 10);
+    });
 
     // --- Ring Type or Magic Type selection ---
     // TemplateRing の場合は magic プロパティを変更するUI

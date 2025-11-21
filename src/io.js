@@ -56,6 +56,16 @@ function ringToXML(ring, ringIdMap) {
     const markerAttr = ring.marker ? ` marker="${escapeXML(ring.marker)}"` : '';
 
     let xml = `  <Ring id="${ringId}" type="${ringType}" x="${ring.pos.x.toFixed(2)}" y="${ring.pos.y.toFixed(2)}" angle="${ring.angle.toFixed(4)}"${markerAttr}>\n`;
+    
+    // コメントの保存
+    if (ring.comments && Array.isArray(ring.comments)) {
+        xml += `    <Comments>\n`;
+        ring.comments.forEach(comment => {
+            xml += `      <Comment text="${escapeXML(comment.text)}" angle1="${comment.angle1}" angle2="${comment.angle2}" />\n`;
+        });
+        xml += `    </Comments>\n`;
+    }
+
     xml += `    <Items>\n`;
     ring.items.forEach(item => {
         xml += `  ` + itemToXML(item, ringIdMap);
@@ -158,6 +168,23 @@ function importFromXML(xmlString, mode) {
 
         newRing.angle = angle;
         if (marker) newRing.marker = marker; // マーカーを設定
+
+        // コメントの読み込み
+        // XMLにCommentsタグがある場合は、デフォルトのコメントをクリアしてXMLの内容で上書きする
+        const commentsEl = ringEl.querySelector('Comments');
+        if (commentsEl) {
+            newRing.comments = []; // 初期化
+            const commentEls = commentsEl.children;
+            for (const cEl of commentEls) {
+                if (cEl.tagName === 'Comment') {
+                    newRing.comments.push({
+                        text: cEl.getAttribute('text') || "",
+                        angle1: parseFloat(cEl.getAttribute('angle1')) || 0,
+                        angle2: parseFloat(cEl.getAttribute('angle2')) || 0
+                    });
+                }
+            }
+        }
 
         newRing.items = []; // デフォルトのアイテムを一旦クリア
 

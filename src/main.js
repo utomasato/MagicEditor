@@ -248,7 +248,7 @@ function Update() {
     else if (CheckMouseUp() || CheckTouchEnded()) { MouseUpEvent(); }
 
     if (CheckKeyDown(Key.D)) { debugMode = !debugMode; }
-    if (CheckKeyDown(Key.H)) { globalIsClockwise = !globalIsClockwise; }
+    //if (CheckKeyDown(Key.H)) { globalIsClockwise = !globalIsClockwise; }
 }
 
 function Draw() {
