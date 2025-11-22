@@ -31,7 +31,7 @@
       <Item type="sigil" value="transform" />
     </Items>
   </Ring>
-  <Ring id="1" type="DictRing" x="-1237.94" y="284.94" angle="1.3446" marker="cross">
+  <Ring id="1" type="DictRing" x="-1544.65" y="355.54" angle="1.3446" marker="cross">
     <Comments>
       <Comment text="cross" angle1="5" angle2="45" />
     </Comments>
@@ -47,7 +47,7 @@
       <Item type="joint" value="5" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="2" type="DictRing" x="-1111.22" y="-172.52" angle="3.4118">
+  <Ring id="2" type="DictRing" x="-1417.93" y="-101.93" angle="3.4118">
     <Comments>
     </Comments>
     <Items>
@@ -64,7 +64,7 @@
       <Item type="joint" value="12" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="3" type="DictRing" x="-1446.09" y="149.20" angle="2.1487">
+  <Ring id="3" type="DictRing" x="-1752.80" y="219.80" angle="2.1487">
     <Comments>
     </Comments>
     <Items>
@@ -75,7 +75,7 @@
       <Item type="chars" value="2" />
     </Items>
   </Ring>
-  <Ring id="4" type="DictRing" x="-1189.32" y="722.46" angle="-0.1107">
+  <Ring id="4" type="DictRing" x="-1488.75" y="858.63" angle="-0.1107">
     <Comments>
     </Comments>
     <Items>
@@ -84,7 +84,7 @@
       <Item type="joint" value="7" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="5" type="DictRing" x="-527.06" y="426.82" angle="-1.3738">
+  <Ring id="5" type="DictRing" x="-795.93" y="504.97" angle="-1.3738">
     <Comments>
     </Comments>
     <Items>
@@ -101,7 +101,7 @@
       <Item type="string_token" value="Local" />
     </Items>
   </Ring>
-  <Ring id="6" type="ArrayRing" x="-1357.23" y="-220.78" angle="1.7645">
+  <Ring id="6" type="ArrayRing" x="-1663.94" y="-150.19" angle="1.7645">
     <Comments>
     </Comments>
     <Items>
@@ -111,7 +111,7 @@
       <Item type="chars" value="75" />
     </Items>
   </Ring>
-  <Ring id="7" type="DictRing" x="-957.01" y="731.79" angle="-1.5307">
+  <Ring id="7" type="DictRing" x="-1218.92" y="869.47" angle="-1.5307">
     <Comments>
     </Comments>
     <Items>
@@ -120,7 +120,7 @@
       <Item type="joint" value="8" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="8" type="ArrayRing" x="-937.82" y="572.29" angle="3.2613">
+  <Ring id="8" type="ArrayRing" x="-1198.53" y="700.03" angle="3.2613">
     <Comments>
     </Comments>
     <Items>
@@ -131,7 +131,7 @@
       <Item type="joint" value="11" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="9" type="ArrayRing" x="-780.96" y="603.81" angle="-1.3725">
+  <Ring id="9" type="ArrayRing" x="-1041.66" y="731.54" angle="-1.3725">
     <Comments>
     </Comments>
     <Items>
@@ -140,7 +140,7 @@
       <Item type="chars" value="0.0" />
     </Items>
   </Ring>
-  <Ring id="10" type="ArrayRing" x="-838.52" y="446.83" angle="3.8111">
+  <Ring id="10" type="ArrayRing" x="-1099.24" y="574.56" angle="3.8111">
     <Comments>
     </Comments>
     <Items>
@@ -149,7 +149,7 @@
       <Item type="chars" value="0.05" />
     </Items>
   </Ring>
-  <Ring id="11" type="ArrayRing" x="-1097.69" y="565.71" angle="1.6120">
+  <Ring id="11" type="ArrayRing" x="-1358.39" y="693.44" angle="1.6120">
     <Comments>
     </Comments>
     <Items>
@@ -158,7 +158,7 @@
       <Item type="chars" value="1.0" />
     </Items>
   </Ring>
-  <Ring id="12" type="ArrayRing" x="-1253.13" y="34.14" angle="0.6017">
+  <Ring id="12" type="ArrayRing" x="-1559.84" y="104.74" angle="0.6017">
     <Comments>
     </Comments>
     <Items>
@@ -169,7 +169,7 @@
       <Item type="chars" value="1" />
     </Items>
   </Ring>
-  <Ring id="13" type="ArrayRing" x="-1004.53" y="426.86" angle="2.7115">
+  <Ring id="13" type="ArrayRing" x="-1265.24" y="554.60" angle="2.7115">
     <Comments>
     </Comments>
     <Items>
@@ -178,9 +178,9 @@
       <Item type="chars" value="0.95" />
     </Items>
   </Ring>
-  <Ring id="14" type="MagicRing" x="-487.36" y="794.61" angle="0.5502" marker="wave">
+  <Ring id="14" type="MagicRing" x="-404.59" y="659.66" angle="0.5502" marker="wave">
     <Comments>
-      <Comment text="trail_alp" angle1="5" angle2="45" />
+      <Comment text="wave" angle1="5" angle2="45" />
     </Comments>
     <Items>
       <Item type="sigil" value="RETURN" />
@@ -196,7 +196,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="15" type="DictRing" x="-743.19" y="942.28" angle="1.0473">
+  <Ring id="15" type="DictRing" x="-660.43" y="807.33" angle="1.0473">
     <Comments>
     </Comments>
     <Items>
@@ -205,7 +205,7 @@
       <Item type="chars" value="500" />
     </Items>
   </Ring>
-  <Ring id="16" type="MagicRing" x="573.91" y="675.30" angle="-0.7044" marker="spiral">
+  <Ring id="16" type="MagicRing" x="573.38" y="674.67" angle="-0.7044" marker="spiral">
     <Comments>
       <Comment text="spiral" angle1="5" angle2="45" />
     </Comments>
@@ -241,7 +241,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="17" type="ArrayRing" x="139.62" y="876.17" angle="1.1376">
+  <Ring id="17" type="ArrayRing" x="139.08" y="875.54" angle="1.1376">
     <Comments>
     </Comments>
     <Items>
@@ -251,7 +251,7 @@
       <Item type="chars" value="200" />
     </Items>
   </Ring>
-  <Ring id="18" type="DictRing" x="444.48" y="1154.11" angle="0.2640">
+  <Ring id="18" type="DictRing" x="443.94" y="1153.48" angle="0.2640">
     <Comments>
     </Comments>
     <Items>
@@ -260,7 +260,7 @@
       <Item type="chars" value="-800" />
     </Items>
   </Ring>
-  <Ring id="19" type="MagicRing" x="942.27" y="229.68" angle="-1.3317" marker="trail">
+  <Ring id="19" type="MagicRing" x="969.32" y="236.27" angle="-1.3317" marker="trail">
     <Comments>
       <Comment text="trail" angle1="5" angle2="45" />
     </Comments>
@@ -282,7 +282,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="20" type="DictRing" x="1100.50" y="-12.63" angle="3.7201">
+  <Ring id="20" type="DictRing" x="1127.55" y="-6.04" angle="3.7201">
     <Comments>
     </Comments>
     <Items>
@@ -291,7 +291,7 @@
       <Item type="chars" value="0.2" />
     </Items>
   </Ring>
-  <Ring id="21" type="DictRing" x="739.68" y="-32.83" angle="2.4843">
+  <Ring id="21" type="DictRing" x="758.56" y="-36.82" angle="2.4843">
     <Comments>
     </Comments>
     <Items>
@@ -300,9 +300,11 @@
       <Item type="string_token" value="Grow_1" />
       <Item type="name" value="trailMaterialName" />
       <Item type="string_token" value="Trail" />
+      <Item type="name" value="shader" />
+      <Item type="string_token" value="additive" />
     </Items>
   </Ring>
-  <Ring id="22" type="MagicRing" x="-347.30" y="-153.63" angle="1.9873">
+  <Ring id="22" type="MagicRing" x="-365.41" y="-161.64" angle="1.9873">
     <Comments>
     </Comments>
     <Items>
@@ -315,7 +317,7 @@
       <Item type="sigil" value="attachtoparent" />
     </Items>
   </Ring>
-  <Ring id="23" type="DictRing" x="-145.12" y="-321.35" angle="2.7174">
+  <Ring id="23" type="DictRing" x="-156.57" y="-346.69" angle="2.7174">
     <Comments>
     </Comments>
     <Items>
@@ -324,7 +326,7 @@
       <Item type="string_token" value="empty" />
     </Items>
   </Ring>
-  <Ring id="24" type="DictRing" x="198.90" y="-472.44" angle="3.5401">
+  <Ring id="24" type="DictRing" x="147.60" y="-350.60" angle="3.5401">
     <Comments>
     </Comments>
     <Items>
@@ -333,9 +335,9 @@
       <Item type="chars" value="2" />
     </Items>
   </Ring>
-  <Ring id="25" type="MagicRing" x="35.87" y="464.21" angle="-0.0771" marker="wave_alp">
+  <Ring id="25" type="MagicRing" x="37.22" y="481.68" angle="-0.0771" marker="wave_alp">
     <Comments>
-      <Comment text="trail_alp" angle1="5" angle2="45" />
+      <Comment text="wave_alp" angle1="5" angle2="45" />
     </Comments>
     <Items>
       <Item type="sigil" value="RETURN" />
@@ -351,7 +353,7 @@
       <Item type="sigil" value="put" />
     </Items>
   </Ring>
-  <Ring id="26" type="MagicRing" x="482.54" y="-197.34" angle="4.3242" marker="trail_alp">
+  <Ring id="26" type="MagicRing" x="440.58" y="-180.18" angle="4.3242" marker="trail_alp">
     <Comments>
       <Comment text="trail_alp" angle1="5" angle2="45" />
     </Comments>

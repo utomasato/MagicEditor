@@ -324,11 +324,13 @@ public class ParticleController : MonoBehaviour
 
             if (preset.renderer.material != null)
             {
-                renderer.material = preset.renderer.material;
+                // 【修正】元のアセットを書き換えないように、マテリアルのコピー（インスタンス）を作成して割り当てる
+                renderer.material = new Material(preset.renderer.material);
             }
             if (preset.renderer.trailMaterial != null)
             {
-                renderer.trailMaterial = preset.renderer.trailMaterial;
+                // 【修正】元のアセットを書き換えないように、マテリアルのコピー（インスタンス）を作成して割り当てる
+                renderer.trailMaterial = new Material(preset.renderer.trailMaterial);
             }
             renderer.alignment = preset.renderer.alignment;
             renderer.sortingFudge = preset.renderer.sortingFudge;
@@ -339,6 +341,7 @@ public class ParticleController : MonoBehaviour
                 string mode = preset.renderer.blendMode.ToLower();
 
                 // メインマテリアルへ適用
+                // 既にコピーされているので、安全に変更可能
                 if (renderer.material != null)
                 {
                     Material mat = renderer.material;
@@ -347,6 +350,7 @@ public class ParticleController : MonoBehaviour
                 }
 
                 // トレイルマテリアルへ適用
+                // 既にコピーされているので、安全に変更可能
                 if (renderer.trailMaterial != null)
                 {
                     Material trailMat = renderer.trailMaterial;
