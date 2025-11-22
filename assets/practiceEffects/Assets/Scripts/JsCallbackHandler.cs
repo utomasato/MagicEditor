@@ -40,7 +40,7 @@ public class JsCallbackHandler : MonoBehaviour
         //TestReceiveGeneralData();
     }
 
-    //*
+    /*
     void Update()
     {
         // "R"キーを押すとシーンがリロードされる例
@@ -140,6 +140,11 @@ public class JsCallbackHandler : MonoBehaviour
         spellText = "<~scale 2>";
         systemManager.TransformObjectById(parentId, spellText);
         //*/
+        /*
+        string spellText = "<~main < ~duration 1 ~startLifetime 2 ~startSpeed 10 ~startSize[30 30 75] ~startColor[5] > ~emission < ~rateOverTime 0 ~burstCount 2 > ~colorOverLifetime < ~gradient < ~alphaKeys[[0.0 0.0][1.0 0.05][1.0 0.95][0.0 1.0]] >> ~renderer < ~renderMode(Mesh) ~meshDistribution(NonUniformRandom) ~meshes(Bullet) ~materialName(Cross) ~alignment(Local) >>";
+        string testId = "test-id-from-csharp-6";
+        systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
+        */
     }
 
     void TestTransform()

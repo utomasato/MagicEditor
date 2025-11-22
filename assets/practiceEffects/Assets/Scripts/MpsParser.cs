@@ -476,7 +476,7 @@ public static class MpsParser
                         {
                             // 1Dレンジ [min max] または 3D固定 [x y z]
                             var values = new List<float>();
-                            while (scanner.Peek() != "]")
+                            while (scanner.Peek() != "]" && scanner.Peek() != null)
                             {
                                 values.Add(scanner.ConsumeFloat());
                             }
@@ -498,8 +498,8 @@ public static class MpsParser
                             }
                             else
                             {
-                                // 値の数が不正だが、例外は投げない
-                                Debug.LogWarning($"Invalid number of arguments for startSize. Expected 2 or 3, but got {values.Count}.");
+                                // 値の数が不正だが、パーサー位置は修正済みなので続行可能
+                                Debug.LogWarning($"Invalid number of arguments for startSize. Expected 2 or 3, but got {values.Count}. Skipping.");
                             }
                         }
                     }
@@ -513,20 +513,35 @@ public static class MpsParser
                     break;
                 case "startRotation": main.startRotation = ParseMinMaxCurveOrConstant(scanner); break;
                 case "startColor":
-                    if (scanner.Peek() == "[") // 単色 [r g b a]
+                    if (scanner.Peek() == "[") // 単色 [r g b a] を期待
                     {
+                        // 【修正】 安全に配列の中身を読み取る
                         scanner.Expect("[");
-                        float r = scanner.ConsumeFloat();
-                        float g = scanner.ConsumeFloat();
-                        float b = scanner.ConsumeFloat();
-                        float a = scanner.ConsumeFloat();
+                        List<float> values = new List<float>();
+                        while (scanner.Peek() != "]" && scanner.Peek() != null)
+                        {
+                            values.Add(scanner.ConsumeFloat());
+                        }
                         scanner.Expect("]");
-                        var singleColor = new Color(r, g, b, a);
 
-                        // 単色をシンプルなグラデーションとして表現
-                        main.startColor = new GradientData();
-                        main.startColor.colorKeys.Add(new ColorKeyData { color = singleColor, time = 0.0f });
-                        main.startColor.alphaKeys.Add(new AlphaKeyData { alpha = singleColor.a, time = 0.0f });
+                        if (values.Count == 4)
+                        {
+                            float r = values[0];
+                            float g = values[1];
+                            float b = values[2];
+                            float a = values[3];
+                            var singleColor = new Color(r, g, b, a);
+
+                            // 単色をシンプルなグラデーションとして表現
+                            main.startColor = new GradientData();
+                            main.startColor.colorKeys.Add(new ColorKeyData { color = singleColor, time = 0.0f });
+                            main.startColor.alphaKeys.Add(new AlphaKeyData { alpha = singleColor.a, time = 0.0f });
+                        }
+                        else
+                        {
+                            // 要素数が合わない場合は警告を出してスキップ（パーサーは既に ']' を消費して復帰している）
+                            Debug.LogWarning($"Parse Warning: 'startColor' expects 4 values [r g b a], but got {values.Count}. Skipping.");
+                        }
                     }
                     else // グラデーション < ... >
                     {
