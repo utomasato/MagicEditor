@@ -120,8 +120,30 @@ class PostscriptInterpreter {
                 }
                 this.stack.push({ type: 'string', value: [String.fromCharCode(charCode)] });
             },
-            getinterval: () => { const [count, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; this.stack.push(arr.slice(index, index + count)); },
-            putinterval: () => { const [subArr, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; arr.splice(index, subArr.length, ...subArr); },
+            getinterval: () => { 
+                const [count, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; 
+                
+                if (arr && arr.value && (arr.type === 'array' || arr.type === 'string')) {
+                    // 値をスライスして新しいオブジェクトとして返す（複製）
+                    const newVal = arr.value.slice(index, index + count);
+                    this.stack.push({ type: arr.type, value: newVal });
+                } else if (Array.isArray(arr)) { // 生の配列の場合
+                     this.stack.push(arr.slice(index, index + count));
+                } else {
+                    throw new Error("`getinterval` requires an array or string.");
+                }
+            },
+            putinterval: () => { 
+                const [subArr, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; 
+                
+                // 配列同士または文字列同士の互換性チェック
+                if (arr && arr.value && subArr && subArr.value && arr.type === subArr.type) {
+                    // spliceを使って要素を置換
+                    arr.value.splice(index, subArr.value.length, ...subArr.value);
+                } else {
+                    throw new Error("`putinterval` requires compatible arrays or strings.");
+                }
+            },
             array: () => {
                 const n = this.stack.pop();
                 if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) {
@@ -260,7 +282,6 @@ class PostscriptInterpreter {
                     key = this.stack.pop();
                 }
                 
-                // --- 変更点: ヘルパーメソッド generateUUID() を使用 ---
                 const id = this.generateUUID(); 
                 const resolvedVal = this.resolveVariablesInStructure(val);
                 
@@ -394,7 +415,6 @@ class PostscriptInterpreter {
         });
     }
     
-    // --- 修正された resolveVariablesInStructure ---
     resolveVariablesInStructure(structure) {
         
         // 1. { type: 'variable_name', value: 'x' } の処理
@@ -454,7 +474,6 @@ class PostscriptInterpreter {
         //    これらは変更せずにそのまま返す
         return structure;
     }
-    // --- 修正ここまで ---
     
     formatForOutput(val) {
         if (val === null) return 'null';
@@ -487,10 +506,8 @@ class PostscriptInterpreter {
                     .map(([key, value]) => `${key} ${this.formatForOutput(value)}`)
                     .join(' ');
                 return `<${dictContent}>`;
-            // --- 追加: variable_name を表示できるように (デバッグ用) ---
             case 'variable_name':
                 return `($${val.value})`;
-            // --- 追加ここまで ---
             default:
                 return `[Unknown Type: ${val.type}]`;
         }
@@ -566,12 +583,7 @@ class PostscriptInterpreter {
                 if (startBracket === '{') {
                     tokens.push(innerTokens);
                 } else { // '['
-                    // --- 修正: 配列リテラルをパースする際、中身のトークンも渡す ---
-                    // (以前は innerTokens をそのまま value にしていたが、
-                    //  PostScript の配列は実行時に評価されるのではなく、
-                    //  リテラルとして中身 (数値や変数名トークン) を保持すべき)
                     tokens.push({ type: 'array', value: innerTokens });
-                    // --- 修正ここまで ---
                 }
                 continue;
             }
@@ -596,7 +608,6 @@ class PostscriptInterpreter {
                 }
                 for (let j = 0; j < innerTokens.length; j += 2) {
                     let key = innerTokens[j];
-                    // --- 修正: 辞書リテラルのキーの ~ を削除しない ---
                     if (typeof key === 'string' && key.startsWith('~')) {
                          // dictObject[key.substring(1)] = innerTokens[j + 1]; // 旧: キーは ~ を除外
                          dictObject[key] = innerTokens[j + 1]; // 新: キーの ~ を保持
@@ -643,9 +654,7 @@ class PostscriptInterpreter {
             }
 
             let currentToken = '';
-            
-            // --- 修正： \、$、~ で始まるトークンのパース処理 ---
-            
+                        
             if (code[i] === '\\') { // エスケープされたリテラル名
                 i++; // \ をスキップ
                 while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
@@ -723,7 +732,6 @@ class PostscriptInterpreter {
                 }
                 if(currentToken) tokens.push(currentToken);
             }
-            // --- 修正ここまで ---
         }
         return tokens;
     }
@@ -779,10 +787,8 @@ class PostscriptInterpreter {
             } else if (Array.isArray(token)) {
                 this.stack.push(token);
             } else if (typeof token === 'object' && token !== null && token.type && (token.type === 'array' || token.type === 'dict')) {
-                // --- 修正: 配列や辞書リテラルは、中身の変数を解決してから積む ---
                 const resolvedToken = this.resolveVariablesInStructure(token);
                 this.stack.push(resolvedToken);
-                // --- 修正ここまで ---
                 
             // --- ★ Sigil (または数値以外) の処理 ---
             } else if (typeof token === 'string') {
@@ -794,7 +800,6 @@ class PostscriptInterpreter {
                     // (※変数検索はしないのがユーザーの要望)
                     throw new Error(`Undefined command: ${token}`);
                 }
-            // --- ★ 変更ここまで ---
 
             } else {
                  this.stack.push(token);
