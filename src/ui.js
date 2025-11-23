@@ -713,7 +713,7 @@ function createRingPanel(ring) {
         magicSelect.parent(contentArea);
         
         const magicOptions = [
-            "fire", "bullet", 
+            "fire", "bullet", "charge"
         ];
         magicOptions.forEach(opt => { magicSelect.option(opt); });
         magicSelect.selected(ring.magic);

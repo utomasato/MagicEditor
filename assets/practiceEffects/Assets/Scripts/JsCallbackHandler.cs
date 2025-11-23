@@ -35,7 +35,7 @@ public class JsCallbackHandler : MonoBehaviour
         }
     }
 
-    /*
+    //*
     void Update()
     {
         // "R"キーを押すとシーンがリロードされる例
