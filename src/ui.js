@@ -724,6 +724,75 @@ function createRingPanel(ring) {
             closePanel(); // パネルを閉じる
         });
 
+        // --- パラメータ追加UI ---
+        if (typeof templateDatas !== 'undefined' && templateDatas[ring.magic]) {
+            const paramContainer = createDiv('');
+            paramContainer.parent(contentArea);
+            paramContainer.style('margin-top', '8px');
+            paramContainer.style('border-top', '1px solid #ddd');
+            paramContainer.style('padding-top', '8px');
+            
+            const paramLabel = createP('Add Parameter:');
+            paramLabel.parent(paramContainer);
+            paramLabel.style('margin', '0 0 4px 0');
+            paramLabel.style('font-size', '12px');
+
+            const paramSelect = createSelect();
+            paramSelect.parent(paramContainer);
+            paramSelect.style('width', '100%');
+            paramSelect.option('Select parameter...');
+            
+            const params = templateDatas[ring.magic].parameters;
+            Object.keys(params).forEach(key => {
+                paramSelect.option(key);
+            });
+
+            paramSelect.changed(() => {
+                const key = paramSelect.value();
+                if (key === 'Select parameter...') return;
+                
+                const paramDef = params[key];
+                if (paramDef) {
+                    // 名前オブジェクトを追加
+                    ring.items.push(new Name(0, 0, key, ring));
+                    
+                    const type = paramDef.type;
+                    const vals = String(paramDef.defaultValue).split(/\s+/);
+
+                    // vector3 または color の場合、ArrayRing を作成して接続
+                    if (type === 'vector3' || type === 'color') {
+                        // 新しい ArrayRing を作成 (親リングの近くに配置)
+                        // 配置場所は適当に親の右下あたりにする
+                        const newRingPos = { x: ring.pos.x + 150, y: ring.pos.y + 150 };
+                        const newArrayRing = new ArrayRing(newRingPos);
+                        
+                        // グローバルな rings 配列に追加
+                        rings.push(newArrayRing);
+                        
+                        // デフォルト値を ArrayRing に追加
+                        vals.forEach(v => {
+                            if (v) newArrayRing.items.push(new Chars(0, 0, v, newArrayRing));
+                        });
+                        newArrayRing.CalculateLayout();
+
+                        // Joint を作成して TemplateRing に追加
+                        const joint = new Joint(0, 0, newArrayRing, ring);
+                        ring.items.push(joint);
+
+                    } else {
+                        // それ以外（数値など）は直接 Chars を追加
+                        vals.forEach(v => {
+                            if (v) ring.items.push(new Chars(0, 0, v, ring));
+                        });
+                    }
+                    
+                    ring.CalculateLayout();
+                    paramSelect.selected('Select parameter...');
+                }
+            });
+        }
+        // ------------------------
+
     } 
     // TemplateRing 以外の場合、または isNew フラグが立っている場合
     else if (true || ring.isNew) { 

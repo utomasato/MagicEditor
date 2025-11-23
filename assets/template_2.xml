@@ -257,7 +257,7 @@
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="name" value="z" />
-      <Item type="chars" value="-800" />
+      <Item type="chars" value="800" />
     </Items>
   </Ring>
   <Ring id="19" type="MagicRing" x="969.32" y="236.27" angle="-1.3317" marker="trail">
