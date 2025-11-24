@@ -246,8 +246,8 @@
     </Comments>
     <Items>
       <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="15" />
-      <Item type="chars" value="15" />
+      <Item type="chars" value="8" />
+      <Item type="chars" value="8" />
       <Item type="chars" value="200" />
     </Items>
   </Ring>
