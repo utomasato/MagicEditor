@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System;
 
 // ----------------------------------------------------------------------------------
-// Velocity (速度) 関連のモジュールパース処理を分離したファイル
+// 動き関係
 // 
 // 含まれるモジュール:
 // - VelocityOverLifetime
 // - LimitVelocityOverLifetime
 // - InheritVelocity
+// - Force over Lifetime
+// - External Forces
+// - Noise
+// - Collision
 // ----------------------------------------------------------------------------------
 public static partial class MpsParser
 {
@@ -91,5 +95,66 @@ public static partial class MpsParser
             }
         }
         return inheritVelocity;
+    }
+
+    private static ForceOverLifetimeModuleData ParseForceOverLifetimeModule(Scanner s)
+    {
+        var m = new ForceOverLifetimeModuleData { enabled = true };
+        while (s.Peek() != ">")
+        {
+            string t = s.Consume();
+            string k = t.StartsWith("~") ? t.Substring(1) : (t.StartsWith("(") ? t.Replace("(", "").Replace(")", "") : t);
+            switch (k)
+            {
+                case "x": m.x = ParseUniversalMinMaxCurve(s); break;
+                case "y": m.y = ParseUniversalMinMaxCurve(s); break;
+                case "z": m.z = ParseUniversalMinMaxCurve(s); break;
+                default: SkipUnknownValue(s); break;
+            }
+        }
+        return m;
+    }
+
+    private static ExternalForcesModuleData ParseExternalForcesModule(Scanner s)
+    {
+        var m = new ExternalForcesModuleData { enabled = true };
+        while (s.Peek() != ">")
+        {
+            string k = s.Consume().Substring(1);
+            if (k == "enabled") m.enabled = s.ConsumeBool();
+            else if (k == "multiplier") m.multiplier = ParseUniversalMinMaxCurve(s);
+            else SkipUnknownValue(s);
+        }
+        return m;
+    }
+
+    private static NoiseModuleData ParseNoiseModule(Scanner s)
+    {
+        var m = new NoiseModuleData { enabled = true };
+        while (s.Peek() != ">")
+        {
+            string k = s.Consume().Substring(1);
+            if (k == "enabled") m.enabled = s.ConsumeBool();
+            else if (k == "strength") m.strength = ParseUniversalMinMaxCurve(s);
+            else if (k == "frequency") m.frequency = s.ConsumeFloat();
+            else if (k == "scrollSpeed") m.scrollSpeed = ParseUniversalMinMaxCurve(s);
+            else SkipUnknownValue(s);
+        }
+        return m;
+    }
+
+    private static CollisionModuleData ParseCollisionModule(Scanner s)
+    {
+        var m = new CollisionModuleData { enabled = true };
+        while (s.Peek() != ">")
+        {
+            string k = s.Consume().Substring(1);
+            if (k == "enabled") m.enabled = s.ConsumeBool();
+            else if (k == "dampen") m.dampen = ParseUniversalMinMaxCurve(s);
+            else if (k == "bounce") m.bounce = ParseUniversalMinMaxCurve(s);
+            else if (k == "lifetimeLoss") m.lifetimeLoss = ParseUniversalMinMaxCurve(s);
+            else SkipUnknownValue(s);
+        }
+        return m;
     }
 }
