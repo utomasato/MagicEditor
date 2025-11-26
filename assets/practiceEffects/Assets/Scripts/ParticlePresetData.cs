@@ -195,45 +195,59 @@ public class ShapeModuleData
 {
     public bool enabled;
     public ParticleSystemShapeType shapeType = ParticleSystemShapeType.Cone;
-    public bool alignToDirection;
-    public float randomizeDirection;
-    public float randomizePosition;
-    public float spherizeDirection;
-
-    // --- 形状別パラメータ ---
-    // Sphere / HemiSphere / Circle
+    public float angle = 25f;
     public float radius = 1f;
     public float radiusThickness = 1f; // 0=Surface, 1=Volume
-    public bool fromShell = false;
-    public bool fromVolume = true;
+    public float donutRadius = 0f; // Donut
 
-    // Cone
-    public float angle = 25f;
-    public float length = 5f;
-    public ShapeEmitFrom emitFrom = ShapeEmitFrom.Base;
+    // Arc (Circle, Cone, Donut, Edge, Hemisphere, Sphere)
+    public float arc = 360f;
+    public ParticleSystemShapeMultiModeValue arcMode = ParticleSystemShapeMultiModeValue.Random;
+    public float arcSpread = 0f;
+    public MinMaxCurveData arcSpeed = new MinMaxCurveData { min = 1f, max = 1f };
+
+    public float length = 5f; // Cone
+    public ShapeEmitFrom emitFrom = ShapeEmitFrom.Base; // Custom Enum for logical helpers
 
     // Box
     public Vector3 boxThickness = Vector3.one;
 
-    // Mesh / SkinnedMeshRenderer / MeshRenderer
+    // Transform
+    public Vector3 position = Vector3.zero;
+    public Vector3 rotation = Vector3.zero;
+    public Vector3 scale = Vector3.one;
+
+    // Align / Randomize
+    public bool alignToDirection = false;
+    public float randomizeDirection = 0f;
+    public float spherizeDirection = 0f;
+    public float randomizePosition = 0f;
+
+    // Mesh
     public Mesh mesh;
-    public MeshRenderer meshRenderer;
-    public SkinnedMeshRenderer skinnedMeshRenderer;
     public ParticleSystemMeshShapeType meshShapeType = ParticleSystemMeshShapeType.Vertex;
+    public ParticleSystemShapeMultiModeValue meshSpawnMode = ParticleSystemShapeMultiModeValue.Random;
+    public MinMaxCurveData meshSpawnSpeed = new MinMaxCurveData { min = 1f, max = 1f };
+    public int meshMaterialIndex = 0;
     public bool useMeshColors = true;
     public float normalOffset = 0f;
     public float meshScale = 1f;
 
-    // Sprite
-    public Sprite sprite;
-
     // Texture
     public Texture2D texture;
-    public ParticleSystemShapeTextureChannel textureChannel = ParticleSystemShapeTextureChannel.Red;
+    public ParticleSystemShapeTextureChannel textureChannel = ParticleSystemShapeTextureChannel.Red; // "Clip Channel"
+    public float textureClipThreshold = 0f;
     public int textureUVChannel = 0;
-    public float textureColorAffectsParticles = 1f;
-    public float textureAlphaAffectsParticles = 1f;
-    public float textureBilinearFiltering = 1f;
+    public bool textureColorAffectsParticles = true;
+    public bool textureAlphaAffectsParticles = true;
+    public bool textureBilinearFiltering = false;
+
+    // Ignored in parser/logic but kept for structure compatibility:
+    public MeshRenderer meshRenderer;
+    public SkinnedMeshRenderer skinnedMeshRenderer;
+    public Sprite sprite;
+    public bool fromShell = false;
+    public bool fromVolume = true;
 }
 
 [System.Serializable]

@@ -5112,6 +5112,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: planeParticle
       objectReference: {fileID: 0}
+    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: ShapeModule.type
+      value: 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: ShapeModule.enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8586,6 +8594,35 @@ MonoBehaviour:
     mesh: {fileID: -4432124805086160128, guid: a267cea2cdf8a4d9d8f76ba841c93808, type: 3}
   - name: Cylinder
     mesh: {fileID: 4632596647708219413, guid: a709d8ee52c014456b14a6e8b09c609e, type: 3}
+  textureList:
+  - name: Circle
+    texture: {fileID: 2800000, guid: 507d7f8bb1f7d4926a59592f6ca3e9c2, type: 3}
+  - name: Glow_1
+    texture: {fileID: 2800000, guid: 489c088754e034e7db7c026f9d16ccc1, type: 3}
+  - name: Glow_2
+    texture: {fileID: 2800000, guid: 1e5c41cee0dc64371853587d58bcd5b5, type: 3}
+  - name: Glow_3
+    texture: {fileID: 2800000, guid: 3525fe52163484d15a1b003cd011694e, type: 3}
+  - name: Glow_4
+    texture: {fileID: 2800000, guid: 2b3dd44e342d441218f794f320d7a9ae, type: 3}
+  - name: Shock
+    texture: {fileID: 2800000, guid: 5c6959f3582cb42c7a27c62fadd1b506, type: 3}
+  - name: Slash
+    texture: {fileID: 2800000, guid: 62c6a57ace77f44bca9025e16a13797a, type: 3}
+  - name: Smoke_1
+    texture: {fileID: 2800000, guid: 853b4ac63ab2c47a69745cf09c7ab0eb, type: 3}
+  - name: Smoke_2
+    texture: {fileID: 2800000, guid: 3f779396a14dd41f280bcf510c066458, type: 3}
+  - name: Smoke_3
+    texture: {fileID: 2800000, guid: b6250e1d80ccf4e2a9267fd747d341c3, type: 3}
+  - name: Smoke_4
+    texture: {fileID: 2800000, guid: cb867ef475bb64a72a3d51530654f775, type: 3}
+  - name: Spiral
+    texture: {fileID: 2800000, guid: 189c3c85e145e4bcea8b5c2211c82820, type: 3}
+  - name: Trail_1
+    texture: {fileID: 2800000, guid: 3881154e384734a5b93b7196ca89827d, type: 3}
+  - name: Trail_2
+    texture: {fileID: 2800000, guid: 5c0c7b0854b254bce9c22c528a98d76a, type: 3}
   grid: {fileID: 932052822}
   skyMaterials:
   - {fileID: 2100000, guid: 290c1470354624bd7978d82c6f0e2782, type: 2}

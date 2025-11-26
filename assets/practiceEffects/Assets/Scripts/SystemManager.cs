@@ -17,6 +17,14 @@ public class MeshEntry
     public Mesh mesh;
 }
 
+// インスペクターに表示するための、名前とテクスチャのペアを保持するクラス
+[System.Serializable]
+public class TextureEntry
+{
+    public string name;
+    public Texture2D texture;
+}
+
 /// <summary>
 /// ゲーム全体の設定を管理し、各機能（ParticleGeneratorなど）に指示を出す司令塔クラス。
 /// </summary>
@@ -36,9 +44,15 @@ public class SystemManager : MonoBehaviour
     [Tooltip("名前とメッシュを紐付けて登録します")]
     public List<MeshEntry> meshList;
 
+    [Header("テクスチャリスト")]
+    [Tooltip("名前とテクスチャを紐付けて登録します（Shapeモジュール用など）")]
+    public List<TextureEntry> textureList;
+
     // --- Private Fields ---
     private Dictionary<string, Material> materialDictionary;
     private Dictionary<string, Mesh> meshDictionary;
+    private Dictionary<string, Texture2D> textureDictionary;
+
     // Manages generated objects by their unique ID
     private Dictionary<string, GameObject> managedObjectsById = new Dictionary<string, GameObject>();
 
@@ -52,25 +66,50 @@ public class SystemManager : MonoBehaviour
 
     void Awake()
     {
+        // マテリアル辞書の構築
         materialDictionary = new Dictionary<string, Material>();
-        foreach (var entry in materialList)
+        if (materialList != null)
         {
-            if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.material != null)
+            foreach (var entry in materialList)
             {
-                if (!materialDictionary.ContainsKey(entry.name))
+                if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.material != null)
                 {
-                    materialDictionary.Add(entry.name, entry.material);
+                    if (!materialDictionary.ContainsKey(entry.name))
+                    {
+                        materialDictionary.Add(entry.name, entry.material);
+                    }
                 }
             }
         }
+
+        // メッシュ辞書の構築
         meshDictionary = new Dictionary<string, Mesh>();
-        foreach (var entry in meshList)
+        if (meshList != null)
         {
-            if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.mesh != null)
+            foreach (var entry in meshList)
             {
-                if (!meshDictionary.ContainsKey(entry.name))
+                if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.mesh != null)
                 {
-                    meshDictionary.Add(entry.name, entry.mesh);
+                    if (!meshDictionary.ContainsKey(entry.name))
+                    {
+                        meshDictionary.Add(entry.name, entry.mesh);
+                    }
+                }
+            }
+        }
+
+        // テクスチャ辞書の構築
+        textureDictionary = new Dictionary<string, Texture2D>();
+        if (textureList != null)
+        {
+            foreach (var entry in textureList)
+            {
+                if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.texture != null)
+                {
+                    if (!textureDictionary.ContainsKey(entry.name))
+                    {
+                        textureDictionary.Add(entry.name, entry.texture);
+                    }
                 }
             }
         }
@@ -91,7 +130,8 @@ public class SystemManager : MonoBehaviour
 
         try
         {
-            ParticlePreset preset = MpsParser.Parse(mpsCode, materialDictionary, meshDictionary);
+            // Parse時にtextureDictionaryも渡す
+            ParticlePreset preset = MpsParser.Parse(mpsCode, materialDictionary, meshDictionary, textureDictionary);
 
             if (particleGenerator != null)
             {

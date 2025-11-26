@@ -196,7 +196,7 @@ public class ParticleController : MonoBehaviour
                 ps.randomSeed = preset.main.randomSeed;
             }
 
-            // --- Start Colorの適用（高度な機能対応） ---
+            // --- Start Colorの適用 ---
             if (preset.main.startColor != null)
             {
                 var sc = preset.main.startColor;
@@ -220,17 +220,14 @@ public class ParticleController : MonoBehaviour
                         );
                         break;
                     case "RandomColor":
-                        // (Random)指定の場合はRainbowグラディエントを生成済み
                         var g = CreateUnityGradient(sc.gradientMax);
                         minMaxGrad = new ParticleSystem.MinMaxGradient(g);
                         minMaxGrad.mode = ParticleSystemGradientMode.RandomColor;
                         break;
                 }
 
-                // randomColorフラグが有効なら、既存のGradient設定を「RandomColor」モードで上書き
                 if (preset.main.randomColor)
                 {
-                    // 現在の設定がGradientかTwoGradientsなら、そのGradientを使ってRandomColorモードにする
                     if (minMaxGrad.mode == ParticleSystemGradientMode.Gradient ||
                         minMaxGrad.mode == ParticleSystemGradientMode.TwoGradients)
                     {
@@ -253,39 +250,29 @@ public class ParticleController : MonoBehaviour
         {
             emission.rateOverTime = CreatePsMinMaxCurveFromData(preset.emission.rateOverTime);
 
-            // バースト設定のリストを作成
+            // Rate Over Distance (Optional support if needed, just a float/curve)
+            // emission.rateOverDistance = CreatePsMinMaxCurveFromData(preset.emission.rateOverDistance);
+
             List<ParticleSystem.Burst> unityBursts = new List<ParticleSystem.Burst>();
 
-            // 1. 新しいリスト形式 (~bursts) の適用
             if (preset.emission.bursts != null && preset.emission.bursts.Count > 0)
             {
                 foreach (var bData in preset.emission.bursts)
                 {
-                    // MinMaxCurveDataから count の最小・最大を取得
                     short minCount = (short)bData.count.min;
                     short maxCount = (short)bData.count.max;
-
-                    // Burst構造体の作成 (Time, CountMin, CountMax, Cycles, Interval)
                     var burst = new ParticleSystem.Burst(bData.time, minCount, maxCount, bData.cycleCount, bData.repeatInterval);
-
-                    // Probabilityの適用
                     burst.probability = bData.probability;
-
                     unityBursts.Add(burst);
                 }
             }
 
-            // 2. 古い簡易形式 (~burstCount) の互換性対応
-            // もしリスト形式が空で、かつレガシー設定がある場合のみ追加する（あるいは混合したい場合は条件を調整）
             if (unityBursts.Count == 0 && preset.emission.maxBurstCount > 0)
             {
                 short min = (short)preset.emission.minBurstCount;
                 short max = (short)preset.emission.maxBurstCount;
-                // Time=0 で1回だけ発生するバーストとして追加
                 unityBursts.Add(new ParticleSystem.Burst(0.0f, min, max));
             }
-
-            // 最後に配列としてセット
             emission.SetBursts(unityBursts.ToArray());
         }
 
@@ -294,14 +281,61 @@ public class ParticleController : MonoBehaviour
         shape.enabled = preset.shape != null && preset.shape.enabled;
         if (shape.enabled)
         {
-            shape.shapeType = preset.shape.shapeType;
-            shape.angle = preset.shape.angle;
-            shape.radius = preset.shape.radius;
-            shape.radiusThickness = preset.shape.radiusThickness;
+            var sData = preset.shape;
+
+            // Basic
+            shape.shapeType = sData.shapeType;
+            shape.angle = sData.angle;
+            shape.radius = sData.radius;
+            shape.radiusThickness = sData.radiusThickness;
+            shape.donutRadius = sData.donutRadius;
+
+            // Arc
+            shape.arc = sData.arc;
+            shape.arcMode = sData.arcMode;
+            shape.arcSpread = sData.arcSpread;
+            shape.arcSpeed = CreatePsMinMaxCurveFromData(sData.arcSpeed);
+
+            // Cone / Box
+            shape.length = sData.length;
+            shape.boxThickness = sData.boxThickness;
+
+            // Transform
+            shape.position = sData.position;
+            shape.rotation = sData.rotation;
+            shape.scale = sData.scale;
+
+            // Align / Random
+            shape.alignToDirection = sData.alignToDirection;
+            shape.randomDirectionAmount = sData.randomizeDirection;
+            shape.sphericalDirectionAmount = sData.spherizeDirection;
+            shape.randomPositionAmount = sData.randomizePosition;
+
+            // Mesh
+            if (sData.mesh != null)
+                shape.mesh = sData.mesh;
+
+            shape.meshShapeType = sData.meshShapeType;
+            shape.meshSpawnMode = sData.meshSpawnMode;
+            shape.meshSpawnSpeed = CreatePsMinMaxCurveFromData(sData.meshSpawnSpeed);
+            shape.meshMaterialIndex = sData.meshMaterialIndex;
+            shape.useMeshColors = sData.useMeshColors;
+            shape.normalOffset = sData.normalOffset;
+            shape.meshScale = sData.meshScale;
+
+            // Texture
+            if (sData.texture != null)
+                shape.texture = sData.texture;
+
+            shape.textureClipChannel = sData.textureChannel;
+            shape.textureClipThreshold = sData.textureClipThreshold;
+            shape.textureColorAffectsParticles = sData.textureColorAffectsParticles;
+            shape.textureAlphaAffectsParticles = sData.textureAlphaAffectsParticles;
+            shape.textureBilinearFiltering = sData.textureBilinearFiltering;
+            shape.textureUVChannel = sData.textureUVChannel;
         }
 
         // --- Velocity over Lifetime Module ---
-        // 修正: Orbital Velocityを使用する際、XYZ全ての軸でモード(Constant, Curve, TwoCurves)が一致している必要があるための対策
         var velocityOverLifetime = ps.velocityOverLifetime;
         velocityOverLifetime.enabled = preset.velocityOverLifetime != null && preset.velocityOverLifetime.enabled;
         if (velocityOverLifetime.enabled)
@@ -311,34 +345,28 @@ public class ParticleController : MonoBehaviour
             velocityOverLifetime.z = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.z);
             velocityOverLifetime.space = preset.velocityOverLifetime.space;
 
-            // --- Orbital Mode Check ---
-            // 1. Two Curves (Random between two curves) がどれか1つでも使われているかチェック
             bool hasTwoCurves = IsTwoCurves(preset.velocityOverLifetime.orbitalX) ||
                                 IsTwoCurves(preset.velocityOverLifetime.orbitalY) ||
                                 IsTwoCurves(preset.velocityOverLifetime.orbitalZ);
 
-            // 2. Single Curve がどれか1つでも使われているかチェック
             bool hasAnyCurve = IsCurve(preset.velocityOverLifetime.orbitalX) ||
                                IsCurve(preset.velocityOverLifetime.orbitalY) ||
                                IsCurve(preset.velocityOverLifetime.orbitalZ);
 
             if (hasTwoCurves)
             {
-                // どれか1つでもTwoCurvesなら、全てをTwoCurvesモードに強制変換する
                 velocityOverLifetime.orbitalX = CreateTwoCurvesMode(preset.velocityOverLifetime.orbitalX);
                 velocityOverLifetime.orbitalY = CreateTwoCurvesMode(preset.velocityOverLifetime.orbitalY);
                 velocityOverLifetime.orbitalZ = CreateTwoCurvesMode(preset.velocityOverLifetime.orbitalZ);
             }
             else if (hasAnyCurve)
             {
-                // どれか1つでもCurveなら、全てをSingle Curveモードに強制変換する
                 velocityOverLifetime.orbitalX = CreateCurveMode(preset.velocityOverLifetime.orbitalX);
                 velocityOverLifetime.orbitalY = CreateCurveMode(preset.velocityOverLifetime.orbitalY);
                 velocityOverLifetime.orbitalZ = CreateCurveMode(preset.velocityOverLifetime.orbitalZ);
             }
             else
             {
-                // 全て定数
                 velocityOverLifetime.orbitalX = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.orbitalX);
                 velocityOverLifetime.orbitalY = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.orbitalY);
                 velocityOverLifetime.orbitalZ = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.orbitalZ);
@@ -481,7 +509,7 @@ public class ParticleController : MonoBehaviour
             collision.lifetimeLoss = CreatePsMinMaxCurveFromData(preset.collision.lifetimeLoss);
         }
 
-        // --- Triggers Module, SubEmitters, Lights, CustomData (Basic Enable only) ---
+        // --- Triggers Module, SubEmitters, Lights, CustomData ---
         var trigger = ps.trigger;
         trigger.enabled = preset.triggers != null && preset.triggers.enabled;
 
@@ -586,8 +614,6 @@ public class ParticleController : MonoBehaviour
 
     private void ApplyBlendModeToMaterial(Material mat, string mode)
     {
-        Debug.Log($"Applying Blend Mode: {mode} to material: {mat.name} (Shader: {mat.shader.name})");
-
         bool isMobileShader = mat.shader.name.Contains("Mobile/Particles");
         bool isLegacyShader = mat.shader.name.Contains("Legacy Shaders/Particles");
 
@@ -602,7 +628,6 @@ public class ParticleController : MonoBehaviour
             if (newShader != null) mat.shader = newShader;
             else
             {
-                Debug.LogWarning($"Requested legacy shader for mode '{mode}' not found. Falling back to Standard Unlit.");
                 var standardShader = Shader.Find("Particles/Standard Unlit");
                 if (standardShader != null)
                 {
