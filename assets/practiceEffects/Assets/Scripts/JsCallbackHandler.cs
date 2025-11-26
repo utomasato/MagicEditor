@@ -72,12 +72,14 @@ public class JsCallbackHandler : MonoBehaviour
     {
         string spellText;
         string testId;
-        //**/string parentId;
-        //**/string childId;
+        string parentId;
+        string childId;
 
+        /* test
         spellText = "<~shape < > ~emission < > ~renderer < >>";
         testId = "test-id-from-csharp-0";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
+        //*/
 
         /* fire
         spellText = "<~shape (empty)>";
@@ -141,58 +143,58 @@ public class JsCallbackHandler : MonoBehaviour
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         childId = "test-id-from-csharp-6";
         systemManager.AttachToParent(childId, parentId);
-        spellText = "<~scale 2>";
+        spellText = "<~scale 5>";
         systemManager.TransformObjectById(parentId, spellText);
         //*/
 
-        /* charge
-         spellText = "<~shape (empty)>";
-         testId = "test-id-from-csharp-0";
+        //* charge
+        spellText = "<~shape (empty)>";
+        testId = "test-id-from-csharp-0";
         systemManager.CreateObjectFromMps(spellText, testId);
         // trail
-        spellText = "<~main <~duration 2 ~startLifetime 1 ~startSpeed 0 ~startColor [1 0.5 0 1] > ~emission <~rateOverTime 0 ~burstCount 20> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 15]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [0.2 1] [1 1]]>> ~trails <~lifetime [0.1 0.2] ~minVertexDistance 0.1 ~sizeAffectsWidth false ~widthOverTrail [[0 0.05] [1 0]]> ~renderer <~renderMode (None) ~trailMaterialName (Smoke_2)>>";
+        spellText = "<~main <~duration 2 ~startLifetime 1 ~startSpeed 0 ~startColor [1 0.5 0 1] > ~emission <~rateOverTime 0 ~bursts [<~count 20>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 15] (hello)] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [0.2 1] [1 1]]>> ~trails <~lifetime [0.1 0.2] ~minVertexDistance 0.1 ~sizeAffectsWidth false ~widthOverTrail [[0 0.05] [1 0]]> ~renderer <~renderMode (None) ~trailMaterialName (Smoke_2)>>";
         testId = "test-id-from-csharp-1";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
-         parentId = "test-id-from-csharp-0";
-         childId = "test-id-from-csharp-1";
+        parentId = "test-id-from-csharp-0";
+        childId = "test-id-from-csharp-1";
         systemManager.AttachToParent(childId, parentId);
         // trailBlack
-        spellText = "<~main <~duration 2 ~startLifetime 1 ~startSpeed 0 ~startColor [0.25 0.2 0 1] > ~emission <~rateOverTime 0 ~burstCount 8> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 15]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.2] [1 1]]>> ~trails <~lifetime [0.1 0.2] ~minVertexDistance 0.1 ~sizeAffectsWidth false ~widthOverTrail [[0 0.15] [1 0.02]]> ~renderer <~renderMode (None) ~trailMaterialName (Smoke_2) ~shader (alphablended)>>";
+        spellText = "<~main <~duration 2 ~startLifetime 1 ~startSpeed 0 ~startColor [0.25 0.2 0 1] > ~emission <~rateOverTime 0 ~bursts [<~count 8>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 15]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.2] [1 1]]>> ~trails <~lifetime [0.1 0.2] ~minVertexDistance 0.1 ~sizeAffectsWidth false ~widthOverTrail [[0 0.15] [1 0.02]]> ~renderer <~renderMode (None) ~trailMaterialName (Smoke_2) ~shader (alphablended)>>";
         testId = "test-id-from-csharp-2";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";
         childId = "test-id-from-csharp-2";
         systemManager.AttachToParent(childId, parentId);
         // dot
-        spellText = "<~main <~duration 2 ~startLifetime [0.7 1] ~startSpeed 0 ~startSize [0.2 0.3] ~startColor [1 0.8 0.6 1] > ~emission <~rateOverTime 0 ~burstCount 20> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 10]] ~radial [-2 -3]> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [0.2 1] [0.8 1] [1 0]]>> ~renderer <~materialName (Cross)>>";
+        spellText = "<~main <~duration 2 ~startLifetime [0.7 1] ~startSpeed 0 ~startSize [0.2 0.3] ~startColor [1 0.8 0.6 1] > ~emission <~rateOverTime 0 ~bursts [<~count 20>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 10]] ~radial [-2 -3]> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [0.2 1] [0.8 1] [1 0]]>> ~renderer <~materialName (Cross)>>";
         testId = "test-id-from-csharp-3";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";
         childId = "test-id-from-csharp-3";
         systemManager.AttachToParent(childId, parentId);
         // smoke
-        spellText = "<~main <~duration 2 ~startLifetime [0.7 1] ~startSpeed 0 ~startSize [2 3] ~startRotation [0 360] ~startColor [1 0.5 0 0.1] > ~emission <~rateOverTime 0 ~burstCount 100> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 01] [1 20]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.5]]>> ~sizeOverLifetime <~size [[0 1] [0.5 1] [1 0]]> ~renderer <~materialName (Smoke_2)>>";
+        spellText = "<~main <~duration 2 ~startLifetime [0.7 1] ~startSpeed 0 ~startSize [2 3] ~startRotation [0 360] ~startColor [1 0.5 0 0.1] > ~emission <~rateOverTime 0 ~bursts [<~count 100>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 01] [1 20]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.5]]>> ~sizeOverLifetime <~size [[0 1] [0.5 1] [1 0]]> ~renderer <~materialName (Smoke_2)>>";
         testId = "test-id-from-csharp-4";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";
         childId = "test-id-from-csharp-4";
         systemManager.AttachToParent(childId, parentId);
         // smoke_alp
-        spellText = "<~main <~duration 2 ~startLifetime [0.7 1] ~startSpeed 0 ~startSize [2 3] ~startRotation [0 360] ~startColor [1 0.5 0 0.05] > ~emission <~rateOverTime 0 ~burstCount 100> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 01] [1 20]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.5]]>> ~sizeOverLifetime <~size [[0 1] [0.5 1] [1 0]]> ~renderer <~materialName (Smoke_2) ~shader (alphablended) ~sortingFudge 10>>";
+        spellText = "<~main <~duration 2 ~startLifetime [0.7 1] ~startSpeed 0 ~startSize [2 3] ~startRotation [0 360] ~startColor [1 0.5 0 0.05] > ~emission <~rateOverTime 0 ~bursts [<~count 100>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 01] [1 20]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [1 0.5]]>> ~sizeOverLifetime <~size [[0 1] [0.5 1] [1 0]]> ~renderer <~materialName (Smoke_2) ~shader (alphablended) ~sortingFudge 10>>";
         testId = "test-id-from-csharp-4-2";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";
         childId = "test-id-from-csharp-4-2";
         systemManager.AttachToParent(childId, parentId);
         // core
-        spellText = "<~main <~duration 2 ~startDelay 0.2 ~startLifetime 1 ~startSpeed 0 ~startSize 1.5 ~startColor [1 0.5 0 1] > ~emission <~rateOverTime 0 ~burstCount 5> ~sizeOverLifetime <~size [[0 0] [0.3 0.6] [0.7 1] [0.8 0.2] [1 0]]> ~renderer <~materialName (Grow_1)>>";
+        spellText = "<~main <~duration 2 ~startDelay 0.2 ~startLifetime 1 ~startSpeed 0 ~startSize 1.5 ~startColor [1 0.5 0 1] > ~emission <~rateOverTime 0 ~bursts [<~count 5>]> ~sizeOverLifetime <~size [[0 0] [0.3 0.6] [0.7 1] [0.8 0.2] [1 0]]> ~renderer <~materialName (Grow_1)>>";
         testId = "test-id-from-csharp-5";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";
         childId = "test-id-from-csharp-5";
         systemManager.AttachToParent(childId, parentId);
         // core_alp
-        spellText = "<~main <~duration 2 ~startDelay 0.2 ~startLifetime 1 ~startSpeed 0 ~startSize 1.5 ~startColor [0.5 0.3 0 1] > ~emission <~rateOverTime 0 ~burstCount 5> ~sizeOverLifetime <~size [[0 0] [0.3 0.6] [0.7 1] [0.8 0.2] [1 0]]> ~renderer <~materialName (Grow_1) ~shader (alphablended) ~sortingFudge 10>>";
+        spellText = "<~main <~duration 2 ~startDelay 0.2 ~startLifetime 1 ~startSpeed 0 ~startSize 1.5 ~startColor [0.5 0.3 0 1] > ~emission <~rateOverTime 0 ~bursts [<~count 5>]> ~sizeOverLifetime <~size [[0 0] [0.3 0.6] [0.7 1] [0.8 0.2] [1 0]]> ~renderer <~materialName (Grow_1) ~shader (alphablended) ~sortingFudge 10>>";
         testId = "test-id-from-csharp-5-2";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";

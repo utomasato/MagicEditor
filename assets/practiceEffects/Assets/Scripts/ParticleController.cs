@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Linq;
+using System.Collections.Generic;
 
 /// <summary>
 /// プリセットデータに基づいてパーティクルをカスタマイズして再生します
@@ -54,14 +55,21 @@ public class ParticleController : MonoBehaviour
         }
     }
 
-    // データがカーブモードかどうかを判定 (Orbital Velocityなどで使用)
+    // データがカーブモード（Single or Double）かどうかを判定
     private bool IsCurve(MinMaxCurveData data)
     {
         return (data.curve != null && data.curve.keys.Count > 0) ||
                (data.minCurve != null && data.minCurve.keys.Count > 0);
     }
 
-    // 強制的にカーブモードとしてMinMaxCurveを生成する（Orbital Velocity用）
+    // データが「2つのカーブ（Two Curves）」モードかどうかを判定
+    private bool IsTwoCurves(MinMaxCurveData data)
+    {
+        return data.minCurve != null && data.minCurve.keys.Count > 0 &&
+               data.curve != null && data.curve.keys.Count > 0;
+    }
+
+    // 強制的にシングルカーブモードとしてMinMaxCurveを生成する
     private ParticleSystem.MinMaxCurve CreateCurveMode(MinMaxCurveData data, float multiplier = 1.0f)
     {
         if (IsCurve(data))
@@ -76,6 +84,30 @@ public class ParticleController : MonoBehaviour
             curve.AddKey(0.0f, val);
             curve.AddKey(1.0f, val);
             return new ParticleSystem.MinMaxCurve(1.0f, curve);
+        }
+    }
+
+    // 強制的にTwo CurvesモードとしてMinMaxCurveを生成する
+    private ParticleSystem.MinMaxCurve CreateTwoCurvesMode(MinMaxCurveData data, float multiplier = 1.0f)
+    {
+        if (IsTwoCurves(data))
+        {
+            return CreatePsMinMaxCurveFromData(data, multiplier);
+        }
+        else if (IsCurve(data))
+        {
+            // Single Curve -> Two Curves (MinとMaxに同じカーブを設定)
+            var curve = CreateUnityCurve(data.curve, multiplier);
+            return new ParticleSystem.MinMaxCurve(1.0f, curve, curve);
+        }
+        else
+        {
+            // Constant -> Two Curves (MinとMaxに同じフラットなカーブを設定)
+            AnimationCurve curve = new AnimationCurve();
+            float val = data.min * multiplier;
+            curve.AddKey(0.0f, val);
+            curve.AddKey(1.0f, val);
+            return new ParticleSystem.MinMaxCurve(1.0f, curve, curve);
         }
     }
 
@@ -220,12 +252,41 @@ public class ParticleController : MonoBehaviour
         if (emission.enabled)
         {
             emission.rateOverTime = CreatePsMinMaxCurveFromData(preset.emission.rateOverTime);
-            if (preset.emission.maxBurstCount > 0)
+
+            // バースト設定のリストを作成
+            List<ParticleSystem.Burst> unityBursts = new List<ParticleSystem.Burst>();
+
+            // 1. 新しいリスト形式 (~bursts) の適用
+            if (preset.emission.bursts != null && preset.emission.bursts.Count > 0)
             {
-                emission.rateOverTime = 0;
-                int burstCount = Random.Range(preset.emission.minBurstCount, preset.emission.maxBurstCount + 1);
-                emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0.0f, (short)burstCount) });
+                foreach (var bData in preset.emission.bursts)
+                {
+                    // MinMaxCurveDataから count の最小・最大を取得
+                    short minCount = (short)bData.count.min;
+                    short maxCount = (short)bData.count.max;
+
+                    // Burst構造体の作成 (Time, CountMin, CountMax, Cycles, Interval)
+                    var burst = new ParticleSystem.Burst(bData.time, minCount, maxCount, bData.cycleCount, bData.repeatInterval);
+
+                    // Probabilityの適用
+                    burst.probability = bData.probability;
+
+                    unityBursts.Add(burst);
+                }
             }
+
+            // 2. 古い簡易形式 (~burstCount) の互換性対応
+            // もしリスト形式が空で、かつレガシー設定がある場合のみ追加する（あるいは混合したい場合は条件を調整）
+            if (unityBursts.Count == 0 && preset.emission.maxBurstCount > 0)
+            {
+                short min = (short)preset.emission.minBurstCount;
+                short max = (short)preset.emission.maxBurstCount;
+                // Time=0 で1回だけ発生するバーストとして追加
+                unityBursts.Add(new ParticleSystem.Burst(0.0f, min, max));
+            }
+
+            // 最後に配列としてセット
+            emission.SetBursts(unityBursts.ToArray());
         }
 
         // --- Shape Module ---
@@ -240,6 +301,7 @@ public class ParticleController : MonoBehaviour
         }
 
         // --- Velocity over Lifetime Module ---
+        // 修正: Orbital Velocityを使用する際、XYZ全ての軸でモード(Constant, Curve, TwoCurves)が一致している必要があるための対策
         var velocityOverLifetime = ps.velocityOverLifetime;
         velocityOverLifetime.enabled = preset.velocityOverLifetime != null && preset.velocityOverLifetime.enabled;
         if (velocityOverLifetime.enabled)
@@ -249,18 +311,34 @@ public class ParticleController : MonoBehaviour
             velocityOverLifetime.z = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.z);
             velocityOverLifetime.space = preset.velocityOverLifetime.space;
 
-            bool useCurveForOrbital = IsCurve(preset.velocityOverLifetime.orbitalX) ||
-                                      IsCurve(preset.velocityOverLifetime.orbitalY) ||
-                                      IsCurve(preset.velocityOverLifetime.orbitalZ);
+            // --- Orbital Mode Check ---
+            // 1. Two Curves (Random between two curves) がどれか1つでも使われているかチェック
+            bool hasTwoCurves = IsTwoCurves(preset.velocityOverLifetime.orbitalX) ||
+                                IsTwoCurves(preset.velocityOverLifetime.orbitalY) ||
+                                IsTwoCurves(preset.velocityOverLifetime.orbitalZ);
 
-            if (useCurveForOrbital)
+            // 2. Single Curve がどれか1つでも使われているかチェック
+            bool hasAnyCurve = IsCurve(preset.velocityOverLifetime.orbitalX) ||
+                               IsCurve(preset.velocityOverLifetime.orbitalY) ||
+                               IsCurve(preset.velocityOverLifetime.orbitalZ);
+
+            if (hasTwoCurves)
             {
+                // どれか1つでもTwoCurvesなら、全てをTwoCurvesモードに強制変換する
+                velocityOverLifetime.orbitalX = CreateTwoCurvesMode(preset.velocityOverLifetime.orbitalX);
+                velocityOverLifetime.orbitalY = CreateTwoCurvesMode(preset.velocityOverLifetime.orbitalY);
+                velocityOverLifetime.orbitalZ = CreateTwoCurvesMode(preset.velocityOverLifetime.orbitalZ);
+            }
+            else if (hasAnyCurve)
+            {
+                // どれか1つでもCurveなら、全てをSingle Curveモードに強制変換する
                 velocityOverLifetime.orbitalX = CreateCurveMode(preset.velocityOverLifetime.orbitalX);
                 velocityOverLifetime.orbitalY = CreateCurveMode(preset.velocityOverLifetime.orbitalY);
                 velocityOverLifetime.orbitalZ = CreateCurveMode(preset.velocityOverLifetime.orbitalZ);
             }
             else
             {
+                // 全て定数
                 velocityOverLifetime.orbitalX = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.orbitalX);
                 velocityOverLifetime.orbitalY = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.orbitalY);
                 velocityOverLifetime.orbitalZ = CreatePsMinMaxCurveFromData(preset.velocityOverLifetime.orbitalZ);

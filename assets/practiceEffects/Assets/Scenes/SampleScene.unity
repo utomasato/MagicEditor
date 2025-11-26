@@ -5112,18 +5112,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: planeParticle
       objectReference: {fileID: 0}
-    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
-      propertyPath: ColorModule.enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
-      propertyPath: RotationModule.enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
-      propertyPath: RotationModule.separateAxes
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

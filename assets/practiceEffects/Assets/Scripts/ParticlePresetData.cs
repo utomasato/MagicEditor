@@ -168,7 +168,7 @@ public class MainModuleData
     public Transform customSimulationSpace = null; // ※参照はパース困難なため基本的にはnull
     public float simulationSpeed = 1.0f;
     public bool useUnscaledTime = false;
-    public ParticleSystemScalingMode scalingMode = ParticleSystemScalingMode.Local;
+    public ParticleSystemScalingMode scalingMode = ParticleSystemScalingMode.Hierarchy;
     public bool playOnAwake = true;
     public ParticleSystemEmitterVelocityMode emitterVelocityMode = ParticleSystemEmitterVelocityMode.Transform;
     public int maxParticles = 1000;

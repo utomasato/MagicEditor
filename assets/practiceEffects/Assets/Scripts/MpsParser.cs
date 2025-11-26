@@ -88,11 +88,14 @@ public static partial class MpsParser
 
         public string Consume() => _position < _tokens.Length ? _tokens[_position++] : null;
 
+        // 修正: Exceptionを投げずにログのみ出力して処理を継続する
         public void Expect(string token)
         {
             var consumed = Consume();
             if (consumed != token)
-                throw new Exception($"Parse Error: Expected '{token}' but got '{consumed}'.");
+            {
+                Debug.LogWarning($"Parse Warning: Expected '{token}' but got '{consumed}'. Ignoring error and continuing.");
+            }
         }
 
         public float ConsumeFloat()
@@ -149,6 +152,47 @@ public static partial class MpsParser
     }
 
     // ----------------------------------------------------------------------------------
+    // ヘルパー関数: 余分な要素のスキップ処理
+    // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// 閉じカッコ ']' が出るまでトークンを読み飛ばします。
+    /// 要素数が多すぎる場合や、不正な値が含まれている場合に、次の構文まで安全に進めるために使用します。
+    /// </summary>
+    private static void SkipToCloseBracket(Scanner scanner)
+    {
+        int safetyCount = 0;
+        while (scanner.Peek() != "]" && scanner.Peek() != null)
+        {
+            // 安全策: 明らかに構造が壊れている場合（次のモジュールや閉じタグが見えた場合）はスキップを中断
+            string p = scanner.Peek();
+            if (p == ">" || p.StartsWith("~"))
+            {
+                Debug.LogWarning($"Parse Warning: Hit unexpected token '{p}' while skipping to ']'. Stop skipping.");
+                return;
+            }
+
+            scanner.Consume(); // 余分な要素を消費
+
+            safetyCount++;
+            if (safetyCount > 1000) // 無限ループ防止
+            {
+                Debug.LogWarning("Parse Warning: Infinite loop detected while skipping tokens.");
+                break;
+            }
+        }
+
+        if (scanner.Peek() == "]")
+        {
+            scanner.Consume();
+        }
+        else
+        {
+            Debug.LogWarning("Parse Warning: Expected ']' not found.");
+        }
+    }
+
+    // ----------------------------------------------------------------------------------
     // 新しい汎用パース関数群
     // ----------------------------------------------------------------------------------
 
@@ -201,14 +245,12 @@ public static partial class MpsParser
         string nextToken = scanner.Peek();
 
         // --- ▼▼▼ 不正データのスキップ処理 ▼▼▼ ---
-        // 1. 次のトークンがキーワード(~)またはブロック終了(>)の場合 -> 値が欠落しているとみなし、デフォルト値を返して消費しない
         if (nextToken != null && (nextToken.StartsWith("~") || nextToken == ">"))
         {
             Debug.LogWarning($"Parse Warning: Expected value for curve but found '{nextToken}'. Using default 0.");
             return new MinMaxCurveData { min = 0f, max = 0f };
         }
 
-        // 2. 次のトークンが数値でも構造開始記号([, <)でもない場合 -> ゴミデータとみなし、スキップしてデフォルト値を返す
         if (nextToken != null && nextToken != "[" && nextToken != "<" && !IsNumber(nextToken))
         {
             Debug.LogWarning($"Parse Warning: Expected number or curve start but got '{nextToken}'. Skipping invalid token.");
@@ -233,7 +275,7 @@ public static partial class MpsParser
         }
 
         // '[' で始まる場合
-        scanner.Consume(); // '[' 消費
+        scanner.Consume(); // '[' 消費 (Outer)
 
         // 次が数値なら -> [min max] (MinMax定数)
         // 次が '[' なら -> [[...]] (カーブ または 2カーブ)
@@ -248,21 +290,45 @@ public static partial class MpsParser
 
             // 要素が1つだけ [val] の場合も考慮
             float max = min;
-            if (scanner.Peek() != "]")
+            // 次が数値であれば max として採用
+            if (scanner.Peek() != "]" && IsNumber(scanner.Peek()))
             {
                 max = scanner.ConsumeFloat();
             }
-            scanner.Expect("]");
+
+            // 修正: 余分な要素があればスキップする (例: [30 30 75] -> 75を無視)
+            SkipToCloseBracket(scanner);
+
             return new MinMaxCurveData { min = min, max = max };
         }
         else
         {
             // --- Curve Mode ---
-            // ここで Single Curve か Two Curves (Mixed含む) かを判定
-            // Single: [[t v] [t v] ...]  -> 次は '[' のあと数値
-            // Two:    [[[t v]...] [Element2]] -> 次は '[' のあと '['
+            // ここでの構造: [[...
 
-            // ScannerにPeek(offset)がないため、「要素を1つ読み、それが終わった後にまだ要素があるか」で判定します。
+            // 重要: [[0 0.05] [1 0]] のような形式の場合、
+            // [ [キーフレーム] [キーフレーム] ] (Single Curve) なのか
+            // [ [要素1] [要素2] ] (Two Curves / Two Constants) なのかが曖昧。
+
+            // 先読みを行い、次のトークンが数値であれば「キーフレーム」とみなして Single Curve モードを強制する。
+            if (IsNumber(scanner.Peek(1)))
+            {
+                // Single Curve List Mode: [ [t v] [t v] ... ]
+                var data = new MinMaxCurveData();
+                data.curve = new CurveData();
+
+                while (scanner.Peek() == "[")
+                {
+                    data.curve.keys.Add(ParseKeyframe(scanner));
+                }
+                SkipToCloseBracket(scanner);
+                return data;
+            }
+
+            // --- Two Elements / Wrapped Single Curve Mode ---
+            // 上記以外の場合は、ParseSingleElementAsCurve を使って再帰的に要素を読み込む。
+            // 形式例: [ [[t v]...] [[t v]...] ]  (Two Curves)
+            // 形式例: [ [min max] [min max] ]  (Two Constants -> MinMaxCurve)
 
             // まず1つ目の要素（Min側、またはSingleカーブそのもの）を読み込む
             var firstElementCurve = ParseSingleElementAsCurve(scanner);
@@ -283,12 +349,8 @@ public static partial class MpsParser
                 data.curve = ParseSingleElementAsCurve(scanner);
 
                 // もし3つ以上あっても無視して消費
-                while (scanner.Peek() != "]" && scanner.Peek() != null)
-                {
-                    SkipBracketContent(scanner);
-                }
+                SkipToCloseBracket(scanner);
 
-                scanner.Expect("]");
                 return data;
             }
         }
@@ -327,7 +389,8 @@ public static partial class MpsParser
             curve.keys.Add(new KeyframeData { time = 1f, value = avg });
         }
 
-        scanner.Expect("]");
+        // 修正: 余分な要素があればスキップ
+        SkipToCloseBracket(scanner);
         return curve;
     }
 
@@ -336,7 +399,8 @@ public static partial class MpsParser
         scanner.Expect("[");
         float t = scanner.ConsumeFloat();
         float v = scanner.ConsumeFloat();
-        scanner.Expect("]");
+        // 修正: 余分な要素があればスキップ
+        SkipToCloseBracket(scanner);
         return new KeyframeData { time = t, value = v };
     }
 
@@ -392,14 +456,15 @@ public static partial class MpsParser
                 // Gradient 2 (Max)
                 scanner.Expect("[");
                 data.gradientMax = ParseGradientKeysBlock(scanner, false);
-                scanner.Expect("]"); // 外側の ]
+                // 修正: 余分な要素があればスキップ
+                SkipToCloseBracket(scanner);
             }
             else
             {
                 // ここで中身が Color(4要素) か Key(5要素) かを判定
                 List<float> firstBlock = ParseFloatListInsideBrackets(scanner); // 2層目の ] まで読む
 
-                if (firstBlock.Count == 5)
+                if (firstBlock.Count >= 5) // Count >= 5 であれば GradientKey とみなす
                 {
                     // --- Gradient: [[t r g b a] [t r g b a]...] ---
                     data.mode = "Gradient";
@@ -413,19 +478,22 @@ public static partial class MpsParser
                         var block = ParseFloatListInsideBrackets(scanner);
                         AddKeyToGradient(data.gradientMax, block);
                     }
-                    scanner.Expect("]"); // 外側の ]
+                    SkipToCloseBracket(scanner);
                 }
                 else // Count == 4 とみなす
                 {
                     // --- Two Colors: [[r g b a] [r g b a]] ---
                     data.mode = "TwoColors";
-                    data.colorMin = new Color(firstBlock[0], firstBlock[1], firstBlock[2], firstBlock[3]);
+                    if (firstBlock.Count >= 4)
+                        data.colorMin = new Color(firstBlock[0], firstBlock[1], firstBlock[2], firstBlock[3]);
 
                     // 2つ目の色
                     scanner.Expect("[");
                     var secondBlock = ParseFloatListInsideBrackets(scanner);
-                    data.colorMax = new Color(secondBlock[0], secondBlock[1], secondBlock[2], secondBlock[3]);
-                    scanner.Expect("]"); // 外側の ]
+                    if (secondBlock.Count >= 4)
+                        data.colorMax = new Color(secondBlock[0], secondBlock[1], secondBlock[2], secondBlock[3]);
+
+                    SkipToCloseBracket(scanner);
                 }
             }
         }
@@ -521,7 +589,8 @@ public static partial class MpsParser
         var x = scanner.ConsumeFloat();
         var y = scanner.ConsumeFloat();
         var z = scanner.ConsumeFloat();
-        scanner.Expect("]");
+        // 修正: 余分な要素があればスキップ
+        SkipToCloseBracket(scanner);
         return new Vector3(x, y, z);
     }
 
@@ -715,7 +784,8 @@ public static partial class MpsParser
         float g = scanner.ConsumeFloat();
         float b = scanner.ConsumeFloat();
         float a = scanner.ConsumeFloat();
-        scanner.Expect("]");
+        // 修正: 余分な要素があればスキップ
+        SkipToCloseBracket(scanner);
         return new Color(r, g, b, a);
     }
 
@@ -893,7 +963,8 @@ public static partial class MpsParser
                 case "range":
                     scanner.Expect("[");
                     cbs.range = new Vector2(scanner.ConsumeFloat(), scanner.ConsumeFloat());
-                    scanner.Expect("]");
+                    // 修正: 余分な要素があればスキップ
+                    SkipToCloseBracket(scanner);
                     break;
                 default: SkipUnknownValue(scanner); break;
             }
@@ -914,7 +985,8 @@ public static partial class MpsParser
                 case "range":
                     scanner.Expect("[");
                     sbs.range = new Vector2(scanner.ConsumeFloat(), scanner.ConsumeFloat());
-                    scanner.Expect("]");
+                    // 修正: 余分な要素があればスキップ
+                    SkipToCloseBracket(scanner);
                     break;
                 default: SkipUnknownValue(scanner); break;
             }
@@ -935,7 +1007,8 @@ public static partial class MpsParser
                 case "range":
                     scanner.Expect("[");
                     rbs.range = new Vector2(scanner.ConsumeFloat(), scanner.ConsumeFloat());
-                    scanner.Expect("]");
+                    // 修正: 余分な要素があればスキップ
+                    SkipToCloseBracket(scanner);
                     break;
                 default: SkipUnknownValue(scanner); break;
             }
