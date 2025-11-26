@@ -5112,14 +5112,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: planeParticle
       objectReference: {fileID: 0}
-    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
-      propertyPath: ShapeModule.type
-      value: 18
-      objectReference: {fileID: 0}
-    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
-      propertyPath: ShapeModule.enabled
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

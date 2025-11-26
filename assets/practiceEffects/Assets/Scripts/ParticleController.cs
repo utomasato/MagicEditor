@@ -303,7 +303,9 @@ public class ParticleController : MonoBehaviour
             // Transform
             shape.position = sData.position;
             shape.rotation = sData.rotation;
-            shape.scale = sData.scale;
+
+            // 修正: meshScaleは非推奨のため scale に統合
+            shape.scale = sData.scale * sData.meshScale;
 
             // Align / Random
             shape.alignToDirection = sData.alignToDirection;
@@ -321,7 +323,7 @@ public class ParticleController : MonoBehaviour
             shape.meshMaterialIndex = sData.meshMaterialIndex;
             shape.useMeshColors = sData.useMeshColors;
             shape.normalOffset = sData.normalOffset;
-            shape.meshScale = sData.meshScale;
+            // 削除: shape.meshScale = sData.meshScale; 
 
             // Texture
             if (sData.texture != null)
