@@ -5068,6 +5068,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5400614221907829686, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5400614221907829686, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5400614221907829686, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: m_VertexStreams.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5400614221907829686, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: m_VertexStreams.Array.data[4]
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5400614221907829686, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: m_VertexStreams.Array.data[5]
+      value: 34
+      objectReference: {fileID: 0}
     - target: {fileID: 7482183075249485949, guid: 253046f1325d040938f4ae111623851f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -5111,6 +5131,10 @@ PrefabInstance:
     - target: {fileID: 8154596411598727432, guid: 253046f1325d040938f4ae111623851f, type: 3}
       propertyPath: m_Name
       value: planeParticle
+      objectReference: {fileID: 0}
+    - target: {fileID: 9129608406596688014, guid: 253046f1325d040938f4ae111623851f, type: 3}
+      propertyPath: TrailModule.enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8585,7 +8609,7 @@ MonoBehaviour:
   - name: Cone
     mesh: {fileID: -4432124805086160128, guid: a267cea2cdf8a4d9d8f76ba841c93808, type: 3}
   - name: Cylinder
-    mesh: {fileID: 4632596647708219413, guid: a709d8ee52c014456b14a6e8b09c609e, type: 3}
+    mesh: {fileID: 4632596647708219413, guid: cac39de4270ad4fe7a84eabb087da162, type: 3}
   textureList:
   - name: Circle
     texture: {fileID: 2800000, guid: 507d7f8bb1f7d4926a59592f6ca3e9c2, type: 3}
@@ -8602,7 +8626,7 @@ MonoBehaviour:
   - name: Slash
     texture: {fileID: 2800000, guid: 62c6a57ace77f44bca9025e16a13797a, type: 3}
   - name: Smoke_1
-    texture: {fileID: 2800000, guid: 853b4ac63ab2c47a69745cf09c7ab0eb, type: 3}
+    texture: {fileID: 2800000, guid: d578f37fdfb104b1992284d5e5e51c7d, type: 3}
   - name: Smoke_2
     texture: {fileID: 2800000, guid: 3f779396a14dd41f280bcf510c066458, type: 3}
   - name: Smoke_3
@@ -8615,6 +8639,15 @@ MonoBehaviour:
     texture: {fileID: 2800000, guid: 3881154e384734a5b93b7196ca89827d, type: 3}
   - name: Trail_2
     texture: {fileID: 2800000, guid: 5c0c7b0854b254bce9c22c528a98d76a, type: 3}
+  shaderList:
+  - name: Additive
+    shader: {fileID: 10720, guid: 0000000000000000f000000000000000, type: 0}
+  - name: AlphaBlended
+    shader: {fileID: 10721, guid: 0000000000000000f000000000000000, type: 0}
+  - name: Aura
+    shader: {fileID: -6465566751694194690, guid: ccc8d970d997343b7ae030d67247f366, type: 3}
+  - name: Glow
+    shader: {fileID: -6465566751694194690, guid: 7b0390f92846744d5bb251c6d3517ccd, type: 3}
   grid: {fileID: 932052822}
   skyMaterials:
   - {fileID: 2100000, guid: 290c1470354624bd7978d82c6f0e2782, type: 2}

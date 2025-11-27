@@ -25,6 +25,14 @@ public class TextureEntry
     public Texture2D texture;
 }
 
+// 追加: インスペクターに表示するための、名前とシェーダーのペアを保持するクラス
+[System.Serializable]
+public class ShaderEntry
+{
+    public string name;
+    public Shader shader;
+}
+
 /// <summary>
 /// ゲーム全体の設定を管理し、各機能（ParticleGeneratorなど）に指示を出す司令塔クラス。
 /// </summary>
@@ -48,10 +56,15 @@ public class SystemManager : MonoBehaviour
     [Tooltip("名前とテクスチャを紐付けて登録します（Shapeモジュール用など）")]
     public List<TextureEntry> textureList;
 
+    [Header("シェーダーリスト")]
+    [Tooltip("名前とシェーダーを紐付けて登録します（動的マテリアル生成用）")]
+    public List<ShaderEntry> shaderList;
+
     // --- Private Fields ---
     private Dictionary<string, Material> materialDictionary;
     private Dictionary<string, Mesh> meshDictionary;
     private Dictionary<string, Texture2D> textureDictionary;
+    private Dictionary<string, Shader> shaderDictionary; // 追加
 
     // Manages generated objects by their unique ID
     private Dictionary<string, GameObject> managedObjectsById = new Dictionary<string, GameObject>();
@@ -113,6 +126,22 @@ public class SystemManager : MonoBehaviour
                 }
             }
         }
+
+        // 追加: シェーダー辞書の構築
+        shaderDictionary = new Dictionary<string, Shader>();
+        if (shaderList != null)
+        {
+            foreach (var entry in shaderList)
+            {
+                if (entry != null && !string.IsNullOrEmpty(entry.name) && entry.shader != null)
+                {
+                    if (!shaderDictionary.ContainsKey(entry.name))
+                    {
+                        shaderDictionary.Add(entry.name, entry.shader);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -130,8 +159,8 @@ public class SystemManager : MonoBehaviour
 
         try
         {
-            // Parse時にtextureDictionaryも渡す
-            ParticlePreset preset = MpsParser.Parse(mpsCode, materialDictionary, meshDictionary, textureDictionary);
+            // Parse時にtextureDictionaryとshaderDictionaryも渡す
+            ParticlePreset preset = MpsParser.Parse(mpsCode, materialDictionary, meshDictionary, textureDictionary, shaderDictionary);
 
             if (particleGenerator != null)
             {

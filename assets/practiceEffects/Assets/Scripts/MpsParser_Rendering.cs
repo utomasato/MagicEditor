@@ -13,7 +13,8 @@ using System;
 // ----------------------------------------------------------------------------------
 public static partial class MpsParser
 {
-    private static RendererModuleData ParseRendererModule(Scanner s, Dictionary<string, Material> md, Dictionary<string, Mesh> msd)
+    // 引数に shaderDict と textureDict を追加
+    private static RendererModuleData ParseRendererModule(Scanner s, Dictionary<string, Material> md, Dictionary<string, Mesh> msd, Dictionary<string, Shader> sd, Dictionary<string, Texture2D> td)
     {
         var m = new RendererModuleData { enabled = true };
         while (s.Peek() != ">")
@@ -33,8 +34,85 @@ public static partial class MpsParser
                 string[] ns = s.ConsumeStringInParens().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var n in ns) if (msd.TryGetValue(n, out Mesh me)) m.meshes.Add(me);
             }
+            // 既存のマテリアル指定
             else if (k == "materialName") { if (md.TryGetValue(s.ConsumeStringInParens(), out Material mat)) m.material = mat; }
+            // 動的マテリアル指定 (~material <~shader (Name) ~texture (Name)>)
+            else if (k == "material")
+            {
+                s.Expect("<");
+                while (s.Peek() != ">")
+                {
+                    string subKey = s.Consume().Substring(1);
+                    if (subKey == "shader")
+                    {
+                        string shaderName = s.ConsumeStringInParens();
+                        if (sd.TryGetValue(shaderName, out Shader shader))
+                        {
+                            m.shader = shader;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Shader '{shaderName}' not found in dictionary.");
+                        }
+                    }
+                    else if (subKey == "texture")
+                    {
+                        string textureName = s.ConsumeStringInParens();
+                        if (td.TryGetValue(textureName, out Texture2D tex))
+                        {
+                            m.mainTexture = tex;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Texture '{textureName}' not found in dictionary.");
+                        }
+                    }
+                    else
+                    {
+                        SkipUnknownValue(s);
+                    }
+                }
+                s.Expect(">");
+            }
             else if (k == "trailMaterialName") { if (md.TryGetValue(s.ConsumeStringInParens(), out Material tm)) m.trailMaterial = tm; }
+            // 追加: 動的トレイルマテリアル指定 (~trailMaterial <~shader (Name) ~texture (Name)>)
+            else if (k == "trailMaterial")
+            {
+                s.Expect("<");
+                while (s.Peek() != ">")
+                {
+                    string subKey = s.Consume().Substring(1);
+                    if (subKey == "shader")
+                    {
+                        string shaderName = s.ConsumeStringInParens();
+                        if (sd.TryGetValue(shaderName, out Shader shader))
+                        {
+                            m.trailShader = shader;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Trail Shader '{shaderName}' not found in dictionary.");
+                        }
+                    }
+                    else if (subKey == "texture")
+                    {
+                        string textureName = s.ConsumeStringInParens();
+                        if (td.TryGetValue(textureName, out Texture2D tex))
+                        {
+                            m.trailTexture = tex;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Trail Texture '{textureName}' not found in dictionary.");
+                        }
+                    }
+                    else
+                    {
+                        SkipUnknownValue(s);
+                    }
+                }
+                s.Expect(">");
+            }
             else if (k == "alignment") { if (Enum.TryParse(s.ConsumeStringInParens(), true, out ParticleSystemRenderSpace rs)) m.alignment = rs; }
             else if (k == "shader" || k == "blendMode") m.blendMode = s.ConsumeStringInParens();
             else if (k == "sortingFudge") m.sortingFudge = s.ConsumeFloat();

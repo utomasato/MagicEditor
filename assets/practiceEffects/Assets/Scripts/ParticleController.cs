@@ -521,8 +521,32 @@ public class ParticleController : MonoBehaviour
         var lights = ps.lights;
         lights.enabled = preset.lights != null && preset.lights.enabled;
 
+        // --- Custom Data Module ---
         var customData = ps.customData;
         customData.enabled = preset.customData != null && preset.customData.enabled;
+        if (customData.enabled)
+        {
+            var data = preset.customData;
+
+            // UnityのCustomDataはStreamごとに設定しますが、ここではシンプルにVector Stream 1 (Custom1) に対して設定します
+            customData.SetMode(ParticleSystemCustomData.Custom1, data.mode);
+
+            if (data.mode == ParticleSystemCustomDataMode.Vector)
+            {
+                int count = Mathf.Clamp((int)data.vectorComponentCount, 0, 4);
+                customData.SetVectorComponentCount(ParticleSystemCustomData.Custom1, count);
+
+                if (count >= 1) customData.SetVector(ParticleSystemCustomData.Custom1, 0, CreatePsMinMaxCurveFromData(data.vec1));
+                if (count >= 2) customData.SetVector(ParticleSystemCustomData.Custom1, 1, CreatePsMinMaxCurveFromData(data.vec2));
+                if (count >= 3) customData.SetVector(ParticleSystemCustomData.Custom1, 2, CreatePsMinMaxCurveFromData(data.vec3));
+                if (count >= 4) customData.SetVector(ParticleSystemCustomData.Custom1, 3, CreatePsMinMaxCurveFromData(data.vec4));
+            }
+            else if (data.mode == ParticleSystemCustomDataMode.Color)
+            {
+                customData.SetMode(ParticleSystemCustomData.Custom1, ParticleSystemCustomDataMode.Color);
+                customData.SetColor(ParticleSystemCustomData.Custom1, CreateUnityGradient(data.color));
+            }
+        }
 
         // --- Texture Sheet Animation Module ---
         var textureSheetAnimation = ps.textureSheetAnimation;
@@ -582,14 +606,69 @@ public class ParticleController : MonoBehaviour
                 renderer.SetMeshes(preset.renderer.meshes.ToArray());
             }
 
-            if (preset.renderer.material != null)
+            // --- Material Logic ---
+            // どのルートでマテリアルが作られたかに関わらず、テクスチャ指定があれば適用する
+            Material matToUse = null;
+
+            if (preset.renderer.shader != null)
             {
-                renderer.material = new Material(preset.renderer.material);
+                // 1. 動的シェーダー指定
+                matToUse = new Material(preset.renderer.shader);
             }
-            if (preset.renderer.trailMaterial != null)
+            else if (preset.renderer.material != null)
             {
-                renderer.trailMaterial = new Material(preset.renderer.trailMaterial);
+                // 2. 既存マテリアル指定 (コピー)
+                matToUse = new Material(preset.renderer.material);
             }
+            else
+            {
+                // 3. 何も指定なし (Fallback)
+                // シェーダー指定がない場合のデフォルトをAdditiveに変更
+                Shader defaultShader = Shader.Find("Mobile/Particles/Additive");
+                if (defaultShader == null) defaultShader = Shader.Find("Legacy Shaders/Particles/Additive");
+
+                // 万が一見つからない場合はStandard Unlit
+                if (defaultShader == null) defaultShader = Shader.Find("Particles/Standard Unlit");
+
+                if (defaultShader != null)
+                {
+                    matToUse = new Material(defaultShader);
+                }
+            }
+
+            // マテリアルが決定したらテクスチャを適用
+            if (matToUse != null)
+            {
+                if (preset.renderer.mainTexture != null)
+                {
+                    matToUse.mainTexture = preset.renderer.mainTexture;
+                }
+                renderer.material = matToUse;
+            }
+
+
+            // --- Trail Material Logic ---
+            Material trailMatToUse = null;
+
+            if (preset.renderer.trailShader != null)
+            {
+                trailMatToUse = new Material(preset.renderer.trailShader);
+            }
+            else if (preset.renderer.trailMaterial != null)
+            {
+                trailMatToUse = new Material(preset.renderer.trailMaterial);
+            }
+
+            // トレイルマテリアルが決定したらテクスチャを適用
+            if (trailMatToUse != null)
+            {
+                if (preset.renderer.trailTexture != null)
+                {
+                    trailMatToUse.mainTexture = preset.renderer.trailTexture;
+                }
+                renderer.trailMaterial = trailMatToUse;
+            }
+
             renderer.alignment = preset.renderer.alignment;
             renderer.sortingFudge = preset.renderer.sortingFudge;
 
@@ -598,15 +677,11 @@ public class ParticleController : MonoBehaviour
                 string mode = preset.renderer.blendMode.ToLower();
                 if (renderer.material != null)
                 {
-                    Material mat = renderer.material;
-                    ApplyBlendModeToMaterial(mat, mode);
-                    renderer.material = mat;
+                    renderer.material = ApplyBlendModeToMaterial(renderer.material, mode);
                 }
                 if (renderer.trailMaterial != null)
                 {
-                    Material trailMat = renderer.trailMaterial;
-                    ApplyBlendModeToMaterial(trailMat, mode);
-                    renderer.trailMaterial = trailMat;
+                    renderer.trailMaterial = ApplyBlendModeToMaterial(renderer.trailMaterial, mode);
                 }
             }
         }
@@ -614,8 +689,12 @@ public class ParticleController : MonoBehaviour
         ps.Play();
     }
 
-    private void ApplyBlendModeToMaterial(Material mat, string mode)
+    private Material ApplyBlendModeToMaterial(Material original, string mode)
     {
+        // マテリアルのインスタンス（コピー）を作成して、元のアセットを変更しないようにする
+        Material mat = new Material(original);
+        mat.name = original.name + " (Instance)";
+
         bool isMobileShader = mat.shader.name.Contains("Mobile/Particles");
         bool isLegacyShader = mat.shader.name.Contains("Legacy Shaders/Particles");
 
@@ -642,6 +721,8 @@ public class ParticleController : MonoBehaviour
         {
             ApplyStandardBlendProperties(mat, mode);
         }
+
+        return mat;
     }
 
     private void ApplyStandardBlendProperties(Material mat, string mode)

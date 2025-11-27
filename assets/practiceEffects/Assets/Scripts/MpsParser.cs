@@ -281,21 +281,21 @@ public static partial class MpsParser
 
     // ... (Object creation, Transform, Animation parsing methods)
 
-    // Updated Parse method signature to include textureDictionary
-    public static ParticlePreset Parse(string mpsCode, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict, Dictionary<string, Texture2D> textureDict)
+    // Updated Parse method signature to include shaderDictionary
+    public static ParticlePreset Parse(string mpsCode, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict, Dictionary<string, Texture2D> textureDict, Dictionary<string, Shader> shaderDict)
     {
         var scanner = new Scanner(mpsCode);
         var preset = new ParticlePreset();
 
         scanner.Expect("<");
-        ParseObjectContent(scanner, preset, materialDict, meshDict, textureDict);
+        ParseObjectContent(scanner, preset, materialDict, meshDict, textureDict, shaderDict);
         scanner.Expect(">");
 
         return preset;
     }
 
-    // Updated ParseObjectContent to pass textureDict
-    private static void ParseObjectContent(Scanner scanner, ParticlePreset preset, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict, Dictionary<string, Texture2D> textureDict)
+    // Updated ParseObjectContent to pass shaderDict
+    private static void ParseObjectContent(Scanner scanner, ParticlePreset preset, Dictionary<string, Material> materialDict, Dictionary<string, Mesh> meshDict, Dictionary<string, Texture2D> textureDict, Dictionary<string, Shader> shaderDict)
     {
         while (scanner.Peek() != null && scanner.Peek() != ">")
         {
@@ -325,8 +325,8 @@ public static partial class MpsParser
                 case "textureSheetAnimation": preset.textureSheetAnimation = ParseTextureSheetAnimationModule(scanner); break;
                 case "lights": preset.lights = new LightsModuleData { enabled = true }; SkipModuleContent(scanner); break;
                 case "trails": preset.trails = ParseTrailsModule(scanner); break;
-                case "customData": preset.customData = new CustomDataModuleData { enabled = true }; SkipModuleContent(scanner); break;
-                case "renderer": preset.renderer = ParseRendererModule(scanner, materialDict, meshDict); break;
+                case "customData": preset.customData = ParseCustomDataModule(scanner); break;
+                case "renderer": preset.renderer = ParseRendererModule(scanner, materialDict, meshDict, shaderDict, textureDict); break;
                 default:
                     Debug.LogWarning($"Unknown MPS module key: '~{key}'. Skipping this module.");
                     SkipModuleContent(scanner);

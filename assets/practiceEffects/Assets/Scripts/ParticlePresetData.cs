@@ -513,7 +513,16 @@ public class RendererModuleData
     public bool enabled = true;
     public ParticleSystemRenderMode renderMode = ParticleSystemRenderMode.Billboard;
     public Material material;
+
+    // 動的マテリアル生成用のフィールド
+    public Shader shader;
+    public Texture2D mainTexture;
+
     public Material trailMaterial;
+    // 追加: Trail用の動的マテリアル生成用フィールド
+    public Shader trailShader;
+    public Texture2D trailTexture;
+
     public ParticleSystemSortMode sortMode = ParticleSystemSortMode.None;
     public float sortingFudge = 0f;
     public float minParticleSize = 0f;
