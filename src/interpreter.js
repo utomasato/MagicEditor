@@ -120,22 +120,22 @@ class PostscriptInterpreter {
                 }
                 this.stack.push({ type: 'string', value: [String.fromCharCode(charCode)] });
             },
-            getinterval: () => { 
-                const [count, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; 
-                
+            getinterval: () => {
+                const [count, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()];
+
                 if (arr && arr.value && (arr.type === 'array' || arr.type === 'string')) {
                     // 値をスライスして新しいオブジェクトとして返す（複製）
                     const newVal = arr.value.slice(index, index + count);
                     this.stack.push({ type: arr.type, value: newVal });
                 } else if (Array.isArray(arr)) { // 生の配列の場合
-                     this.stack.push(arr.slice(index, index + count));
+                    this.stack.push(arr.slice(index, index + count));
                 } else {
                     throw new Error("`getinterval` requires an array or string.");
                 }
             },
-            putinterval: () => { 
-                const [subArr, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()]; 
-                
+            putinterval: () => {
+                const [subArr, index, arr] = [this.stack.pop(), this.stack.pop(), this.stack.pop()];
+
                 // 配列同士または文字列同士の互換性チェック
                 if (arr && arr.value && subArr && subArr.value && arr.type === subArr.type) {
                     // spliceを使って要素を置換
@@ -155,11 +155,11 @@ class PostscriptInterpreter {
             forall: () => {
                 const proc = this.stack.pop();
                 const collection = this.stack.pop();
-                
+
                 const procedure = Array.isArray(proc) ? proc : (proc.value || []);
 
                 if (typeof collection === 'object' && collection !== null && collection.type === 'array' && Array.isArray(collection.value)) {
-                     for (const token of collection.value) {
+                    for (const token of collection.value) {
                         this.stack.push(token); // 配列の要素をスタックに積む
                         this.run(procedure);
                     }
@@ -170,7 +170,7 @@ class PostscriptInterpreter {
                         this.run(procedure);
                     }
                 } else if (Array.isArray(collection)) { // 生の配列もサポート
-                     for (const item of collection) {
+                    for (const item of collection) {
                         this.stack.push(item);
                         this.run(procedure);
                     }
@@ -268,7 +268,7 @@ class PostscriptInterpreter {
                 try {
                     while (true) { this.run(proc); }
                 } catch (e) {
-                    if (e.message === 'EXIT_LOOP' && e.level === this.commandLoopLevel) {} 
+                    if (e.message === 'EXIT_LOOP' && e.level === this.commandLoopLevel) { }
                     else { throw e; }
                 } finally {
                     this.commandLoopLevel--;
@@ -281,10 +281,10 @@ class PostscriptInterpreter {
                 if (this.stack.length > 0 && typeof this.stack[this.stack.length - 1] === 'string' && this.stack[this.stack.length - 1].startsWith('~')) {
                     key = this.stack.pop();
                 }
-                
-                const id = this.generateUUID(); 
+
+                const id = this.generateUUID();
                 const resolvedVal = this.resolveVariablesInStructure(val);
-                
+
                 const data = {
                     isActive: true,
                     message: "MagicSpell",
@@ -297,7 +297,7 @@ class PostscriptInterpreter {
 
                 if (key) {
                     const variableName = key.substring(1);
-                    const unityObjectRef = { type: 'unityObject', value: id }; 
+                    const unityObjectRef = { type: 'unityObject', value: id };
                     this.dictStack[this.dictStack.length - 1][variableName] = unityObjectRef;
                 }
             },
@@ -307,11 +307,11 @@ class PostscriptInterpreter {
                 if (this.stack.length > 0 && typeof this.stack[this.stack.length - 1] === 'string' && this.stack[this.stack.length - 1].startsWith('~')) {
                     key = this.stack.pop();
                 }
-                
+
                 // --- 変更点: ヘルパーメソッド generateUUID() を使用 ---
-                const id = this.generateUUID(); 
+                const id = this.generateUUID();
                 const resolvedVal = this.resolveVariablesInStructure(val);
-                
+
                 const data = {
                     isActive: true,
                     message: "CreateObject",
@@ -324,7 +324,7 @@ class PostscriptInterpreter {
 
                 if (key) {
                     const variableName = key.substring(1);
-                    const unityObjectRef = { type: 'unityObject', value: id }; 
+                    const unityObjectRef = { type: 'unityObject', value: id };
                     this.dictStack[this.dictStack.length - 1][variableName] = unityObjectRef;
                 }
             },
@@ -376,7 +376,7 @@ class PostscriptInterpreter {
 
                 sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
             },
-            
+
             print: () => {
                 const val = this.stack.pop();
                 if (typeof val === 'object' && val !== null && val.type === 'string') {
@@ -392,7 +392,7 @@ class PostscriptInterpreter {
                     this.output.push(this.formatForOutput(val));
                 });
             },
-            color: () => { 
+            color: () => {
                 const [b, g, r] = [this.stack.pop(), this.stack.pop(), this.stack.pop()];
                 this.stack.push(['color', r, g, b]);
             }
@@ -408,15 +408,15 @@ class PostscriptInterpreter {
         if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
             return crypto.randomUUID();
         }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
             const r = Math.random() * 16 | 0;
             const v = c === 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
     }
-    
+
     resolveVariablesInStructure(structure) {
-        
+
         // 1. { type: 'variable_name', value: 'x' } の処理
         if (typeof structure === 'object' && structure !== null && structure.type === 'variable_name') {
             const value = this.lookupVariable(structure.value);
@@ -429,7 +429,7 @@ class PostscriptInterpreter {
                 return null; // または undefined
             }
         }
-        
+
         // 2. プリミティブ型 (string, number, boolean) はそのまま返す
         if (typeof structure !== 'object' || structure === null) {
             // 'add' や 1 や '~pos' など。
@@ -449,13 +449,13 @@ class PostscriptInterpreter {
             if (Array.isArray(structure.value)) {
                 const newStructure = { ...structure };
                 // value (トークンの配列) の各要素を解決
-                newStructure.value = structure.value.map(item => this.resolveVariablesInStructure(item)); 
+                newStructure.value = structure.value.map(item => this.resolveVariablesInStructure(item));
                 return newStructure;
             }
             // value が配列でない場合は、そのまま返す (またはエラー)
             return structure;
         }
-        
+
         // 5. { type: 'dict', ... } オブジェクト
         if (structure.type === 'dict') {
             const newStructure = { ...structure, value: {} };
@@ -463,18 +463,18 @@ class PostscriptInterpreter {
                 if (Object.hasOwnProperty.call(structure.value, key)) {
                     // キーは解決しない
                     // 値を解決
-                    const resolvedValue = this.resolveVariablesInStructure(structure.value[key]); 
+                    const resolvedValue = this.resolveVariablesInStructure(structure.value[key]);
                     newStructure.value[key] = resolvedValue;
                 }
             }
             return newStructure;
         }
-        
+
         // 6. その他のオブジェクト (例: { type: 'unityObject', ... } )
         //    これらは変更せずにそのまま返す
         return structure;
     }
-    
+
     formatForOutput(val) {
         if (val === null) return 'null';
         if (val === undefined) return 'undefined';
@@ -486,7 +486,7 @@ class PostscriptInterpreter {
             return `{${val.map(item => this.formatForOutput(item)).join(' ')}}`;
         }
         if (!val.type) {
-             // 一般的なオブジェクトの場合
+            // 一般的なオブジェクトの場合
             return JSON.stringify(val);
         }
         switch (val.type) {
@@ -532,9 +532,9 @@ class PostscriptInterpreter {
                 i++;
                 while (i < code.length && level > 0) {
                     const current_char = code[i];
-                    
+
                     if (current_char === '\\') { // エスケープ文字
-                         if (i + 1 < code.length) {
+                        if (i + 1 < code.length) {
                             content += current_char; // \ も content に含める
                             content += code[i + 1]; // 次の文字も content に含める
                             i += 2;
@@ -548,20 +548,20 @@ class PostscriptInterpreter {
                         let str_level = 1;
                         content += current_char;
                         i++;
-                         while(i < code.length && str_level > 0) {
+                        while (i < code.length && str_level > 0) {
                             if (code[i] === '\\') { // 文字列内のエスケープ
                                 if (i + 1 < code.length) {
                                     content += code[i];
-                                    content += code[i+1];
+                                    content += code[i + 1];
                                     i += 2;
                                 } else {
                                     throw new Error("Parse error: Escape character (\\) at end of string in procedure/array.");
                                 }
-                            } else if(code[i] === '(') {
+                            } else if (code[i] === '(') {
                                 str_level++;
                                 content += code[i];
                                 i++;
-                            } else if(code[i] === ')') {
+                            } else if (code[i] === ')') {
                                 str_level--;
                                 content += code[i];
                                 i++;
@@ -587,7 +587,7 @@ class PostscriptInterpreter {
                 }
                 continue;
             }
-            
+
             if (char === '<') {
                 let level = 1;
                 let content = '';
@@ -609,13 +609,13 @@ class PostscriptInterpreter {
                 for (let j = 0; j < innerTokens.length; j += 2) {
                     let key = innerTokens[j];
                     if (typeof key === 'string' && key.startsWith('~')) {
-                         // dictObject[key.substring(1)] = innerTokens[j + 1]; // 旧: キーは ~ を除外
-                         dictObject[key] = innerTokens[j + 1]; // 新: キーの ~ を保持
+                        // dictObject[key.substring(1)] = innerTokens[j + 1]; // 旧: キーは ~ を除外
+                        dictObject[key] = innerTokens[j + 1]; // 新: キーの ~ を保持
                     } else if (typeof key === 'object' && key.type === 'literal_name') {
-                         dictObject[key.value] = innerTokens[j + 1]; // キーは \ を除外
+                        dictObject[key.value] = innerTokens[j + 1]; // キーは \ を除外
                     } else {
-                         // 数値や文字列キーも許可 (PostScript準拠)
-                         dictObject[String(key)] = innerTokens[j + 1];
+                        // 数値や文字列キーも許可 (PostScript準拠)
+                        dictObject[String(key)] = innerTokens[j + 1];
                     }
                 }
                 tokens.push({ type: 'dict', value: dictObject });
@@ -633,7 +633,7 @@ class PostscriptInterpreter {
                             content += code[i + 1]; // エスケープ対象文字を content に追加
                             i += 2;
                         } else {
-                             throw new Error("Parse error: Escape character (\\) at end of string literal.");
+                            throw new Error("Parse error: Escape character (\\) at end of string literal.");
                         }
                     } else if (code[i] === '(') {
                         level++;
@@ -654,11 +654,11 @@ class PostscriptInterpreter {
             }
 
             let currentToken = '';
-                        
+
             if (code[i] === '\\') { // エスケープされたリテラル名
                 i++; // \ をスキップ
                 while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
-                     if (code[i] === '\\') { // トークン途中のエスケープ
+                    if (code[i] === '\\') { // トークン途中のエスケープ
                         if (i + 1 < code.length) {
                             currentToken += code[i + 1]; // \ は含めず、次の文字だけ
                             i += 2;
@@ -675,7 +675,7 @@ class PostscriptInterpreter {
             } else if (code[i] === '$') { // Chars由来の変数名
                 i++; // $ をスキップ
                 while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
-                     if (code[i] === '\\') { // トークン途中のエスケープ
+                    if (code[i] === '\\') { // トークン途中のエスケープ
                         if (i + 1 < code.length) {
                             currentToken += code[i + 1]; // \ は含めず、次の文字だけ
                             i += 2;
@@ -692,11 +692,11 @@ class PostscriptInterpreter {
             } else if (code[i] === '~') { // Name由来の変数名 (def用)
                 currentToken += code[i]; // ~ を含める
                 i++;
-                 while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
-                     if (code[i] === '\\') { // トークン途中のエスケープ
+                while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
+                    if (code[i] === '\\') { // トークン途中のエスケープ
                         if (i + 1 < code.length) {
                             currentToken += '\\'; // \ も含める
-                            currentToken += code[i+1]; // 次の文字も
+                            currentToken += code[i + 1]; // 次の文字も
                             i += 2;
                         } else {
                             throw new Error("Parse error: Escape character (\\) at end of code in token.");
@@ -706,18 +706,18 @@ class PostscriptInterpreter {
                         i++;
                     }
                 }
-                
+
                 if (currentToken.length > 1) { // ~add や ~\\~
                     // def で処理するために、エスケープを解決したキーを ~ につけて渡す
                     let key = currentToken.substring(1).replace(/\\(.)/g, '$1');
                     tokens.push("~" + key);
                 } else if (currentToken === '~') {
                     // ~ 単体はリテラル名として扱う (\~ と同じ)
-                     tokens.push({ type: 'literal_name', value: '~' });
+                    tokens.push({ type: 'literal_name', value: '~' });
                 }
 
             } else { // 通常のトークン（コマンド、数値、エスケープなしリテラル）
-                 while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
+                while (i < code.length && !/[\s\{\}\[\]\<\>\(\)]/.test(code[i])) {
                     if (code[i] === '\\') { // トークン途中のエスケープ
                         if (i + 1 < code.length) {
                             currentToken += code[i + 1]; // \ は含めず、次の文字だけ
@@ -730,7 +730,7 @@ class PostscriptInterpreter {
                         i++;
                     }
                 }
-                if(currentToken) tokens.push(currentToken);
+                if (currentToken) tokens.push(currentToken);
             }
         }
         return tokens;
@@ -754,15 +754,15 @@ class PostscriptInterpreter {
             } else if (typeof token === 'string' && token.startsWith('(') && token.endsWith(')')) {
                 let strContent = token.slice(1, -1);
                 // エスケープ文字 (\( \_ \) \\ など) を解決
-                strContent = strContent.replace(/\\(.)/g, '$1'); 
+                strContent = strContent.replace(/\\(.)/g, '$1');
                 this.stack.push({ type: 'string', value: strContent.split('') });
-            
-            // ★ literal_name (\add や \~ など)
+
+                // ★ literal_name (\add や \~ など)
             } else if (typeof token === 'object' && token !== null && token.type === 'literal_name') {
                 // \ でエスケープされたものは、リテラル値 (文字列) を積む
-                this.stack.push(token.value); 
+                this.stack.push(token.value);
 
-            // ★ variable_name (Chars由来 $add) の処理
+                // ★ variable_name (Chars由来 $add) の処理
             } else if (typeof token === 'object' && token !== null && token.type === 'variable_name') {
                 // Chars (例: $add) は、変数としてのみ検索する
                 const value = this.lookupVariable(token.value);
@@ -781,7 +781,7 @@ class PostscriptInterpreter {
                 }
 
             } else if (typeof token === 'string' && token.startsWith('~')) {
-                 this.stack.push(token);
+                this.stack.push(token);
             } else if (!isNaN(parseFloat(token)) && isFinite(token)) {
                 this.stack.push(parseFloat(token));
             } else if (Array.isArray(token)) {
@@ -789,8 +789,8 @@ class PostscriptInterpreter {
             } else if (typeof token === 'object' && token !== null && token.type && (token.type === 'array' || token.type === 'dict')) {
                 const resolvedToken = this.resolveVariablesInStructure(token);
                 this.stack.push(resolvedToken);
-                
-            // --- ★ Sigil (または数値以外) の処理 ---
+
+                // --- ★ Sigil (または数値以外) の処理 ---
             } else if (typeof token === 'string') {
                 // Sigil (例: add) は、コマンドとしてのみ検索する
                 if (this.commands[token]) {
@@ -802,7 +802,7 @@ class PostscriptInterpreter {
                 }
 
             } else {
-                 this.stack.push(token);
+                this.stack.push(token);
             }
         }
     }
@@ -817,12 +817,12 @@ class PostscriptInterpreter {
             const tokens = this.parse(code);
             this.run(tokens);
         } catch (e) {
-            if(e.message === 'EXIT_LOOP') {
+            if (e.message === 'EXIT_LOOP') {
                 throw new Error("`exit` was called outside of a `loop`.");
             }
             throw e;
         }
-        
+
         return {
             stack: this.stack,
             dictStack: this.dictStack,

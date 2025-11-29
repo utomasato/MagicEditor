@@ -1,7 +1,6 @@
 //各シジルの描画
 
-function DrawSigil(token, x, y, rotate = 0, zoom = 1)
-{
+function DrawSigil(token, x, y, rotate = 0, zoom = 1) {
     PushTransform();
     Translate(x, y);
     Scale(config.sigilSize * zoom);
@@ -9,14 +8,13 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
     stroke(config.sigilColor);
     strokeWeight(config.sigilLineWidth);
     noFill();
-    switch(token)
-    {
+    switch (token) {
         case "RETURN":
-            line(   0,  0.5,  0.38,    0);
-            line( 0.38,    0,    0, -0.5);
-            line(   0, -0.5, -0.38,    0);
-            line(-0.38,    0,    0,  0.5);
-            line(   0,  -0.5,   0,    -1);
+            line(0, 0.5, 0.38, 0);
+            line(0.38, 0, 0, -0.5);
+            line(0, -0.5, -0.38, 0);
+            line(-0.38, 0, 0, 0.5);
+            line(0, -0.5, 0, -1);
             line(-0.3, -0.75, 0.3, -0.75);
             break;
         case "COMPLETE":
@@ -28,10 +26,10 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
         case "pop": // スタックのトップを削除
             line(0.5, -0.5, 0.5, 0.5);
             line(0.5, 0.5, -0.25, 0.5);
-            arc(-0.25, 0.25, 0.5, 0.5, HALF_PI, HALF_PI*3);
+            arc(-0.25, 0.25, 0.5, 0.5, HALF_PI, HALF_PI * 3);
             line(-0.25, 0, 0.5, 0);
-            line(0.25,-0.25,-0.25,0.25);
-            line(0.25, 0.25,-0.25, -0.25);
+            line(0.25, -0.25, -0.25, 0.25);
+            line(0.25, 0.25, -0.25, -0.25);
             line(0, 0.3536, 0, -0.3536);
             break;
         case "exch": // スタックのトップとその下を交換する
@@ -46,17 +44,17 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             break;
         case "dup": // トップを複製する
             push();
-            translate(0.125,0);
+            translate(0.125, 0);
             line(0.25, 0.5, 0, 0.5);
-            arc(0,0,1,1,HALF_PI,3*HALF_PI);
+            arc(0, 0, 1, 1, HALF_PI, 3 * HALF_PI);
             line(0, -0.5, 0.25, -0.5);
-            line(0.25, 0.5, 0.25,-0.5);
-            line(0, 0.5, 0, -0.5);        
+            line(0.25, 0.5, 0.25, -0.5);
+            line(0, 0.5, 0, -0.5);
             pop();
             break;
         case "copy": // 配列、辞書、文字列のコピー　or スタックの上から指定された数を複製
-            arc(0, 0, 1, 1, -2/3*PI, 2/3*PI);
-            arc(-0.25, 0, 1, 1, -2/3*PI, 2/3*PI);
+            arc(0, 0, 1, 1, -2 / 3 * PI, 2 / 3 * PI);
+            arc(-0.25, 0, 1, 1, -2 / 3 * PI, 2 / 3 * PI);
             break;
         case "index": // 指定された深さのオブジェクトを複製する
             line(0, -0.5, 0, 0.5);
@@ -70,25 +68,25 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(-0.25, -0.5, 0, -0.25);
             push();
             translate(0, 0.125);
-            ellipse(0,0,0.75);
+            ellipse(0, 0, 0.75);
             line(-0.1875, -0.3248, 0.0647, -0.2415);
             line(-0.1875, 0.3248, -0.2415, 0.0647);
             line(0.375, 0, 0.1768, 0.1768);
             pop();
             break;
         case "add": // 和
-            line( -0.5,  -0.5,    0,  0.5);
-            line(    0,   0.5,  0.5, -0.5);
-            line(-0.25,     0, 0.25,    0);
-            line(    0, -0.25,    0, 0.25);
+            line(-0.5, -0.5, 0, 0.5);
+            line(0, 0.5, 0.5, -0.5);
+            line(-0.25, 0, 0.25, 0);
+            line(0, -0.25, 0, 0.25);
             break;
         case "sub": // 差
             push();
             translate(0.125, 0);
             arc(0, 0.25, 0.5, 0.5, -HALF_PI, PI);
-            arc(0, -0.25,0.5, 0.5, HALF_PI, TWO_PI);
+            arc(0, -0.25, 0.5, 0.5, HALF_PI, TWO_PI);
             line(-0.5, -0.25, 0, -0.25);
-            pop(); 
+            pop();
             break;
         case "mul": // 積
             line(0.5, -0.5, 0.5, 0.5);
@@ -112,7 +110,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             ellipse(0.5, 0, config.sigilLineWidth);
             ellipse(0, 0, config.sigilLineWidth);
             push();
-            translate(0.25,0);
+            translate(0.25, 0);
             line(0.25, -0.25, -0.25, -0.25);
             line(0.25, 0.25, -0.25, 0.25);
             pop();
@@ -125,31 +123,30 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             ellipse(0, 0, 0.5);
             break;
         case "abs": // 絶対値
-            line( -0.5,  0.5, -0.5, -0.5);
-            line( -0.5, -0.5,    0,  0.5);
-            line(    0,  0.5,  0.5, -0.5);
-            line(  0.5, -0.5,  0.5,  0.5);
-            line(-0.25,    0, 0.25,    0);
+            line(-0.5, 0.5, -0.5, -0.5);
+            line(-0.5, -0.5, 0, 0.5);
+            line(0, 0.5, 0.5, -0.5);
+            line(0.5, -0.5, 0.5, 0.5);
+            line(-0.25, 0, 0.25, 0);
             break;
         case "neg": // 符号反転
             line(0.375, -0.5, 0.375, 0.5);
             line(0.375, 0.5, -0.375, -0.5);
             line(-0.375, -0.5, -0.375, 0.5);
-            line(0.25, 0, -0.25, 0);        
+            line(0.25, 0, -0.25, 0);
             break;
         case "sqrt": // 平方根
-            for(let i = 0; i < 2; i++)
-            {
-              push();
-              rotate(i*PI);
-              line(0.5, 0.25, 0.375, 0);
-              line(0.375, 0, 0.25, 0.5);
-              line(0.25, 0.5, -0.5, 0.5);
-              pop();
+            for (let i = 0; i < 2; i++) {
+                push();
+                rotate(i * PI);
+                line(0.5, 0.25, 0.375, 0);
+                line(0.375, 0, 0.25, 0.5);
+                line(0.25, 0.5, -0.5, 0.5);
+                pop();
             }
             line(-0.3125, -0.25, 0.3125, 0.25);
             break;
-        case "atan": 
+        case "atan":
             line(0.5, -0.5, 0.5, 0);
             arc(0, 0, 1, 1, 0, PI);
             line(-0.5, 0, -0.5, -0.5);
@@ -162,21 +159,21 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             ellipse(0, 0, 0.25);
             line(0, 0, -0.3535, 0.3535);
             line(-0.3535, 0.3535, 0, 0.3535);
-            arc(0, 0, 1, 1, -3/4*PI, 3/4*PI);
+            arc(0, 0, 1, 1, -3 / 4 * PI, 3 / 4 * PI);
             break;
         case "sin":
             ellipse(0, 0, 0.25);
             line(0.3535, 0, 0.3535, 0.3535);
             line(0.3535, 0.3535, -0.3535, -0.3535);
             line(-0.3535, -0.3535, -0.3535, 0);
-            arc(0, 0, 1, 1, PI/4, 3/4*PI);
-            arc(0, 0, 1, 1, -3/4*PI, -PI/4);
+            arc(0, 0, 1, 1, PI / 4, 3 / 4 * PI);
+            arc(0, 0, 1, 1, -3 / 4 * PI, -PI / 4);
             break;
         case "rand": // 乱数
             push();
             translate(0, 0.1);
             scale(0.8);
-            strokeWeight(config.sigilLineWidth/0.8);
+            strokeWeight(config.sigilLineWidth / 0.8);
             sigil_parts("rand");
             pop();
             line(0.3464, -0.1, 0.3535, -0.5);
@@ -186,7 +183,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             push();
             translate(0, 0.1);
             scale(0.8);
-            strokeWeight(config.sigilLineWidth/0.8);
+            strokeWeight(config.sigilLineWidth / 0.8);
             sigil_parts("rand");
             pop();
             line(0.27, -0.3, -0.27, -0.3);
@@ -199,13 +196,13 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             push();
             translate(0, -0.1);
             scale(0.8);
-            strokeWeight(config.sigilLineWidth/0.8);
+            strokeWeight(config.sigilLineWidth / 0.8);
             sigil_parts("rand");
             pop();
             line(0, 0.3, -0.5, 0.5);
             line(0, 0.3, 0.5, 0.5);
             line(-0.5, 0.5, 0.5, 0.5);
-            ellipse(0, 0.4, config.sigilLineWidth*1.2);
+            ellipse(0, 0.4, config.sigilLineWidth * 1.2);
             break;
         case "array": // 指定されたサイズの配列を作成する(要素はすべてnull)
             ellipse(0, 0, 1);
@@ -218,7 +215,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(-0.25, -0.25, 0.25, -0.25);
             arc(0.25, 0, 0.5, 0.5, -HALF_PI, HALF_PI);
             line(0.25, 0.25, -0.25, 0.25);
-            for (let i=-0.25; i<0.3; i+=0.125)
+            for (let i = -0.25; i < 0.3; i += 0.125)
                 line(-i, -0.125, -i, 0.125);
             arc(0, 0, 1, 1, 0, HALF_PI);
             arc(0, 0, 1, 1, PI, -HALF_PI);
@@ -226,8 +223,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
         case "length":
             line(0.375, 0.5, 0.375, -0.5);
             line(0.375, -0.5, -0.375, -0.5);
-            for (let i=-0.25;i<0.4;i+=0.125)
-            {
+            for (let i = -0.25; i < 0.4; i += 0.125) {
                 line(-i, -0.5, -i, -0.25);
             }
             break;
@@ -253,7 +249,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             sigil_parts("look");
             translate(0.25, 0);
             arc(0, 0, 1, 1, HALF_PI, -HALF_PI);
-            arc(0, 0, 0.75, 0.75, QUARTER_PI*3, QUARTER_PI*5);
+            arc(0, 0, 0.75, 0.75, QUARTER_PI * 3, QUARTER_PI * 5);
             line(-0.3536, 0.3536, -0.1326, 0.1326);
             line(-0.3536, -0.3536, -0.1326, -0.1326);
             pop();
@@ -264,7 +260,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             sigil_parts("write");
             translate(0.25, 0);
             arc(0, 0, 1, 1, HALF_PI, -HALF_PI);
-            arc(0, 0, 0.75, 0.75, QUARTER_PI*3, QUARTER_PI*5);
+            arc(0, 0, 0.75, 0.75, QUARTER_PI * 3, QUARTER_PI * 5);
             line(-0.3536, 0.3536, -0.1326, 0.1326);
             line(-0.3536, -0.3536, -0.1326, -0.1326);
             pop();
@@ -310,7 +306,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(0.4125, 0.375, 0.2875, 0.375);
             arc(0.35, 0.1875, 0.25, 0.125, -HALF_PI, PI);
             arc(0.35, 0.0625, 0.25, 0.125, HALF_PI, TWO_PI);
-            arc(0.35, -0.125, 0.25, 0.25, -PI*3/4, PI*3/4);
+            arc(0.35, -0.125, 0.25, 0.25, -PI * 3 / 4, PI * 3 / 4);
             line(0.4125, -0.25, 0.4125, -0.5);
             line(0.2875, -0.25, 0.2875, -0.5);
             break;
@@ -326,7 +322,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(0.4125, 0.375, 0.2875, 0.375);
             arc(0.35, 0.1875, 0.25, 0.125, -HALF_PI, PI);
             arc(0.35, 0.0625, 0.25, 0.125, HALF_PI, TWO_PI);
-            arc(0.35, -0.125, 0.25, 0.25, -PI*3/4, PI*3/4);
+            arc(0.35, -0.125, 0.25, 0.25, -PI * 3 / 4, PI * 3 / 4);
             line(0.4125, -0.25, 0.4125, -0.5);
             line(0.2875, -0.25, 0.2875, -0.5);
             break;
@@ -386,11 +382,11 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(-0.125, 0, -0.125, -0.5);
             break;
         case "and":
-            line(-0.25, -0.5, 0 + 0.125 * Math.cos(-PI/6), 0.25 + 0.125 * Math.sin(-PI/6));
-            arc(0, 0.25, 0.125*2, 0.125*2, -PI/6, HALF_PI);
-            arc(0, 0.25, 0.125*2, 0.125*2, HALF_PI, 7/6*PI);
-            line(0 + 0.125 * Math.cos(7/6*PI), 0.25 + 0.125 * Math.sin(7/6*PI), 0.25, -0.5);
-            arc(0, 0, 0.375*2, 0.375*2, -3/4*PI, -1/3*PI);
+            line(-0.25, -0.5, 0 + 0.125 * Math.cos(-PI / 6), 0.25 + 0.125 * Math.sin(-PI / 6));
+            arc(0, 0.25, 0.125 * 2, 0.125 * 2, -PI / 6, HALF_PI);
+            arc(0, 0.25, 0.125 * 2, 0.125 * 2, HALF_PI, 7 / 6 * PI);
+            line(0 + 0.125 * Math.cos(7 / 6 * PI), 0.25 + 0.125 * Math.sin(7 / 6 * PI), 0.25, -0.5);
+            arc(0, 0, 0.375 * 2, 0.375 * 2, -3 / 4 * PI, -1 / 3 * PI);
             break;
         case "not":
             line(0.375, -0.5, 0.375, 0.5);
@@ -407,7 +403,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
         case "xor":
             line(-0.5, 0.5, 0.3536, -0.3536);
             line(-0.3536, -0.3536, 0.5, 0.5);
-            arc(0, 0, 1, 1, -QUARTER_PI, QUARTER_PI*5)
+            arc(0, 0, 1, 1, -QUARTER_PI, QUARTER_PI * 5)
             break;
         case "true":
             line(0.5, 0.5, -0.5, 0.5);
@@ -422,10 +418,9 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             break;
         case "exec":
             push();
-            for (let i=0; i<5;i++)
-            {
+            for (let i = 0; i < 5; i++) {
                 line(0, 0.5, 0.2939, -0.4045);
-                Rotate(TWO_PI/5);
+                Rotate(TWO_PI / 5);
             }
             pop();
             break;
@@ -446,15 +441,15 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(0.375, -0.5, 0.375, 0.5);
             line(0.375, 0.5, -0.375, 0.5);
             line(0.375, 0, -0.375, 0);
-            for(let i = -0.25; i<0.3125; i+=0.125)
+            for (let i = -0.25; i < 0.3125; i += 0.125)
                 line(-i, -0.125, -i, 0.125);
             break;
         case "repeat":
-            for (let i=0; i<3; i++)
-                line(-0.125+0.25*i, 0, -0.375+0.25*i, -0.5);
+            for (let i = 0; i < 3; i++)
+                line(-0.125 + 0.25 * i, 0, -0.375 + 0.25 * i, -0.5);
             line(0.375, -0.5, 0.375, 0.5);
             line(0.375, 0.5, -0.125, 0.5);
-            arc(-0.125, 0.25, 0.5, 0.5, HALF_PI, HALF_PI*3);
+            arc(-0.125, 0.25, 0.5, 0.5, HALF_PI, HALF_PI * 3);
             line(-0.125, 0, 0.375, 0);
             break;
         case "loop":
@@ -473,18 +468,18 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(0.25, -0.25, -0.25, -0.25);
             break;
         case "color":
-            arc(0, 0, 1, 1, -5/6*PI, 5/6*PI);
+            arc(0, 0, 1, 1, -5 / 6 * PI, 5 / 6 * PI);
             const r = 0.1333;
             ellipse(0, 0.1333, 0.4);
             ellipse(0.1155, -0.0667, 0.4);
             ellipse(-0.1155, -0.0667, 0.4);
             break;
         case "setcolor":
-            arc(0, 0.125, 0.75, 0.75, -5/6*PI, 5/6*PI);
+            arc(0, 0.125, 0.75, 0.75, -5 / 6 * PI, 5 / 6 * PI);
             sigil_parts("set");
             break;
         case "currentcolor":
-            arc(0, -0.125, 0.75, 0.75, -5/6*PI, 5/6*PI);
+            arc(0, -0.125, 0.75, 0.75, -5 / 6 * PI, 5 / 6 * PI);
             sigil_parts("current");
             break;
         case "magicactivate":
@@ -519,10 +514,10 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(0, 0.3, -0.1, 0.2);
             line(0, -0.3, 0.1, -0.2);
             line(0, -0.3, -0.1, -0.2);
-            arc(0, 0, 0.8, 0.8, 0.3, HALF_PI-0.3);
-            arc(0, 0, 0.8, 0.8, HALF_PI+0.3, PI-0.3);
-            arc(0, 0, 0.8, 0.8, PI+0.3, -HALF_PI-0.3);
-            arc(0, 0, 0.8, 0.8, -HALF_PI+0.3, -0.3);
+            arc(0, 0, 0.8, 0.8, 0.3, HALF_PI - 0.3);
+            arc(0, 0, 0.8, 0.8, HALF_PI + 0.3, PI - 0.3);
+            arc(0, 0, 0.8, 0.8, PI + 0.3, -HALF_PI - 0.3);
+            arc(0, 0, 0.8, 0.8, -HALF_PI + 0.3, -0.3);
             line(0.4, -0.3, 0.4, -0.4);
             line(0.4, -0.4, 0.3, -0.4);
             line(-0.4, 0.3, -0.4, 0.4);
@@ -539,9 +534,9 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
         case "print":
             line(0.5, -0.5, 0.5, 0.5);
             line(0.5, 0.5, -0.25, 0.5);
-            arc(-0.25, 0.25, 0.5, 0.5, HALF_PI, HALF_PI*3);
+            arc(-0.25, 0.25, 0.5, 0.5, HALF_PI, HALF_PI * 3);
             line(-0.25, 0, 0.5, 0);
-            for (let i=-0.3; i<0.3; i+=0.125)
+            for (let i = -0.3; i < 0.3; i += 0.125)
                 line(-i, 0.125, -i, 0.375);
             break;
         case "stack":
@@ -549,16 +544,16 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
             line(-0.5, 0.5, 0.5, 0.5);
             line(0.5, 0.5, 0.5, 0.25);
             line(0.5, 0.25, 0.2, 0);
-            line(-0.2, 0, -0.5, -0.25)        
+            line(-0.2, 0, -0.5, -0.25)
             line(-0.5, -0.25, -0.5, -0.5);
             line(-0.5, -0.5, 0.5, -0.5)
             line(0.5, -0.5, 0.5, -0.25);
-            for (let i=-0.25; i<0.3; i+=0.125)
+            for (let i = -0.25; i < 0.3; i += 0.125)
                 line(0.2, i, -0.2, i);
             break;
         case "joint":
-            fill(0,0,0);
-            circle(0,0,0.15);
+            fill(0, 0, 0);
+            circle(0, 0, 0.15);
             break;
         case "name":
             push();
@@ -577,10 +572,8 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1)
     PopTransform();
 }
 
-function sigil_parts(part)
-{
-    switch(part)
-    {
+function sigil_parts(part) {
+    switch (part) {
         case "rand":
             line(0, 0.5, -0.433, 0.25);
             line(-0.433, 0.25, -0.433, -0.25);
@@ -593,7 +586,7 @@ function sigil_parts(part)
             line(0, 0, 0, -0.5);
             break;
         case "current":
-            ellipse(0,0.375,config.sigilLineWidth*1.2);
+            ellipse(0, 0.375, config.sigilLineWidth * 1.2);
             line(0.5, 0.5, -0.5, 0.5);
             line(-0.5, 0.5, 0, 0.25);
             line(0, 0.25, 0.5, 0.5);
@@ -620,16 +613,14 @@ function sigil_parts(part)
     }
 }
 
-function DrawIcon(a, x, y, size)
-{
+function DrawIcon(a, x, y, size) {
     PushTransform();
     Translate(x, y);
     Scale(size);
     stroke(config.sigilColor);
     strokeWeight(config.sigilLineWidth);
     noFill();
-    switch (a)
-    {
+    switch (a) {
         case "ring":
             ellipse(0, 0, 1);
             ellipse(0, 0, 0.8);
@@ -673,8 +664,8 @@ function DrawIcon(a, x, y, size)
             text("var",0, 0.25);
             */
             pop();
-            DrawText(size*0.5, "123", x, y-size*0.25, config.fontColor, CENTER);
-            DrawText(size*0.5, "var", x, y+size*0.25, config.fontColor, CENTER);
+            DrawText(size * 0.5, "123", x, y - size * 0.25, config.fontColor, CENTER);
+            DrawText(size * 0.5, "var", x, y + size * 0.25, config.fontColor, CENTER);
             push();
             break;
         case "string":
@@ -686,7 +677,7 @@ function DrawIcon(a, x, y, size)
             text("Str",0,0);
             */
             pop();
-            DrawText(size*0.5, "Str", x, y, config.fontColor, CENTER);
+            DrawText(size * 0.5, "Str", x, y, config.fontColor, CENTER);
             push();
             break;
         case "name":
@@ -698,11 +689,11 @@ function DrawIcon(a, x, y, size)
             text("Name",0,0);
             */
             pop();
-            DrawText(size*0.5, "Name", x, y, config.fontColor, CENTER);
+            DrawText(size * 0.5, "Name", x, y, config.fontColor, CENTER);
             push();
             break;
         case "tRing":
-            arc(0, 0.1, 0.6, 0.6, -PI/4 ,5/4*PI);
+            arc(0, 0.1, 0.6, 0.6, -PI / 4, 5 / 4 * PI);
             bezier(0.2121, -0.1121, 0, -0.2242, 0, -0.3, 0.05, -0.4);
             bezier(0.05, -0.4, -0.15, -0.35, -0.15, -0.15, -0.1, 0);
             bezier(-0.1, 0, 0, 0.2, -0.3, 0.15, -0.2121, -0.1121);
@@ -717,34 +708,31 @@ function DrawIcon(a, x, y, size)
             */
             pop();
             textSize(size);
-            textAlign(CENTER,CENTER);
+            textAlign(CENTER, CENTER);
             fill(0);
             strokeWeight(0);
-            text(a,x,y);
+            text(a, x, y);
             push();
     }
     pop();
 }
 
-function DrawElement(e, x, y, size=1.0)
-{
+function DrawElement(e, x, y, size = 1.0) {
     push();
     translate(x, y);
     scale(config.sigilSize * size);
     stroke(config.sigilColor);
-    strokeWeight(config.sigilLineWidth/size);
+    strokeWeight(config.sigilLineWidth / size);
     noFill();
-    switch(e)
-    {
+    switch (e) {
         case "fire":
-            arc(0, 0.1, 0.6, 0.6, -PI/4 ,5/4*PI);
+            arc(0, 0.1, 0.6, 0.6, -PI / 4, 5 / 4 * PI);
             bezier(0.2121, -0.1121, 0, -0.2242, 0, -0.3, 0.05, -0.4);
             bezier(0.05, -0.4, -0.15, -0.35, -0.15, -0.15, -0.1, 0);
             bezier(-0.1, 0, 0, 0.2, -0.3, 0.15, -0.2121, -0.1121);
             break;
         default:
-            for (var i = 0; i< 4;i++)
-            {
+            for (var i = 0; i < 4; i++) {
                 rotate(HALF_PI);
                 line(0, 0.1, 0.1, 0.3);
                 line(0.1, 0.3, 0, 0.5);

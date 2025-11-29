@@ -35,7 +35,7 @@ function layoutSubtreeAndGetEffectiveRadius(parentRing, visited) {
                 children.push({
                     ring: targetRing,
                     layout: parentRing.layouts[index],
-                    effectiveRadius: 0 
+                    effectiveRadius: 0
                 });
             }
         }
@@ -45,7 +45,7 @@ function layoutSubtreeAndGetEffectiveRadius(parentRing, visited) {
         parentRing.effectiveRadius = parentRing.outerradius;
         return parentRing.outerradius;
     }
-    
+
     // 2. 子のサブツリーを再帰的にレイアウトし、実効半径を取得
     children.forEach(child => {
         child.effectiveRadius = layoutSubtreeAndGetEffectiveRadius(child.ring, new Set(visited));
@@ -63,11 +63,11 @@ function layoutSubtreeAndGetEffectiveRadius(parentRing, visited) {
         const distance = parentRing.outerradius + child.effectiveRadius + ringGap;
         const newX = parentRing.pos.x + distance * cos(alignAngle);
         const newY = parentRing.pos.y + distance * sin(alignAngle);
-        
+
         // 子の向きは親を向くように設定
         const directionToParent = atan2(parentRing.pos.y - newY, parentRing.pos.x - newX);
         const newAngle = directionToParent + HALF_PI;
-        
+
         // サブツリー全体を変換
         transformSubtree(child.ring, newX, newY, newAngle);
     });
@@ -81,18 +81,18 @@ function layoutSubtreeAndGetEffectiveRadius(parentRing, visited) {
             for (let j = i + 1; j < children.length; j++) {
                 const childA = children[i];
                 const childB = children[j];
-                
+
                 const distBetween = dist(childA.ring.pos.x, childA.ring.pos.y, childB.ring.pos.x, childB.ring.pos.y);
                 const requiredDist = childA.effectiveRadius + childB.effectiveRadius + 5;
 
                 if (distBetween < requiredDist) {
                     collisionFound = true;
                     const overlap = requiredDist - distBetween;
-                    
+
                     const ringToMoveData = (childA.effectiveRadius >= childB.effectiveRadius) ? childB : childA;
-                    
+
                     const angleFromParent = atan2(ringToMoveData.ring.pos.y - parentRing.pos.y, ringToMoveData.ring.pos.x - parentRing.pos.x);
-                    
+
                     const dx = overlap * cos(angleFromParent);
                     const dy = overlap * sin(angleFromParent);
 
@@ -114,19 +114,19 @@ function layoutSubtreeAndGetEffectiveRadius(parentRing, visited) {
         const distToChildCenter = dist(parentRing.pos.x, parentRing.pos.y, child.ring.pos.x, child.ring.pos.y);
         maxExtent = max(maxExtent, distToChildCenter + child.effectiveRadius);
     });
-    
+
     parentRing.effectiveRadius = maxExtent;
     return maxExtent;
 }
 
 
 /**
- * 指定されたリングとそのすべての子孫リングを、指定されたオフセット分だけ移動させます。
- * @param {MagicRing} ringToMove - 移動を開始するリング
- * @param {number} dx - X方向の移動量
- * @param {number} dy - Y方向の移動量
- * @param {Set<MagicRing>} movedRings - この移動操作で既に動かしたリングのセット
- */
+ * 指定されたリングとそのすべての子孫リングを、指定されたオフセット分だけ移動させます。
+ * @param {MagicRing} ringToMove - 移動を開始するリング
+ * @param {number} dx - X方向の移動量
+ * @param {number} dy - Y方向の移動量
+ * @param {Set<MagicRing>} movedRings - この移動操作で既に動かしたリングのセット
+ */
 function moveRingAndDescendants(ringToMove, dx, dy, movedRings) {
     if (!ringToMove || movedRings.has(ringToMove)) {
         return;
@@ -146,13 +146,13 @@ function moveRingAndDescendants(ringToMove, dx, dy, movedRings) {
 }
 
 /**
- * 指定されたリングのサブツリー全体を、指定された中心点(cx, cy)周りに角度angleだけ回転させます。
- * @param {MagicRing} ring - 回転を開始するリング
- * @param {number} cx - 回転の中心X座標
- * @param {number} cy - 回転の中心Y座標
- * @param {number} angle - 回転させる角度（ラジアン）
- * @param {Set<MagicRing>} rotatedRings - 無限再帰防止用のセット
- */
+ * 指定されたリングのサブツリー全体を、指定された中心点(cx, cy)周りに角度angleだけ回転させます。
+ * @param {MagicRing} ring - 回転を開始するリング
+ * @param {number} cx - 回転の中心X座標
+ * @param {number} cy - 回転の中心Y座標
+ * @param {number} angle - 回転させる角度（ラジアン）
+ * @param {Set<MagicRing>} rotatedRings - 無限再帰防止用のセット
+ */
 function rotateSubtreeAroundPoint(ring, cx, cy, angle, rotatedRings) {
     if (!ring || rotatedRings.has(ring)) {
         return;
@@ -178,12 +178,12 @@ function rotateSubtreeAroundPoint(ring, cx, cy, angle, rotatedRings) {
 }
 
 /**
- * 指定されたリングの位置と角度を更新し、その変化に応じてサブツリー全体を適切に変換（移動＆回転）します。
- * @param {MagicRing} ringToUpdate - 更新対象のリング
- * @param {number} newX - 新しい目標X座標
- * @param {number} newY - 新しい目標Y座標
- * @param {number} newAngle - 新しい目標角度 (ラジアン)
- */
+ * 指定されたリングの位置と角度を更新し、その変化に応じてサブツリー全体を適切に変換（移動＆回転）します。
+ * @param {MagicRing} ringToUpdate - 更新対象のリング
+ * @param {number} newX - 新しい目標X座標
+ * @param {number} newY - 新しい目標Y座標
+ * @param {number} newAngle - 新しい目標角度 (ラジアン)
+ */
 function transformSubtree(ringToUpdate, newX, newY, newAngle) {
     const oldPos = { x: ringToUpdate.pos.x, y: ringToUpdate.pos.y };
     const oldAngle = ringToUpdate.angle;
@@ -203,14 +203,14 @@ function transformSubtree(ringToUpdate, newX, newY, newAngle) {
         [...new Set(children)].forEach(child => {
             rotateSubtreeAroundPoint(
                 child,
-                newX, 
+                newX,
                 newY,
                 angleChange,
                 new Set([ringToUpdate])
             );
         });
     }
-    
+
     ringToUpdate.angle = newAngle;
 }
 

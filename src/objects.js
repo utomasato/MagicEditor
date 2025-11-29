@@ -1,7 +1,5 @@
-class MagicRing 
-{
-    constructor(pos) 
-    {
+class MagicRing {
+    constructor(pos) {
         this.pos = pos;
         this.radius = 0;
         this.innerradius = 0;
@@ -10,13 +8,13 @@ class MagicRing
         this.color = color(0, 0, 0, 128);
         this.items = [new Sigil(0, 0, "RETURN", this),];
         this.circumference = 0;
-        this.itemRadWidth = {sigil: 0, char: 0, charSpacing:0, padding: 0};
+        this.itemRadWidth = { sigil: 0, char: 0, charSpacing: 0, padding: 0 };
         this.layouts = [];
         this.angle = 0;
         this.effectiveRadius = 0; // 実効半径を保持するプロパティを追加
         this.isStartPoint = false;
         this.comments = [];
-        
+
         this.spellstart = "{ ";
         this.spellend = "}";
 
@@ -25,7 +23,7 @@ class MagicRing
         this.configMinCircumference = config.minRingCircumference;
 
         this.CalculateLayout();
-        
+
         this.marker = null;
     }
 
@@ -49,12 +47,11 @@ class MagicRing
         newRing.CalculateLayout();
         return newRing;
     }
-    
-    CalculateLayout()
-    {
+
+    CalculateLayout() {
         this.layouts = [];
         let totalLength = 0;
-        
+
         this.items.forEach(item => {
             if (item) {
                 totalLength += item.GetLength() + config.itemPadding;
@@ -69,7 +66,7 @@ class MagicRing
         this.radius = this.circumference;
         this.innerradius = this.radius - this.configWidth / 2;
         this.outerradius = this.radius + this.configWidth / 2;
-        
+
         this.itemRadWidth = {
             sigil: config.sigilWidth / this.circumference * TWO_PI,
             char: config.charWidth / this.circumference * TWO_PI,
@@ -77,14 +74,14 @@ class MagicRing
             stringSide: config.stringSideWidth / this.circumference * TWO_PI,
             padding: config.itemPadding / this.circumference * TWO_PI,
         };
-        
+
         const nonNullItems = this.items.filter(item => item !== null);
         if (nonNullItems.length === 0) return;
 
         const actualTotalLength = nonNullItems.reduce((sum, item) => sum + item.GetLength() + config.itemPadding, 0);
         const excessLength = this.circumference - actualTotalLength;
         const excessAngle = excessLength / this.circumference * TWO_PI;
-        
+
         let firstItem = this.items.find(item => item !== null);
         if (!firstItem) return;
 
@@ -98,26 +95,25 @@ class MagicRing
             } else {
                 itemLength = config.sigilWidth;
             }
-            
+
             currentAngle -= itemLength / this.circumference * PI;
             const itemEndAngle = currentAngle - (itemLength / this.circumference * PI) - this.itemRadWidth.padding / 2 - excessAngle / nonNullItems.length / 2;
             this.layouts.push({ angle: currentAngle, angle2: itemEndAngle });
             currentAngle -= (itemLength / this.circumference * PI + this.itemRadWidth.padding + excessAngle / nonNullItems.length);
         }
     }
-    
-    Draw() 
-    {
+
+    Draw() {
         const direction = globalIsClockwise ? -1 : 1;
         for (let i = 0; i < this.items.length; i++) {
             const item = this.items[i];
             if (item && item.type === 'joint') {
-                const sourceRing = item.value; 
-                const parentRing = this; 
-                
+                const sourceRing = item.value;
+                const parentRing = this;
+
                 if (sourceRing && parentRing && i < this.layouts.length) {
                     const layout = this.layouts[i];
-                    if(!layout) continue;
+                    if (!layout) continue;
 
                     const startAngleOnRing = parentRing.angle + layout.angle * direction;
                     const p0x = parentRing.pos.x + parentRing.radius * Math.sin(startAngleOnRing);
@@ -130,7 +126,7 @@ class MagicRing
 
                     const distance = dist(p0x, p0y, p3x, p3y);
                     const controlDist = distance / 2;
-                    
+
                     const controlAngleP1 = atan2(p0y - parentRing.pos.y, p0x - parentRing.pos.x);
                     const controlAngleP2 = atan2(p3y - sourceRing.pos.y, p3x - sourceRing.pos.x);
 
@@ -151,9 +147,8 @@ class MagicRing
         PushTransform();
         Translate(this.pos.x, this.pos.y);
         Rotate(this.angle);
-        if(debugMode)
-        {
-            FillCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, color(200,200,200,100));
+        if (debugMode) {
+            FillCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, color(200, 200, 200, 100));
 
             // 実効半径をデバッグ表示
             if (this.effectiveRadius > 0) {
@@ -163,69 +158,62 @@ class MagicRing
                 ellipse(0, 0, this.effectiveRadius * 2);
             }
         }
-        
+
         this.DrawRingShape();
 
         this.DrawRingStar();
-        
-        for (let i = 0; i < this.items.length; i++)
-        {
-            if (this.items[i] && this.layouts[i]) 
-            {
-                this.items[i].DrawByRing(this.radius, this.layouts[i].angle * direction , this.itemRadWidth);
+
+        for (let i = 0; i < this.items.length; i++) {
+            if (this.items[i] && this.layouts[i]) {
+                this.items[i].DrawByRing(this.radius, this.layouts[i].angle * direction, this.itemRadWidth);
             }
         }
 
-        if(debugMode){
+        if (debugMode) {
             this.DrawDebugLine();
         }
         this.DrawComments();
         PopTransform();
     }
-    
+
     DrawRingShape() {
-        DrawCircle(0, 0, this.innerradius, color(0,0,0)); 
-        DrawCircle(0, 0, this.outerradius, color(0,0,0));
-        if (this.isStartPoint)
-        {
-            DrawCircle(0, 0, this.outerradius + 3, color(0,0,0));
+        DrawCircle(0, 0, this.innerradius, color(0, 0, 0));
+        DrawCircle(0, 0, this.outerradius, color(0, 0, 0));
+        if (this.isStartPoint) {
+            DrawCircle(0, 0, this.outerradius + 3, color(0, 0, 0));
         }
     }
 
-    DrawRingStar()
-    {
+    DrawRingStar() {
         const itemn = this.items.length;
-        const n = itemn<=2 ? 5 : itemn; 
-        const step = floor(n * 2 / 5); 
+        const n = itemn <= 2 ? 5 : itemn;
+        const step = floor(n * 2 / 5);
         const onesteprad = TWO_PI / n;
         PushTransform();
-        for (let i = 0; i < n; i++)
-        {
-            DrawLine(0, -this.innerradius, Math.sin(onesteprad*step) * this.innerradius, -Math.cos(onesteprad*step) * this.innerradius, color(0,0,0))
+        for (let i = 0; i < n; i++) {
+            DrawLine(0, -this.innerradius, Math.sin(onesteprad * step) * this.innerradius, -Math.cos(onesteprad * step) * this.innerradius, color(0, 0, 0))
             Rotate(onesteprad);
         }
         PopTransform();
     }
-    
-    DrawComments()
-    {
+
+    DrawComments() {
         this.comments.forEach(comment => {
             let radius = this.outerradius + config.fontSize;
             let charDegWidth = (config.charWidth + config.charSpacing) / radius * 360; // 一文字ごとにずらす角度
             let totalRotation = 0;
             //function applyRotation(deg) { Rotate(-deg/180*PI); totalRotation += deg; }
-            
+
             PushTransform();
             Rotate((-comment.angle1 / 180 + 1) * PI);
             PushTransform();
             const chars = comment.text.split('');
             chars.forEach(char => {
-                DrawText(config.fontSize, char, 0, radius , config.fontColor, CENTER);
+                DrawText(config.fontSize, char, 0, radius, config.fontColor, CENTER);
                 //applyRotation(charDegWidth);
-                Rotate(-charDegWidth/180*PI);
+                Rotate(-charDegWidth / 180 * PI);
                 totalRotation += charDegWidth;
-                if (totalRotation > comment.angle2 || char == "\n")
-                {
+                if (totalRotation > comment.angle2 || char == "\n") {
                     PopTransform();
                     PushTransform();
                     totalRotation = 0;
@@ -238,47 +226,39 @@ class MagicRing
             PopTransform();
         });
     }
-    
-    DrawDebugLine()
-    {
+
+    DrawDebugLine() {
         const direction = globalIsClockwise ? -1 : 1;
-        this.layouts.forEach(l=>{
+        this.layouts.forEach(l => {
             if (l) {
                 PushTransform();
-                Rotate(l.angle * direction );
-                DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0,255,0));
+                Rotate(l.angle * direction);
+                DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0, 255, 0));
                 PopTransform();
                 PushTransform();
-                Rotate(l.angle2 * direction );
-                DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0,0,255));
+                Rotate(l.angle2 * direction);
+                DrawLine(0, -this.innerradius, 0, -this.outerradius, color(0, 0, 255));
                 PopTransform();
             }
         });
     }
-    
-    RemoveItem(index)
-    {
-        this.items.splice(index,1);
+
+    RemoveItem(index) {
+        this.items.splice(index, 1);
     }
-    InsertItem(item, index)
-    {
+    InsertItem(item, index) {
         this.items.splice(index, 0, item);
     }
-    
-    CheckDistance(pos)
-    {
-        return Math.sqrt((pos.x - this.pos.x)**2 + (pos.y - this.pos.y)**2);
+
+    CheckDistance(pos) {
+        return Math.sqrt((pos.x - this.pos.x) ** 2 + (pos.y - this.pos.y) ** 2);
     }
-    
-    CheckPosIsOn(pos)
-    {
+
+    CheckPosIsOn(pos) {
         const distance = this.CheckDistance(pos)
-        if (distance < this.outerradius + config.ringRotateHandleWidth)
-        {
-            if (distance < this.outerradius)
-            {
-                if (distance < this.innerradius)
-                {
+        if (distance < this.outerradius + config.ringRotateHandleWidth) {
+            if (distance < this.outerradius) {
+                if (distance < this.innerradius) {
                     return [this, "inner"];
                 }
                 const iteminfo = this.CheckPosItem(pos);
@@ -288,30 +268,27 @@ class MagicRing
         }
         return false;
     }
-    
-    CheckPosItem(pos)
-    {
+
+    CheckPosItem(pos) {
         const direction = globalIsClockwise ? -1 : 1;
         const mouseAngle = -PI - Math.atan2(pos.x - this.pos.x, pos.y - this.pos.y);
-        const angle = (((mouseAngle - this.angle)/PI *direction % 2 + 2) % 2 - 2) * PI;
-        
+        const angle = (((mouseAngle - this.angle) / PI * direction % 2 + 2) % 2 - 2) * PI;
+
         for (let i = 0; i < this.layouts.length; i++) {
             const layout = this.layouts[i];
             if (layout && layout.angle2 <= angle) {
-                return {item: this.items[i], index: i};
+                return { item: this.items[i], index: i };
             }
         }
-        
+
         let firstItem = this.items.find(item => item !== null);
         let firstItemIndex = this.items.indexOf(firstItem);
-        return {item: firstItem, index: firstItemIndex};
+        return { item: firstItem, index: firstItemIndex };
     }
-    
-    Spell()
-    {
+
+    Spell() {
         let spell = "";
-        this.items.slice(1).forEach( item =>
-        {
+        this.items.slice(1).forEach(item => {
             if (item) spell += item.SpellToken() + " ";
         });
         return this.spellstart + spell + this.spellend;
@@ -321,11 +298,11 @@ class MagicRing
 class ArrayRing extends MagicRing {
     constructor(pos) {
         super(pos);
-        this.items = [new Sigil(0, 0, "COMPLETE", this)]; 
+        this.items = [new Sigil(0, 0, "COMPLETE", this)];
 
         this.configWidth = config.arrayWidth;
         this.configMinCircumference = config.minArrayCircumference;
-        
+
         this.spellstart = "[ ";
         this.spellend = "]";
 
@@ -337,7 +314,7 @@ class ArrayRing extends MagicRing {
     }
 
     CanAcceptItem(item) {
-        if (!item) return true; 
+        if (!item) return true;
 
         if (item.type === 'sigil' && item.value !== 'COMPLETE') {
             return false;
@@ -346,7 +323,7 @@ class ArrayRing extends MagicRing {
             return false;
         }
 
-        return true; 
+        return true;
     }
 
     CheckPosIsOn(pos) {
@@ -360,7 +337,7 @@ class ArrayRing extends MagicRing {
 class DictRing extends MagicRing {
     constructor(pos) {
         super(pos);
-        this.items = [new Sigil(0, 0, "COMPLETE", this)]; 
+        this.items = [new Sigil(0, 0, "COMPLETE", this)];
         this.spellstart = "< ";
         this.spellend = ">";
         this.CalculateLayout();
@@ -373,12 +350,12 @@ class DictRing extends MagicRing {
     DrawRingShape() {
         const numVertices = Math.max(this.items.length, 6);
         const angleStep = TWO_PI / numVertices;
-        const doubleLineOffset = 3; 
+        const doubleLineOffset = 3;
 
         noFill();
         stroke(0, 0, 0);
         strokeWeight(1);
-        
+
         beginShape();
         for (let i = 0; i < numVertices; i++) {
             const angle = i * angleStep;
@@ -386,14 +363,14 @@ class DictRing extends MagicRing {
         }
         endShape(CLOSE);
 
-        const　correctedOuterRadius = this.outerradius / cos(PI / numVertices);
+        const correctedOuterRadius = this.outerradius / cos(PI / numVertices);
         beginShape();
         for (let i = 0; i < numVertices; i++) {
             const angle = i * angleStep;
             vertex(correctedOuterRadius * sin(angle), -correctedOuterRadius * cos(angle));
         }
         endShape(CLOSE);
-        
+
         const secondOuterRadius = correctedOuterRadius - doubleLineOffset;
         beginShape();
         for (let i = 0; i < numVertices; i++) {
@@ -425,29 +402,27 @@ class DictRing extends MagicRing {
 class TemplateRing extends MagicRing {
     constructor(pos) {
         super(pos);
-        this.items = [new Sigil(0, 0, "RETURN", this)]; 
+        this.items = [new Sigil(0, 0, "RETURN", this)];
         //this.spellstart = "< ";
         //this.spellend = ">";
         this.magic = "fire"
         this.CalculateLayout();
     }
-    
+
     clone(clonedMap = new Map()) {
         const newRing = super.clone(clonedMap);
         newRing.magic = this.magic;
         return newRing;
     }
-    
+
     DrawRingStar() {
         //super.DrawRingStar();
-        DrawElement(this.magic, 0, 0, this.innerradius/30)
+        DrawElement(this.magic, 0, 0, this.innerradius / 30)
     }
-    
-    Spell()
-    {
+
+    Spell() {
         let spell = "";
-        this.items.slice(1).forEach( item =>
-        {
+        this.items.slice(1).forEach(item => {
             if (item) spell += item.SpellToken() + " ";
         });
         return magicTemplates(this.magic, spell);
@@ -455,14 +430,13 @@ class TemplateRing extends MagicRing {
 }
 
 class RingItem {
-    constructor(x, y, value, parentRing)
-    {
-        this.pos = { x: x, y: y }; 
+    constructor(x, y, value, parentRing) {
+        this.pos = { x: x, y: y };
         this.type = "item";
         this.value = value;
         this.parentRing = parentRing;
     }
-    
+
     clone(clonedMap) {
         // this.constructor を使うことで、呼び出し元のクラス（Sigil, Charsなど）の新しいインスタンスを生成できる
         const newItem = new this.constructor(this.pos.x, this.pos.y, this.value, null);
@@ -470,73 +444,62 @@ class RingItem {
     }
 
     GetLength() { return 0; }
-    DrawByRing(radius, layout, itemRadWidth) {}
-    DrawByCanvas() {}
-    DrawByDrag() {}
+    DrawByRing(radius, layout, itemRadWidth) { }
+    DrawByCanvas() { }
+    DrawByDrag() { }
     SetValue(newValue) { this.value = newValue; }
     CheckPosIsOn(pos) { return false; }
     SpellToken() { return this.value; }
 }
 
 class Sigil extends RingItem {
-    constructor(x, y, value, parentRing)
-    {
+    constructor(x, y, value, parentRing) {
         super(x, y, value, parentRing);
         this.type = "sigil";
     }
-    
-    GetLength()
-    {
+
+    GetLength() {
         return config.sigilWidth;
     }
 
-    DrawByRing(radius, angle, itemRadWidth)
-    {
+    DrawByRing(radius, angle, itemRadWidth) {
         const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
         Rotate(angle);
-        if (globalIsClockwise && this.value != "RETURN" && this.value != "COMPLETE") 
-        {
+        if (globalIsClockwise && this.value != "RETURN" && this.value != "COMPLETE") {
             Rotate(PI);
             DrawSigil(this.value, 0, radius);
         }
-        else
-        {
+        else {
             DrawSigil(this.value, 0, -radius);
         }
         PopTransform();
     }
-    
-    DrawByDrag()
-    {
+
+    DrawByDrag() {
         const ClickObj = CheckMouseObject(false);
-        if (ClickObj[0] == "ring")
-        {
+        if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
             if (globalIsClockwise)
-                DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle+PI, zoomSize);
+                DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle + PI, zoomSize);
             else
                 DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle, zoomSize);
         }
-        else
-        {
+        else {
             DrawSigil(this.value, GetMouseX(), GetMouseY(), PI, zoomSize);
         }
     }
-    
-    DrawByCanvas()
-    {
-        if(debugMode){
-            DrawRect(this.pos.x-this.GetLength()*PI, this.pos.y-config.sigilSize/2, this.GetLength()*TWO_PI, config.sigilSize, color(0,255,0));
+
+    DrawByCanvas() {
+        if (debugMode) {
+            DrawRect(this.pos.x - this.GetLength() * PI, this.pos.y - config.sigilSize / 2, this.GetLength() * TWO_PI, config.sigilSize, color(0, 255, 0));
         }
         DrawSigil(this.value, this.pos.x, this.pos.y, PI);
     }
-    
-    CheckPosIsOn(pos)
-    {
-        if (this.pos.x-config.sigilSize/2 < pos.x && pos.x < this.pos.x+config.sigilSize/2 && this.pos.y-config.sigilSize/2  < pos.y && pos.y < this.pos.y+config.sigilSize/2)
-        {
+
+    CheckPosIsOn(pos) {
+        if (this.pos.x - config.sigilSize / 2 < pos.x && pos.x < this.pos.x + config.sigilSize / 2 && this.pos.y - config.sigilSize / 2 < pos.y && pos.y < this.pos.y + config.sigilSize / 2) {
             return true;
         }
         return false;
@@ -544,39 +507,33 @@ class Sigil extends RingItem {
 }
 
 class Chars extends RingItem {
-    constructor(x, y, value, parentRing)
-    {
+    constructor(x, y, value, parentRing) {
         super(x, y, value, parentRing);
         this.type = "chars";
     }
-    
-    GetLength()
-    {
-        return this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing;
+
+    GetLength() {
+        return this.value.length * config.charWidth + (this.value.length - 1) * config.charSpacing;
     }
-    
-    DrawByRing(radius, angle, itemRadWidth)
-    {
+
+    DrawByRing(radius, angle, itemRadWidth) {
         const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
         Rotate(angle);
         if (!globalIsClockwise) Rotate(PI);
         const radwide = this.GetLength() / radius * TWO_PI;
-        Rotate((radwide/2 - itemRadWidth.char/2) * direction);
+        Rotate((radwide / 2 - itemRadWidth.char / 2) * direction);
         const chars = this.value.split('');
-        chars.forEach(char =>
-        {
-            DrawText(config.fontSize, char, 0, radius * direction , config.fontColor, CENTER);
-            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
+        chars.forEach(char => {
+            DrawText(config.fontSize, char, 0, radius * direction, config.fontColor, CENTER);
+            Rotate((-itemRadWidth.char - itemRadWidth.charSpacing) * direction);
         });
         PopTransform();
     }
-    
-    DrawByDrag()
-    {
+
+    DrawByDrag() {
         const ClickObj = CheckMouseObject(false);
-        if (ClickObj[0] == "ring")
-        {
+        if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
             PushTransform();
@@ -586,32 +543,27 @@ class Chars extends RingItem {
             DrawText(config.fontSize * zoomSize, this.value, 0, 0, config.fontColor, CENTER);
             PopTransform();
         }
-        else
-        {
+        else {
             DrawText(config.fontSize * zoomSize, this.value, GetMouseX(), GetMouseY(), config.fontColor, CENTER);
         }
     }
-    
-    DrawByCanvas()
-    {
-        if(debugMode){
-            DrawRect(this.pos.x-this.GetLength()*PI, this.pos.y-config.fontSize/2, this.GetLength()*TWO_PI, config.fontSize, color(0,255,0));
+
+    DrawByCanvas() {
+        if (debugMode) {
+            DrawRect(this.pos.x - this.GetLength() * PI, this.pos.y - config.fontSize / 2, this.GetLength() * TWO_PI, config.fontSize, color(0, 255, 0));
         }
         DrawText(config.fontSize, this.value, this.pos.x, this.pos.y, config.fontColor, CENTER);
     }
-    
-    CheckPosIsOn(pos)
-    {
-        if (this.pos.x-this.GetLength()*PI < pos.x && pos.x < this.pos.x+this.GetLength()*PI && this.pos.y-config.fontSize/2  < pos.y && pos.y < this.pos.y+config.fontSize/2)
-        {
+
+    CheckPosIsOn(pos) {
+        if (this.pos.x - this.GetLength() * PI < pos.x && pos.x < this.pos.x + this.GetLength() * PI && this.pos.y - config.fontSize / 2 < pos.y && pos.y < this.pos.y + config.fontSize / 2) {
             return true;
         }
         return false;
     }
 
     // --- 修正：Chars の SpellToken を $ プレフィックスと数値対応に変更 ---
-    SpellToken()
-    {
+    SpellToken() {
         const value = this.value;
 
         // 1. 値が null や空文字列、空白でないかチェックし、
@@ -626,114 +578,103 @@ class Chars extends RingItem {
         // 2. 数値でない場合 ( "add", "x", "1a" など) は、変数として扱う
         //    \ と PostScript構文文字 ($ も含む) をエスケープ
         let escapedValue = this.value.replace(/[\\~{}<>()\[\]$]/g, (match) => '\\' + match);
-        
+
         // $ を先頭につけて変数名として扱う
         // (Charsの 'add' は '$add' となり、Sigilの 'add' と区別される)
-        escapedValue = "$" + escapedValue; 
-        
+        escapedValue = "$" + escapedValue;
+
         return escapedValue;
     }
 }
 
 class StringToken extends RingItem {
-    constructor(x, y, value, parentRing)
-    {
+    constructor(x, y, value, parentRing) {
         super(x, y, value, parentRing);
         this.type = "string_token";
     }
-    
-    GetLength()
-    {
-        return this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing + config.stringSideWidth*2;
+
+    GetLength() {
+        return this.value.length * config.charWidth + (this.value.length - 1) * config.charSpacing + config.stringSideWidth * 2;
     }
-    
-    DrawByRing(radius, angle, itemRadWidth)
-    {
+
+    DrawByRing(radius, angle, itemRadWidth) {
         const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
         Rotate(angle);
         if (!globalIsClockwise) Rotate(PI);
         const radwide = this.GetLength() / radius * TWO_PI;
-        Rotate((radwide/2 - itemRadWidth.stringSide) * direction);
-        arc(0, radius * direction, config.stringSideWidth*TWO_PI*2, config.stringSideWidth*TWO_PI*2, HALF_PI, -HALF_PI);
-        Rotate(-itemRadWidth.char/2 * direction);
+        Rotate((radwide / 2 - itemRadWidth.stringSide) * direction);
+        arc(0, radius * direction, config.stringSideWidth * TWO_PI * 2, config.stringSideWidth * TWO_PI * 2, HALF_PI, -HALF_PI);
+        Rotate(-itemRadWidth.char / 2 * direction);
         const chars = this.value.split('');
-        chars.forEach(char =>
-        {
+        chars.forEach(char => {
             DrawText(config.fontSize, char, 0, radius * direction, config.fontColor, CENTER);
-            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
+            Rotate((-itemRadWidth.char - itemRadWidth.charSpacing) * direction);
         });
-        Rotate((itemRadWidth.char/2 + itemRadWidth.charSpacing) * direction);
+        Rotate((itemRadWidth.char / 2 + itemRadWidth.charSpacing) * direction);
         noFill();
         stroke(config.sigilColor);
         strokeWeight(1);
-        arc(0, radius * direction, config.stringSideWidth*TWO_PI*2, config.stringSideWidth*TWO_PI*2, -HALF_PI, HALF_PI);
-        const innerlineradius = (radius-config.stringSideWidth*TWO_PI)*2;
-        const outerlineradius = (radius+config.stringSideWidth*TWO_PI)*2
-        const outlinewidth = this.value.length * itemRadWidth.char + (this.value.length-1) * itemRadWidth.charSpacing;
-        if (globalIsClockwise)
-        {
-            arc(0, 0, innerlineradius, innerlineradius, -HALF_PI-outlinewidth, -HALF_PI);
-            arc(0, 0, outerlineradius, outerlineradius, -HALF_PI-outlinewidth, -HALF_PI);
+        arc(0, radius * direction, config.stringSideWidth * TWO_PI * 2, config.stringSideWidth * TWO_PI * 2, -HALF_PI, HALF_PI);
+        const innerlineradius = (radius - config.stringSideWidth * TWO_PI) * 2;
+        const outerlineradius = (radius + config.stringSideWidth * TWO_PI) * 2
+        const outlinewidth = this.value.length * itemRadWidth.char + (this.value.length - 1) * itemRadWidth.charSpacing;
+        if (globalIsClockwise) {
+            arc(0, 0, innerlineradius, innerlineradius, -HALF_PI - outlinewidth, -HALF_PI);
+            arc(0, 0, outerlineradius, outerlineradius, -HALF_PI - outlinewidth, -HALF_PI);
         }
-        else
-        {
-            arc(0, 0, innerlineradius, innerlineradius, HALF_PI, HALF_PI+outlinewidth);
-            arc(0, 0, outerlineradius, outerlineradius, HALF_PI, HALF_PI+outlinewidth);
+        else {
+            arc(0, 0, innerlineradius, innerlineradius, HALF_PI, HALF_PI + outlinewidth);
+            arc(0, 0, outerlineradius, outerlineradius, HALF_PI, HALF_PI + outlinewidth);
         }
         PopTransform();
     }
-    
-    DrawByDrag()
-    {
+
+    DrawByDrag() {
         const ClickObj = CheckMouseObject(false);
         PushTransform();
-        
+
         Translate(GetMouseX(), GetMouseY());
-        if (ClickObj[0] == "ring")
-        {
+        if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
             Rotate(-mouseAngle);
-            if (!globalIsClockwise) Rotate(PI);        }
+            if (!globalIsClockwise) Rotate(PI);
+        }
         Scale(zoomSize);
         DrawText(config.fontSize, this.value, 0, 0, config.fontColor, CENTER);
-        const textlen = config.fontSize*this.value.length*0.6;
-        const outlineradius = config.stringSideWidth*TWO_PI;
-        DrawLine(-textlen/2, outlineradius, textlen/2, outlineradius, color(config.sigilColor));
-        DrawLine(-textlen/2, -outlineradius, textlen/2, -outlineradius, color(config.sigilColor));
+        const textlen = config.fontSize * this.value.length * 0.6;
+        const outlineradius = config.stringSideWidth * TWO_PI;
+        DrawLine(-textlen / 2, outlineradius, textlen / 2, outlineradius, color(config.sigilColor));
+        DrawLine(-textlen / 2, -outlineradius, textlen / 2, -outlineradius, color(config.sigilColor));
         noFill();
-        arc(-textlen/2, 0, outlineradius*2, outlineradius*2, HALF_PI, -HALF_PI);
-        arc(textlen/2, 0, outlineradius*2, outlineradius*2, -HALF_PI, HALF_PI);
+        arc(-textlen / 2, 0, outlineradius * 2, outlineradius * 2, HALF_PI, -HALF_PI);
+        arc(textlen / 2, 0, outlineradius * 2, outlineradius * 2, -HALF_PI, HALF_PI);
         PopTransform();
     }
-    
-    DrawByCanvas()
-    {
-        if(debugMode){
-            DrawRect(this.pos.x-this.GetLength()*PI, this.pos.y-config.fontSize/2, this.GetLength()*TWO_PI, config.fontSize, color(0,255,0));
+
+    DrawByCanvas() {
+        if (debugMode) {
+            DrawRect(this.pos.x - this.GetLength() * PI, this.pos.y - config.fontSize / 2, this.GetLength() * TWO_PI, config.fontSize, color(0, 255, 0));
         }
         DrawText(config.fontSize, this.value, this.pos.x, this.pos.y, config.fontColor, CENTER);
-        const textlen = config.fontSize*this.value.length*0.6;
-        const outlineradius = config.stringSideWidth*TWO_PI;
-        DrawLine(this.pos.x-textlen/2, this.pos.y+outlineradius, this.pos.x+textlen/2, this.pos.y+outlineradius, color(config.sigilColor));
-        DrawLine(this.pos.x-textlen/2, this.pos.y-outlineradius, this.pos.x+textlen/2, this.pos.y-outlineradius, color(config.sigilColor));
+        const textlen = config.fontSize * this.value.length * 0.6;
+        const outlineradius = config.stringSideWidth * TWO_PI;
+        DrawLine(this.pos.x - textlen / 2, this.pos.y + outlineradius, this.pos.x + textlen / 2, this.pos.y + outlineradius, color(config.sigilColor));
+        DrawLine(this.pos.x - textlen / 2, this.pos.y - outlineradius, this.pos.x + textlen / 2, this.pos.y - outlineradius, color(config.sigilColor));
         noFill();
-        arc(this.pos.x-textlen/2, this.pos.y, outlineradius*2, outlineradius*2, HALF_PI, -HALF_PI);
-        arc(this.pos.x+textlen/2, this.pos.y, outlineradius*2, outlineradius*2, -HALF_PI, HALF_PI);
+        arc(this.pos.x - textlen / 2, this.pos.y, outlineradius * 2, outlineradius * 2, HALF_PI, -HALF_PI);
+        arc(this.pos.x + textlen / 2, this.pos.y, outlineradius * 2, outlineradius * 2, -HALF_PI, HALF_PI);
     }
-    
-    CheckPosIsOn(pos)
-    {
-        if (this.pos.x-this.GetLength()*PI < pos.x && pos.x < this.pos.x+this.GetLength()*PI && this.pos.y-config.fontSize/2  < pos.y && pos.y < this.pos.y+config.fontSize/2)
-        {
+
+    CheckPosIsOn(pos) {
+        if (this.pos.x - this.GetLength() * PI < pos.x && pos.x < this.pos.x + this.GetLength() * PI && this.pos.y - config.fontSize / 2 < pos.y && pos.y < this.pos.y + config.fontSize / 2) {
             return true;
         }
         return false;
     }
-    
-    SpellToken()
-    {
+
+    SpellToken() {
         // \ と ( と ) と $ をエスケープ
         const escapedValue = this.value.replace(/[\\()$]/g, (match) => '\\' + match);
         return "(" + escapedValue + ")";
@@ -741,43 +682,37 @@ class StringToken extends RingItem {
 }
 
 class Name extends RingItem {
-    constructor(x, y, value, parentRing)
-    {
+    constructor(x, y, value, parentRing) {
         super(x, y, value, parentRing);
         this.type = "name";
     }
-    
-    GetLength()
-    {
-        return max(this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing, config.nameObjectMinWidth);
+
+    GetLength() {
+        return max(this.value.length * config.charWidth + (this.value.length - 1) * config.charSpacing, config.nameObjectMinWidth);
     }
-    
-    DrawByRing(radius, angle, itemRadWidth)
-    {   
+
+    DrawByRing(radius, angle, itemRadWidth) {
         const direction = globalIsClockwise ? -1 : 1;
         PushTransform();
         Rotate(angle);
         DrawSigil("name", 0, -radius);
         if (!globalIsClockwise) Rotate(PI);
-        const radwide = (this.value.length * config.charWidth + (this.value.length-1) * config.charSpacing) / radius * TWO_PI;
-        Rotate((radwide/2 - itemRadWidth.char/2) * direction);
+        const radwide = (this.value.length * config.charWidth + (this.value.length - 1) * config.charSpacing) / radius * TWO_PI;
+        Rotate((radwide / 2 - itemRadWidth.char / 2) * direction);
         const chars = this.value.split('');
-        chars.forEach(char =>
-        {
-            DrawText(config.fontSize, char, 0, radius * direction , config.fontColor, CENTER);
-            Rotate((-itemRadWidth.char-itemRadWidth.charSpacing) * direction);
+        chars.forEach(char => {
+            DrawText(config.fontSize, char, 0, radius * direction, config.fontColor, CENTER);
+            Rotate((-itemRadWidth.char - itemRadWidth.charSpacing) * direction);
         });
         PopTransform();
     }
 
-    DrawByDrag()
-    {
+    DrawByDrag() {
         const ClickObj = CheckMouseObject(false);
         PushTransform();
-        
+
         Translate(GetMouseX(), GetMouseY());
-        if (ClickObj[0] == "ring")
-        {
+        if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
             Rotate(-mouseAngle);
@@ -788,30 +723,26 @@ class Name extends RingItem {
         DrawSigil("name", 0, 0, PI);
         PopTransform();
     }
-    
-    DrawByCanvas()
-    {
-        if(debugMode){
-            DrawRect(this.pos.x-this.GetLength()*PI, this.pos.y-config.fontSize/2, this.GetLength()*TWO_PI, config.fontSize, color(0,255,0));
-            DrawRect(this.pos.x-config.sigilSize, this.pos.y-config.sigilSize, config.sigilSize*2, config.sigilSize*2, color(0,255,0));
+
+    DrawByCanvas() {
+        if (debugMode) {
+            DrawRect(this.pos.x - this.GetLength() * PI, this.pos.y - config.fontSize / 2, this.GetLength() * TWO_PI, config.fontSize, color(0, 255, 0));
+            DrawRect(this.pos.x - config.sigilSize, this.pos.y - config.sigilSize, config.sigilSize * 2, config.sigilSize * 2, color(0, 255, 0));
         }
         DrawText(config.fontSize, this.value, this.pos.x, this.pos.y, config.fontColor, CENTER);
         DrawSigil("name", this.pos.x, this.pos.y, PI);
     }
-    
-    CheckPosIsOn(pos)
-    {
-        const textCollider = this.pos.x-this.GetLength()*PI < pos.x && pos.x < this.pos.x+this.GetLength()*PI && this.pos.y-config.fontSize/2  < pos.y && pos.y < this.pos.y+config.fontSize/2;
-        const sigilCollider = this.pos.x-config.sigilSize < pos.x && pos.x < this.pos.x+config.sigilSize && this.pos.y-config.sigilSize  < pos.y && pos.y < this.pos.y+config.sigilSize;
-        if (textCollider || sigilCollider)
-        {
+
+    CheckPosIsOn(pos) {
+        const textCollider = this.pos.x - this.GetLength() * PI < pos.x && pos.x < this.pos.x + this.GetLength() * PI && this.pos.y - config.fontSize / 2 < pos.y && pos.y < this.pos.y + config.fontSize / 2;
+        const sigilCollider = this.pos.x - config.sigilSize < pos.x && pos.x < this.pos.x + config.sigilSize && this.pos.y - config.sigilSize < pos.y && pos.y < this.pos.y + config.sigilSize;
+        if (textCollider || sigilCollider) {
             return true;
         }
         return false;
     }
-    
-    SpellToken()
-    {
+
+    SpellToken() {
         // \ と PostScript構文文字 ($ も含む) をエスケープ
         const escapedValue = this.value.replace(/[\\~{}<>()\[\]$]/g, (match) => '\\' + match);
         return "~" + escapedValue;
@@ -819,9 +750,8 @@ class Name extends RingItem {
 }
 
 class Joint extends RingItem {
-    constructor(x, y, value, parentRing)
-    {
-        super(x, y, value, parentRing); 
+    constructor(x, y, value, parentRing) {
+        super(x, y, value, parentRing);
         this.type = "joint";
         this.isExecute = false;
     }
@@ -835,29 +765,25 @@ class Joint extends RingItem {
         newJoint.isExecute = this.isExecute; // isExecute の状態もコピー
         return newJoint;
     }
-    
-    GetLength()
-    {
+
+    GetLength() {
         if (this.isExecute) return config.sigilWidth;
         return config.jointWidth;
     }
-    
-    DrawByRing(radius, angle, itemRadWidth)
-    {
+
+    DrawByRing(radius, angle, itemRadWidth) {
         PushTransform();
         Rotate(angle);
         DrawSigil("joint", 0, -radius);
-        if (this.isExecute)
-        {
+        if (this.isExecute) {
             const direction = globalIsClockwise ? 1 : -1;
             if (globalIsClockwise) Rotate(PI);
             DrawSigil("exec", 0, direction * radius);
         }
         PopTransform();
     }
-    
-    DrawByDrag()
-    {
+
+    DrawByDrag() {
         const sourceRing = this.value;
 
         if (sourceRing) {
@@ -869,7 +795,7 @@ class Joint extends RingItem {
             const [screenWidth, screenHeight] = GetScreenSize();
             const ringConnectionX_screen = (ringConnectionX_world - cameraPos.x) * zoomSize + screenWidth / 2;
             const ringConnectionY_screen = (ringConnectionY_world - cameraPos.y) * zoomSize + screenHeight / 2;
-            
+
             const p0x = GetMouseX();
             const p0y = GetMouseY();
 
@@ -878,7 +804,7 @@ class Joint extends RingItem {
 
             const distance = dist(p0x, p0y, p3x, p3y);
             const controlDist = distance / 2;
-            
+
             const ringCenter_screen_x = (sourceRing.pos.x - cameraPos.x) * zoomSize + screenWidth / 2;
             const ringCenter_screen_y = (sourceRing.pos.y - cameraPos.y) * zoomSize + screenHeight / 2;
             const controlAngle = atan2(p3y - ringCenter_screen_y, p3x - ringCenter_screen_x);
@@ -894,30 +820,27 @@ class Joint extends RingItem {
             strokeWeight(1);
             bezier(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y);
         }
-        
+
         const ClickObj = CheckMouseObject(false);
-        if (ClickObj[0] == "ring")
-        {
+        if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
             const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
             DrawSigil("joint", GetMouseX(), GetMouseY(), -mouseAngle, zoomSize);
             if (this.isExecute) DrawSigil("exec", GetMouseX(), GetMouseY(), -mouseAngle, zoomSize);
         }
-        else
-        {
+        else {
             DrawSigil("joint", GetMouseX(), GetMouseY(), PI, zoomSize);
             if (this.isExecute) DrawSigil("exec", GetMouseX(), GetMouseY(), PI, zoomSize);
         }
     }
-    
-    DrawByCanvas()
-    {
+
+    DrawByCanvas() {
         const sourceRing = this.value;
 
         if (sourceRing) {
             const p0x = this.pos.x;
             const p0y = this.pos.y;
-            
+
             const radius = sourceRing.outerradius;
             const angle = sourceRing.angle;
             const p3x = sourceRing.pos.x + (radius + 20) * Math.sin(angle);
@@ -939,28 +862,24 @@ class Joint extends RingItem {
             bezier(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y);
         }
 
-        if(debugMode){
-            DrawRect(this.pos.x-this.GetLength()*PI, this.pos.y-config.sigilSize/2, this.GetLength()*TWO_PI, config.sigilSize, color(0,255,0));
+        if (debugMode) {
+            DrawRect(this.pos.x - this.GetLength() * PI, this.pos.y - config.sigilSize / 2, this.GetLength() * TWO_PI, config.sigilSize, color(0, 255, 0));
         }
         DrawSigil("joint", this.pos.x, this.pos.y, PI);
         if (this.isExecute) DrawSigil("exec", this.pos.x, this.pos.y, PI);
     }
-    
-    CheckPosIsOn(pos)
-    {
-        if (this.pos.x-config.sigilSize/2 < pos.x && pos.x < this.pos.x+config.sigilSize/2 && this.pos.y-config.sigilSize/2  < pos.y && pos.y < this.pos.y+config.sigilSize/2)
-        {
+
+    CheckPosIsOn(pos) {
+        if (this.pos.x - config.sigilSize / 2 < pos.x && pos.x < this.pos.x + config.sigilSize / 2 && this.pos.y - config.sigilSize / 2 < pos.y && pos.y < this.pos.y + config.sigilSize / 2) {
             return true;
         }
         return false;
     }
-    
-    SetValue(newValue)
-    {
+
+    SetValue(newValue) {
     }
-    
-    SpellToken()
-    {
+
+    SpellToken() {
         if (this.value && typeof this.value.Spell === 'function') {
             const spell = this.value.Spell();
             return spell + (this.isExecute ? " exec" : "");
@@ -968,22 +887,21 @@ class Joint extends RingItem {
         }
         return "";
     }
-    
-    Straighten()
-    {
+
+    Straighten() {
         const connectedRing = this.value;
         const jointIndex = this.parentRing.items.indexOf(this);
         if (jointIndex === -1 || !this.parentRing.layouts[jointIndex]) {
             return;
         }
-                
+
         const direction = globalIsClockwise ? -1 : 1;
         const jointLocalAngle = this.parentRing.layouts[jointIndex].angle;
 
         const jointGlobalAngle = this.parentRing.angle + jointLocalAngle * direction;
 
         const currentDistance = dist(this.parentRing.pos.x, this.parentRing.pos.y, connectedRing.pos.x, connectedRing.pos.y);
-                
+
         const p5Angle = jointGlobalAngle - HALF_PI;
         const newChildX = this.parentRing.pos.x + currentDistance * cos(p5Angle);
         const newChildY = this.parentRing.pos.y + currentDistance * sin(p5Angle);
@@ -995,10 +913,8 @@ class Joint extends RingItem {
     }
 }
 
-class Button
-{
-    constructor(x, y, w, h, colorFunc, anchor, pivot, size, text, textColor, pressedFunc, isIcon = false, shouldDrawRect = true, align = CENTER)
-    {
+class Button {
+    constructor(x, y, w, h, colorFunc, anchor, pivot, size, text, textColor, pressedFunc, isIcon = false, shouldDrawRect = true, align = CENTER) {
         this.x = x;
         this.y = y;
         this.w = w;
@@ -1015,49 +931,41 @@ class Button
         this.shouldDrawRect = shouldDrawRect;
         this.align = align;
     }
-    
-    Draw()
-    {
+
+    Draw() {
         let [width, height] = GetScreenSize();
         const x = width * this.anchor.x + this.x - this.w * this.pivot.x;
         const y = height * this.anchor.y + this.y - this.h * this.pivot.y;
-        if (this.shouldDrawRect)
-        {
-            DrawRoundRect(x, y, this.w, this.h, 10, color(0,0,0), 3); 
+        if (this.shouldDrawRect) {
+            DrawRoundRect(x, y, this.w, this.h, 10, color(0, 0, 0), 3);
             FillRoundRect(x, y, this.w, this.h, 10, this.colorFunc(this));
         }
-        if(debugMode) DrawRect (x, y, this.w, this.h, color(0,255,0));
-        if (this.isIcon)
-        {
-            DrawIcon(this.text, x + this.w/2, y + this.h/2, this.size);
+        if (debugMode) DrawRect(x, y, this.w, this.h, color(0, 255, 0));
+        if (this.isIcon) {
+            DrawIcon(this.text, x + this.w / 2, y + this.h / 2, this.size);
         }
-        else
-        {
-            DrawText(this.size, this.text, x + this.w/2, y + this.h/2, this.textColor, this.align);
+        else {
+            DrawText(this.size, this.text, x + this.w / 2, y + this.h / 2, this.textColor, this.align);
         }
     }
-    
-    CheckPressed()
-    {
+
+    CheckPressed() {
         let [width, height] = GetScreenSize();
         const x = width * this.anchor.x + this.x - this.w * this.pivot.x;
         const y = height * this.anchor.y + this.y - this.h * this.pivot.y;
-        if (x < GetMouseX() && GetMouseX() < x + this.w && y < GetMouseY() && GetMouseY() < y + this.h)
-        {
+        if (x < GetMouseX() && GetMouseX() < x + this.w && y < GetMouseY() && GetMouseY() < y + this.h) {
             return this;
         }
         return false;
     }
-    
-    Down()
-    {
+
+    Down() {
         this.pressedFunc();
         this.isPressed = true;
         lastPressedButton = this;
     }
-    
-    Up()
-    {
+
+    Up() {
         this.isPressed = false;
         lastPressedButton = null;
     }

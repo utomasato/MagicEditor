@@ -1,5 +1,5 @@
 let config;
-const colorsDict = { 
+const colorsDict = {
     black: "0.0 0.0 0.0", white: "1.0 1.0 1.0", red: "1.0 0.0 0.0", green: "0.0 1.0 0.0",
     blue: "0.0 0.0 1.0", yellow: "1.0 1.0 0.0", cyan: "0.0 1.0 1.0", magenta: "1.0 0.0 1.0",
     gray: "0.5 0.5 0.5", orange: "1.0 0.5 0.0", purple: "0.5 0.0 0.5", brown: "0.6 0.4 0.2"
@@ -54,28 +54,28 @@ let isResizingConsole = false;
  */
 
 function formatStackForDisplay(stack) {
-  // 1. スタックが配列でない、または空である場合は、安全なメッセージを返す
-  if (!Array.isArray(stack) || stack.length === 0) {
-    return '[]';
-  }
-
-  // 2. スタックの各要素に対して、activeInterpreterのformatForOutputを呼び出して文字列に変換する
-  //    .map()は必ず配列に対して呼び出す
-  const formattedItems = stack.map(item => {
-    try {
-      // activeInterpreterとformatForOutputが存在することを確認してから呼び出す
-      if (activeInterpreter && typeof activeInterpreter.formatForOutput === 'function') {
-        return activeInterpreter.formatForOutput(item);
-      }
-      return '[Interpreter Error]';
-    } catch (e) {
-      // 万が一、formatForOutput内でエラーが発生した場合も安全に処理を続ける
-      return `[Formatting Error: ${e.message}]`;
+    // 1. スタックが配列でない、または空である場合は、安全なメッセージを返す
+    if (!Array.isArray(stack) || stack.length === 0) {
+        return '[]';
     }
-  });
 
-  // 3. 整形後の文字列配列を、改行で連結して返す
-  return `[${formattedItems.join(', ')}]`;
+    // 2. スタックの各要素に対して、activeInterpreterのformatForOutputを呼び出して文字列に変換する
+    //    .map()は必ず配列に対して呼び出す
+    const formattedItems = stack.map(item => {
+        try {
+            // activeInterpreterとformatForOutputが存在することを確認してから呼び出す
+            if (activeInterpreter && typeof activeInterpreter.formatForOutput === 'function') {
+                return activeInterpreter.formatForOutput(item);
+            }
+            return '[Interpreter Error]';
+        } catch (e) {
+            // 万が一、formatForOutput内でエラーが発生した場合も安全に処理を続ける
+            return `[Formatting Error: ${e.message}]`;
+        }
+    });
+
+    // 3. 整形後の文字列配列を、改行で連結して返す
+    return `[${formattedItems.join(', ')}]`;
 }
 
 /**
@@ -107,7 +107,7 @@ function Start() {
 
     interpreters['postscript'] = new PostscriptInterpreter();
     interpreters['lisp'] = new LispInterpreter();
-    activeInterpreter = interpreters['postscript']; 
+    activeInterpreter = interpreters['postscript'];
 
     let [width, height] = GetScreenSize();
     SetTitle("MagicEditor");
@@ -139,65 +139,112 @@ function Start() {
     };
 
     staticButtons = [
-        new Button(10, 10, 40, 40, () => { return AddObjectMode == "ring" ? color(128,100,100) : color(255, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "ring",null, () => { AddObjectMode = "ring"; }, true),
-        new Button(55, 10, 40, 40, () => { return AddObjectMode == "sigil" ? color(128,100,100) : color(255, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "sigil",null, () => { AddObjectMode = "sigil"; }, true),
-        new Button(100, 10, 40, 40, () => { return AddObjectMode == "num" ? color(128,100,100) : color(255, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "num",null, () => { AddObjectMode = "num"; }, true),
-        new Button(145, 10, 40, 40, () => { return AddObjectMode == "str" ? color(128,100,100) : color(255, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "string",null, () => { AddObjectMode = "str"; }, true),
-        new Button(190, 10, 40, 40, () => { return AddObjectMode == "name" ? color(128,100,100) : color(255, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "name",null, () => { AddObjectMode = "name"; }, true),
-        new Button(235, 10, 40, 40, () => { return AddObjectMode == "tRing" ? color(128,100,100) : color(255, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "tRing",null, () => { AddObjectMode = "tRing"; }, true),
-        new Button(-5, 10, 40, 40, (instance) => { return instance.isPressed ? color(128, 100, 100) : color(255, 200, 200); }, { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Run",color(0,0,0), () => {
-            if (startRing) {
-                const data = {isActive: true, message: "Reset", name: null, value: 0, text: null};
-                sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
-                const mpsCode = GenerateSpell(startRing);
-                console.log(mpsCode);
-                try {
-                    const result = activeInterpreter.execute(mpsCode);
-                    let consoleMessage = '';
-                    
-                    if (result.output) {
-                        consoleMessage += `Output:\n${result.output}\n\n`;
-                        console.log(`Output:\n${result.output}`);
+        new Button(10, 10, 40, 40,
+            () => { return AddObjectMode == "ring" ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "ring", null,
+            () => { AddObjectMode = AddObjectMode == "ring" ? "" : "ring"; }, true),
+        new Button(55, 10, 40, 40,
+            () => { return AddObjectMode == "sigil" ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "sigil", null,
+            () => { AddObjectMode = AddObjectMode == "sigil" ? "" : "sigil"; }, true),
+        new Button(100, 10, 40, 40,
+            () => { return AddObjectMode == "num" ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "num", null,
+            () => { AddObjectMode = AddObjectMode == "num" ? "" : "num"; }, true),
+        new Button(145, 10, 40, 40,
+            () => { return AddObjectMode == "str" ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "string", null,
+            () => { AddObjectMode = AddObjectMode == "str" ? "" : "str"; }, true),
+        new Button(190, 10, 40, 40,
+            () => { return AddObjectMode == "name" ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "name", null,
+            () => { AddObjectMode = AddObjectMode == "name" ? "" : "name"; }, true),
+        new Button(235, 10, 40, 40,
+            () => { return AddObjectMode == "tRing" ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 30, "tRing", null,
+            () => { AddObjectMode = AddObjectMode == "tRing" ? "" : "tRing"; }, true),
+
+        new Button(-5, 10, 40, 40,
+            (instance) => { return instance.isPressed ? color(128, 100, 100) : color(255, 200, 200); },
+            { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Run", color(0, 0, 0),
+            () => {
+                if (startRing) {
+                    const data = { isActive: true, message: "Reset", name: null, value: 0, text: null };
+                    sendJsonToUnity("JsReceiver", "ReceiveGeneralData", data);
+                    const mpsCode = GenerateSpell(startRing);
+                    console.log(mpsCode);
+                    try {
+                        const result = activeInterpreter.execute(mpsCode);
+                        let consoleMessage = '';
+
+                        if (result.output) {
+                            consoleMessage += `Output:\n${result.output}\n\n`;
+                            console.log(`Output:\n${result.output}`);
+                        }
+                        console.log("==================")
+                        consoleMessage += `Final Stack:\n${formatStackForDisplay(result.stack)}`;
+                        console.log(`Final Stack:\n${formatStackForDisplay(result.stack)}`);
+                        console.log(`Final dictStack:\n${formatStackForDisplay(result.dictStack)}`)
+                        updateConsolePanel(consoleMessage);
+                    } catch (e) {
+                        updateConsolePanel(`Execution Error:\n${e.message}`);
+                        console.log(`Execution Error:\n${e.message}`);
                     }
-                    console.log("==================")
-                    consoleMessage += `Final Stack:\n${formatStackForDisplay(result.stack)}`;
-                    console.log(`Final Stack:\n${formatStackForDisplay(result.stack)}`);
-                    console.log(`Final dictStack:\n${formatStackForDisplay(result.dictStack)}`)
-                    updateConsolePanel(consoleMessage);
-                } catch (e) {
-                    updateConsolePanel(`Execution Error:\n${e.message}`);
-                    console.log(`Execution Error:\n${e.message}`);
                 }
-            }
-            console.log(activeInterpreter.stack);
-        }),
-        new Button(-150, 10, 80, 40, (instance) => { return instance.isPressed ? color(110, 110, 128) : color(220, 220, 255); }, { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Import",color(0,0,0), () => {
-            showXMLInputPanel();
-        }),
-        new Button(-65, 10, 80, 40, (instance) => { return instance.isPressed ? color(100, 128, 110) : color(200, 255, 220); }, { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Export",color(0,0,0), () => {
-            exportToXML();
-        }),
-        new Button(10, -10, 40, 40, (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); }, { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "-",color(0,0,0), () => { ZoomOut(); }),
-        new Button(10, -55, 40, 40, (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); }, { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "=",color(0,0,0), () => { ZoomReset(); }),
-        new Button(10, -100, 40, 40, (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); }, { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "+",color(0,0,0), () => { ZoomIn(); }),
-        new Button(10, 60, 40, 40, () => { return cursormode == "grad" ? color(100, 100, 100) : color(200, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🖐️",color(0,0,0), () => { cursormode = "grad"; SetMouseCursor('grab'); }),
-        new Button(55, 60, 40, 40, () => { return cursormode == "edit" ? color(100, 100, 100) : color(200, 200, 200); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🪶",color(0,0,0), () => { cursormode = "edit"; SetMouseCursor('default'); }),
-        new Button(100, 60, 60, 40, (instance) => { return instance.isPressed ? color(100, 110, 128) : color(200, 220, 255); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Align",color(0,0,0), () => { if (startRing) { alignConnectedRings(startRing); } }),
-        new Button(165, 60, 85, 40, (instance) => { return instance.isPressed ? color(100, 110, 128) : color(200, 220, 255); }, { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Straight",color(0,0,0), () => { if (startRing) { StraightenConnectedJoints(startRing); } }),
-        new Button(-10, 60, 40, 40, () => { return color(200, 200, 200); }, { x: 1, y: 0 }, { x: 1, y: 0 }, 20, "👁️",color(0,0,0), () => { isUIHidden = true; }),
-        new Button(-55, 60, 40, 40, (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); }, { x: 1, y: 0 }, { x: 1, y: 0 }, 20, "📷",color(0,0,0), () => {
-            isUIHidden = true;       // UIを非表示に設定
-            screenshotRequest = true; // 次の描画フレームで撮影をリクエスト
-        }),
-        new Button(5, 105, 30, 15, () => {return color(0,250,0)}, {x:0,y:0}, {x:0,y:0}, 12, "> Start",color(100,100,100), 
-        () => {
-            if (startRing) {
-                cameraPos.x = startRing.pos.x;
-                cameraPos.y = startRing.pos.y;
-            }
-        }, false, false, LEFT),
+                console.log(activeInterpreter.stack);
+            }),
+        new Button(-150, 10, 80, 40,
+            (instance) => { return instance.isPressed ? color(110, 110, 128) : color(220, 220, 255); },
+            { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Import", color(0, 0, 0),
+            () => { showXMLInputPanel(); }),
+        new Button(-65, 10, 80, 40,
+            (instance) => { return instance.isPressed ? color(100, 128, 110) : color(200, 255, 220); },
+            { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Export", color(0, 0, 0),
+            () => { exportToXML(); }),
+        new Button(10, -10, 40, 40,
+            (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
+            { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "-", color(0, 0, 0),
+            () => { ZoomOut(); }),
+        new Button(10, -55, 40, 40,
+            (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
+            { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "=", color(0, 0, 0),
+            () => { ZoomReset(); }),
+        new Button(10, -100, 40, 40,
+            (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
+            { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "+", color(0, 0, 0),
+            () => { ZoomIn(); }),
+        new Button(10, 60, 40, 40,
+            () => { return cursormode == "grad" ? color(100, 100, 100) : color(200, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🖐️", color(0, 0, 0),
+            () => { cursormode = "grad"; SetMouseCursor('grab'); }),
+        new Button(55, 60, 40, 40,
+            () => { return cursormode == "edit" ? color(100, 100, 100) : color(200, 200, 200); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🪶", color(0, 0, 0),
+            () => { cursormode = "edit"; SetMouseCursor('default'); }),
+        new Button(100, 60, 60, 40,
+            (instance) => { return instance.isPressed ? color(100, 110, 128) : color(200, 220, 255); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Align", color(0, 0, 0),
+            () => { if (startRing) { alignConnectedRings(startRing); } }),
+        new Button(165, 60, 85, 40,
+            (instance) => { return instance.isPressed ? color(100, 110, 128) : color(200, 220, 255); },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Straight", color(0, 0, 0),
+            () => { if (startRing) { StraightenConnectedJoints(startRing); } }),
+        new Button(-10, 60, 40, 40,
+            () => { return color(200, 200, 200); },
+            { x: 1, y: 0 }, { x: 1, y: 0 }, 20, "👁️", color(0, 0, 0),
+            () => { isUIHidden = true; }),
+        new Button(-55, 60, 40, 40,
+            (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
+            { x: 1, y: 0 }, { x: 1, y: 0 }, 20, "📷", color(0, 0, 0),
+            () => { isUIHidden = true; screenshotRequest = true; }),
+        new Button(5, 105, 30, 15,
+            () => { return color(0, 250, 0) },
+            { x: 0, y: 0 }, { x: 0, y: 0 }, 12, "> Start", color(100, 100, 100),
+            () => {
+                if (startRing) { cameraPos.x = startRing.pos.x; cameraPos.y = startRing.pos.y; }
+            }, false, false, LEFT),
     ];
-    
+
     buttons = [...staticButtons];
 
     zoomSize = 1;
@@ -205,13 +252,13 @@ function Start() {
 
     InputInitialize();
 
-    rings = [new MagicRing({ x: 0, y: 0 }), ];
+    rings = [new MagicRing({ x: 0, y: 0 }),];
     //rings = [new TemplateRing({ x: 0, y: 0 }), ];
     if (rings.length > 0) {
         startRing = rings[0];
         startRing.isStartPoint = true;
     }
-    
+
     createConsolePanel(); // ui.jsで定義された関数を呼び出す
 }
 
@@ -220,7 +267,7 @@ function UpdateMarkerButtons() {
 
     // マーカー付きリングを検索
     const markedRings = rings.filter(r => r.marker && r.marker.trim() !== "");
-    
+
     // 必要であればソート（ここではマーカー名順）
     markedRings.sort((a, b) => a.marker.localeCompare(b.marker));
 
@@ -228,11 +275,13 @@ function UpdateMarkerButtons() {
 
     markedRings.forEach(ring => {
         buttons.push(
-            new Button(5, yPos, 30, 15, () => {return color(0,250,0)}, {x:0,y:0}, {x:0,y:0}, 12, "> " + ring.marker, color(100,100,100),
-            () => {
-                cameraPos.x = ring.pos.x;
-                cameraPos.y = ring.pos.y;
-            }, false, false, LEFT)
+            new Button(5, yPos, 30, 15,
+                () => { return color(0, 250, 0) },
+                { x: 0, y: 0 }, { x: 0, y: 0 }, 12, "> " + ring.marker, color(100, 100, 100),
+                () => {
+                    cameraPos.x = ring.pos.x;
+                    cameraPos.y = ring.pos.y;
+                }, false, false, LEFT)
         );
         yPos += 20; // 次のボタンの位置
     });
@@ -240,7 +289,7 @@ function UpdateMarkerButtons() {
 
 function Update() {
     let [width, height] = GetScreenSize();
-    
+
     UpdateMarkerButtons();
 
     mousePos = {
@@ -248,27 +297,31 @@ function Update() {
         y: (GetMouseY() - height / 2) / zoomSize + cameraPos.y
     };
 
+    // マウスイベント
     if (CheckMouseDown() || CheckTouchStart()) { MouseDownEvent(); }
     else if (CheckMouse() || CheckTouch()) { MouseHoldEvent(); }
     else if (CheckMouseUp() || CheckTouchEnded()) { MouseUpEvent(); }
 
-    if (CheckKeyDown(Key.D)) { debugMode = !debugMode; }
+    // デバッグボタン
+    if (CheckKeyDown(Key.D)) { debugMode = !debugMode; } // デバッグボタン
+    //if (CheckKeyDown(Key.H)) { globalIsClockwise = !globalIsClockwise; }
+
+    // 入力モード ショートカット
     if (CheckKeyDown(Key.A)) { cursormode = "grad"; SetMouseCursor('grab'); }
     if (CheckKeyDown(Key.S)) { cursormode = "edit"; SetMouseCursor('default'); }
-    if (CheckKeyDown(Key.Q)) {  AddObjectMode = "ring"; }
-    if (CheckKeyDown(Key.W)) {  AddObjectMode = "sigil"; }
-    if (CheckKeyDown(Key.E)) {  AddObjectMode = "num"; }
-    if (CheckKeyDown(Key.R)) {  AddObjectMode = "str"; }
-    if (CheckKeyDown(Key.T)) {  AddObjectMode = "name"; }
-    if (CheckKeyDown(Key.Y)) {  AddObjectMode = "tRing"; }
-    //if (CheckKeyDown(Key.H)) { globalIsClockwise = !globalIsClockwise; }
+    // 追加 ショートカット    
+    if (CheckKeyDown(Key.Q)) { staticButtons[0].Down(); }
+    if (CheckKeyDown(Key.W)) { staticButtons[1].Down(); }
+    if (CheckKeyDown(Key.E)) { staticButtons[2].Down(); }
+    if (CheckKeyDown(Key.R)) { staticButtons[3].Down(); }
+    if (CheckKeyDown(Key.T)) { staticButtons[4].Down(); }
+    if (CheckKeyDown(Key.Y)) { staticButtons[5].Down(); }
 }
 
 function Draw() {
     let [width, height] = GetScreenSize();
     Clear(color(255, 255, 255));
-    if (!isUIHidden)
-    {
+    if (!isUIHidden) {
         DrawGrid();
     }
 
@@ -282,8 +335,7 @@ function Draw() {
 
     if (draggingItem && draggingItem.item) { draggingItem.item.DrawByDrag(); }
 
-    if (!isUIHidden)
-    {
+    if (!isUIHidden) {
         FillRect(0, 0, width, config.menuHeight, config.menuBgColor);
         DrawButtons();
         DrawText(12, "FPS: " + GetFPSText(), width - 10, height - 10, color(0, 0, 0), RIGHT);
@@ -295,8 +347,7 @@ function Draw() {
             DrawText(12, "CursorMode: (" + cursormode + ")", width - 10, height - 110, color(0, 0, 0), RIGHT);
         }
     }
-    else if (screenshotRequest) 
-    {
+    else if (screenshotRequest) {
         saveCanvas('MagicCircle.png'); // 画像を保存
         screenshotRequest = false;     // リクエストフラグをリセット
         isUIHidden = false;            // UIを再表示
@@ -322,8 +373,8 @@ function DrawGrid() {
     }
 }
 
-function ZoomIn() { zoomSize = min(5, zoomSize *1.2); }
-function ZoomOut() { zoomSize = zoomSize /1.2; }
+function ZoomIn() { zoomSize = min(5, zoomSize * 1.2); }
+function ZoomOut() { zoomSize = zoomSize / 1.2; }
 function ZoomReset() { zoomSize = 1; }
 
 function updateConsolePanel(message) {

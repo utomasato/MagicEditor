@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="MagicEditor">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    
+
     <title>p5.js Resizable Control</title>
     <script src="lib/p5/p5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/addons/p5.dom.min.js"></script>
@@ -18,37 +19,47 @@
     <style>
         /* フォントや絵文字の定義 */
         @font-face {
-          font-family: 'NotoColorEmojiLocal';
-          src: url('NotoColorEmoji-Regular.ttf') format('truetype');
+            font-family: 'NotoColorEmojiLocal';
+            src: url('NotoColorEmoji-Regular.ttf') format('truetype');
         }
+
         .emoji {
-          font-family: 'NotoColorEmojiLocal', 'Apple Color Emoji', sans-serif;
+            font-family: 'NotoColorEmojiLocal', 'Apple Color Emoji', sans-serif;
         }
 
         /* 基本設定 */
         * {
             box-sizing: border-box;
         }
-        
-        html, body {
+
+        html,
+        body {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
-            overflow: hidden; /* スクロールバーを完全に非表示 */
+            overflow: hidden;
+            /* スクロールバーを完全に非表示 */
             font-family: Arial, sans-serif;
             /* iOS Safariでのオーバースクロール（画面が引っ張られる現象）を防止 */
             touch-action: none;
             /* --- ▼▼▼ Prevent text selection on canvas ▼▼▼ --- */
-            -webkit-user-select: none; /* Safari */
-            -moz-user-select: none;    /* Firefox */
-            -ms-user-select: none;     /* IE 10+ */
-            user-select: none;         /* Standard syntax */
-            -webkit-touch-callout: none; /* Disable callout on iOS */
+            -webkit-user-select: none;
+            /* Safari */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* IE 10+ */
+            user-select: none;
+            /* Standard syntax */
+            -webkit-touch-callout: none;
+            /* Disable callout on iOS */
         }
 
         /* --- ▼▼▼ Allow text selection on inputs ▼▼▼ --- */
-        input, textarea, [contenteditable="true"] {
+        input,
+        textarea,
+        [contenteditable="true"] {
             -webkit-user-select: auto;
             -moz-user-select: auto;
             -ms-user-select: auto;
@@ -64,10 +75,11 @@
         }
 
         /* --- レイアウトの核となる部分 --- */
-        
+
         /* 1. 全体を囲むコンテナをFlexboxに設定 */
         #main-container {
-            display: flex; /* 中の要素を横並びにする */
+            display: flex;
+            /* 中の要素を横並びにする */
             width: 100%;
             height: 100%;
         }
@@ -75,20 +87,23 @@
         /* 2. 左パネル (p5.js) */
         #p5-container {
             /* JavaScriptで幅が設定される。初期値は50% */
-            width: 50%; 
+            width: 50%;
             height: 100%;
             /* コンテンツが縮小しないように設定 */
-            flex-shrink: 0; 
-            position: relative; /* 子要素のinfoの位置基準のため */
-            overflow: hidden; /* はみ出し防止 */
+            flex-shrink: 0;
+            position: relative;
+            /* 子要素のinfoの位置基準のため */
+            overflow: hidden;
+            /* はみ出し防止 */
         }
-        
+
         /* 3. 中央のリサイズバー (新規追加) */
         #resizer {
             width: 15px;
             height: 100%;
             background: #ccc;
-            cursor: col-resize; /* カーソルをリサイズアイコンに変更 */
+            cursor: col-resize;
+            /* カーソルをリサイズアイコンに変更 */
             flex-shrink: 0;
             /* ドラッグ中のテキスト選択を防ぐ */
             user-select: none;
@@ -98,15 +113,18 @@
         /* 4. 右パネル (Unity) */
         #unity-container {
             /* 残りのスペースをすべて埋める */
-            flex-grow: 1; 
+            flex-grow: 1;
             height: 100%;
-            position: relative; /* Unity Canvasの位置基準のため */
-            overflow: hidden; /* はみ出し防止 */
+            position: relative;
+            /* Unity Canvasの位置基準のため */
+            overflow: hidden;
+            /* はみ出し防止 */
         }
 
         /* 5. Unity/p5のcanvasがコンテナいっぱいに広がるように設定 */
         #unity-canvas,
-        #p5-container > canvas { /* p5.jsが生成するcanvasを指定 */
+        #p5-container>canvas {
+            /* p5.jsが生成するcanvasを指定 */
             width: 100% !important;
             height: 100% !important;
             display: block;
@@ -115,7 +133,8 @@
 
         /* 6. p5.jsの情報表示欄のスタイル */
         .info {
-            position: absolute; /* #p5-containerを基準に配置 */
+            position: absolute;
+            /* #p5-containerを基準に配置 */
             top: 10px;
             left: 10px;
             background: rgba(0, 0, 0, 0);
@@ -124,15 +143,16 @@
             border-radius: 5px;
             font-size: 12px;
             z-index: 0;
-            pointer-events: none; /* マウスイベントを通す */
+            pointer-events: none;
+            /* マウスイベントを通す */
         }
     </style>
-    
+
     <script src="//cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
 </head>
 
-<body>
+<body oncontextmenu="return false;">
     <div id="main-container">
         <!-- 左パネル -->
         <div id="p5-container">
@@ -160,28 +180,28 @@
     <!-- 既存のスクリプト -->
     <script src="./lib/engine.js"></script>
     <script src="./lib/gamelib.js"></script>
-    <script src="./lib/touch.js"></script>  
-    <script src="./src/objects.js"></script>  
-    <script src="./src/magicTemplates.js"></script>  
-    <script src="./src/sigil.js"></script>  
+    <script src="./lib/touch.js"></script>
+    <script src="./src/objects.js"></script>
+    <script src="./src/magicTemplates.js"></script>
+    <script src="./src/sigil.js"></script>
     <script src="./src/input.js"></script>
-    <script src="./src/ui.js"></script>  
+    <script src="./src/ui.js"></script>
     <script src="./src/layout.js"></script>
     <script src="./src/io.js"></script>
-    <script src="./src/interpreter.js"></script>  
+    <script src="./src/interpreter.js"></script>
     <script src="./src/main.js"></script>
 
     <script>
-      // http:// 接続時に navigator.mediaDevices が未定義になる問題への対策
-      if (window.navigator && !window.navigator.mediaDevices) {
-        window.navigator.mediaDevices = {};
-      }
-      if (window.navigator.mediaDevices && !window.navigator.mediaDevices.enumerateDevices) {
-        // enumerateDevices関数が存在しない場合に、空のリストを返すダミー関数を定義する
-        window.navigator.mediaDevices.enumerateDevices = function() {
-          return Promise.resolve([]);
+        // http:// 接続時に navigator.mediaDevices が未定義になる問題への対策
+        if (window.navigator && !window.navigator.mediaDevices) {
+            window.navigator.mediaDevices = {};
         }
-      }
+        if (window.navigator.mediaDevices && !window.navigator.mediaDevices.enumerateDevices) {
+            // enumerateDevices関数が存在しない場合に、空のリストを返すダミー関数を定義する
+            window.navigator.mediaDevices.enumerateDevices = function () {
+                return Promise.resolve([]);
+            }
+        }
     </script>
     <script src="assets/effectwindow/Build/effectwindow.loader.js"></script>
     <script>
@@ -262,7 +282,7 @@
             window.removeEventListener('mouseup', handleDragEnd);
             window.removeEventListener('touchmove', handleDragMove);
             window.removeEventListener('touchend', handleDragEnd);
-            
+
             window.dispatchEvent(new Event('resize'));
         };
 
@@ -271,5 +291,5 @@
         resizer.addEventListener('touchstart', handleDragStart, { passive: false });
     </script>
 </body>
-</html>
 
+</html>

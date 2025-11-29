@@ -30,7 +30,7 @@ function itemToXML(item, ringIdMap) {
         if (value === undefined) value = -1; // 念のため、見つからない場合は-1
     }
 
-    let attributes = `type="${item.type}" value="${escapeXML(value)}"`;    
+    let attributes = `type="${item.type}" value="${escapeXML(value)}"`;
     if (item.type === 'joint') {
         attributes += ` isExecute="${item.isExecute}"`;
     }
@@ -54,7 +54,7 @@ function ringToXML(ring, ringIdMap) {
 
     // Markerがあれば属性に追加
     const markerAttr = ring.marker ? ` marker="${escapeXML(ring.marker)}"` : '';
-    
+
     // TemplateRingの場合、magicプロパティを属性に追加
     let magicAttr = '';
     if (ringType === 'TemplateRing' && ring.magic) {
@@ -62,7 +62,7 @@ function ringToXML(ring, ringIdMap) {
     }
 
     let xml = `  <Ring id="${ringId}" type="${ringType}" x="${ring.pos.x.toFixed(2)}" y="${ring.pos.y.toFixed(2)}" angle="${ring.angle.toFixed(4)}"${markerAttr}${magicAttr}>\n`;
-    
+
     // コメントの保存
     if (ring.comments && Array.isArray(ring.comments)) {
         xml += `    <Comments>\n`;
@@ -90,7 +90,7 @@ function exportToXML() {
     rings.forEach((ring, index) => {
         ringIdMap.set(ring, index);
     });
-    
+
     const startRingId = startRing ? ringIdMap.get(startRing) : -1;
 
     // 2. XML文字列の構築を開始
@@ -247,7 +247,7 @@ function importFromXML(xmlString, mode) {
             }
         }
     }
-    
+
     // --- ステップ3: フィールドアイテムを追加 ---
     const fieldItemElements = xmlDoc.querySelector('FieldItems')?.children;
     if (fieldItemElements) {
@@ -270,7 +270,7 @@ function importFromXML(xmlString, mode) {
             joint.value = null; // 対応するリングが見つからない場合
         }
     });
-    
+
     // --- ステップ5: 開始リングを設定 ---
     if (startRing) {
         startRing.isStartPoint = false; // Reset old start ring flag

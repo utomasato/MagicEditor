@@ -57,13 +57,13 @@ function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCall
     closeButton.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); closeCallback(); });
     const contentArea = createDiv('');
     contentArea.parent(currentUiPanel);
-    
+
     if (deleteCallback || duplicateCallback) {
         const footer = createDiv('');
         footer.parent(currentUiPanel);
         footer.style('display', 'flex');
         footer.style('justify-content', 'flex-end');
-        footer.style('gap', '8px'); 
+        footer.style('gap', '8px');
         footer.style('margin-top', '8px');
         footer.style('border-top', '1px solid #ddd');
         footer.style('padding-top', '8px');
@@ -149,7 +149,7 @@ function createTextInput(item) {
         }
         editingItem = null;
     };
-    
+
     const handleDelete = () => {
         if (item.parentRing) {
             const ring = item.parentRing;
@@ -204,19 +204,19 @@ function createTextInput(item) {
 
     const editButton = createButton('編集');
     editButton.parent(valueContainer);
-    
+
     editButton.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
-        
+
         let newValue = prompt("新しい値を入力してください:", item.value || "");
-        
+
         // item のクラス名を取得
         const itemClassName = item.constructor.name;
         const isStringToken = (itemClassName === 'StringToken');
 
         // newValue が null (キャンセル) になるまでループ
         while (newValue !== null) {
-            
+
             // StringToken 以外の場合のみ検証
             if (!isStringToken) {
                 // 1. 空文字列のチェック
@@ -224,14 +224,14 @@ function createTextInput(item) {
                     newValue = prompt("値が入力されていません。再度入力してください:", item.value || "");
                     continue; // ループの最初に戻る
                 }
-                
+
                 // 2. 空白文字のチェック
                 if (/\s/.test(newValue)) {
                     newValue = prompt("空白文字は使用できません。再度入力してください:", newValue);
                     continue; // ループの最初に戻る
                 }
             }
-            
+
             // 検証OK (StringToken は常にOK)
             break;
         }
@@ -245,7 +245,7 @@ function createTextInput(item) {
                 item.parentRing.CalculateLayout();
             }
         }
-        
+
         // 最終的にパネルを閉じる
         closePanel();
     });
@@ -288,12 +288,12 @@ function createSigilDropdown(item) {
     editingItem = item;
     currentSelectElement = createSelect();
     currentSelectElement.parent(contentArea);
-    
+
     const sigils = [
-        "pop","exch","dup","copy","index", "roll", "add", "sub","mul","div","idiv","mod","abs","neg","sqrt",
-        "atan","cos","sin","rand","srand","rrand","array","string","length","get","put","getinterval","putinterval","forall",
-        "dict","begin","end","def","eq","ne","ge","gt","le","lt","and","not","or","xor","true","false",
-        "exec","if","ifelse","for","repeat","loop","exit","null", 
+        "pop", "exch", "dup", "copy", "index", "roll", "add", "sub", "mul", "div", "idiv", "mod", "abs", "neg", "sqrt",
+        "atan", "cos", "sin", "rand", "srand", "rrand", "array", "string", "length", "get", "put", "getinterval", "putinterval", "forall",
+        "dict", "begin", "end", "def", "eq", "ne", "ge", "gt", "le", "lt", "and", "not", "or", "xor", "true", "false",
+        "exec", "if", "ifelse", "for", "repeat", "loop", "exit", "null",
         "magicactivate", "spawnobj", "transform", "attachtoparent", "animation",
         "print", "stack", "cvi", "chr"
     ];
@@ -310,12 +310,12 @@ function createSigilDropdown(item) {
 }
 
 function createCommentPanel(ring) {
-    const closePanel = () => { 
-        if (currentUiPanel) { 
-            currentUiPanel.remove(); 
-            currentUiPanel = null; 
-        } 
-        editingItem = null; 
+    const closePanel = () => {
+        if (currentUiPanel) {
+            currentUiPanel.remove();
+            currentUiPanel = null;
+        }
+        editingItem = null;
     };
 
     const panelResult = createBasePanel('Edit Comments', closePanel, null, null);
@@ -335,7 +335,7 @@ function createCommentPanel(ring) {
         }
         return null; // キャンセルされた場合
     };
-    
+
     // メインのコンテナ
     const container = createDiv('');
     container.parent(contentArea);
@@ -355,7 +355,7 @@ function createCommentPanel(ring) {
     headerRow.style('border-bottom', '1px solid #ccc');
     headerRow.style('padding-bottom', '5px');
     headerRow.style('margin-bottom', '5px');
-    
+
     createDiv('Text').parent(headerRow);
     createDiv('Ang1').parent(headerRow);
     createDiv('Ang2').parent(headerRow);
@@ -445,7 +445,7 @@ function createCommentPanel(ring) {
                 comment.text = newText;
                 comment.angle1 = newAngle1;
                 comment.angle2 = newAngle2;
-                
+
                 // UI更新（再描画）
                 closePanel();
                 setTimeout(() => createCommentPanel(ring), 10);
@@ -483,7 +483,7 @@ function createCommentPanel(ring) {
     addBtn.style('cursor', 'pointer');
     addBtn.style('background-color', '#f0f0f0');
     addBtn.style('border', '1px dashed #999');
-    
+
     addBtn.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         // 新規作成ダイアログフロー
@@ -496,7 +496,7 @@ function createCommentPanel(ring) {
 
         const newAngle2 = getNumberInput("Angle2 (範囲角度):", "45");
         if (newAngle2 === null) return;
-        
+
         ring.comments.push({
             text: newText,
             angle1: newAngle1,
@@ -521,7 +521,7 @@ function createRingPanel(ring) {
         rings = rings.filter(r => r !== ring);
         if (ring === startRing) {
             startRing = rings.find(r => isRingStartable(r)) || (rings.length > 0 ? rings[0] : null);
-            if(startRing) startRing.isStartPoint = true;
+            if (startRing) startRing.isStartPoint = true;
         }
         fieldItems.forEach(item => {
             if (item && item.type === 'joint' && item.value === ring) {
@@ -573,11 +573,11 @@ function createRingPanel(ring) {
     const editMarkerButton = createButton('編集');
     editMarkerButton.parent(markerContainer);
     editMarkerButton.style('cursor', 'pointer');
-    
+
     editMarkerButton.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         const newValue = prompt("マーカー名を入力してください:", ring.marker || "");
-        
+
         if (newValue !== null) {
             ring.marker = newValue;
             markerDisplay.html(newValue);
@@ -616,7 +616,7 @@ function createRingPanel(ring) {
             closePanel();
         });
     }
-    
+
     const alignButton = createButton('このリングから整列');
     alignButton.parent(buttonContainer);
     alignButton.style('width', '100%');
@@ -627,7 +627,7 @@ function createRingPanel(ring) {
         alignConnectedRings(ring);
         closePanel();
     });
-    
+
     const straightenButton = createButton('このリングから直線化');
     straightenButton.parent(buttonContainer);
     straightenButton.style('width', '100%');
@@ -647,8 +647,8 @@ function createRingPanel(ring) {
     jointButton.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         const newJoint = new Joint(ring.pos.x, ring.pos.y, ring, null);
-        newJoint.pos.x +=  (ring.radius + 70) * Math.sin(ring.angle + PI/20);
-        newJoint.pos.y -=  (ring.radius + 70) * Math.cos(ring.angle + PI/20);
+        newJoint.pos.x += (ring.radius + 70) * Math.sin(ring.angle + PI / 20);
+        newJoint.pos.y -= (ring.radius + 70) * Math.cos(ring.angle + PI / 20);
         fieldItems.push(newJoint);
         closePanel();
     });
@@ -684,7 +684,7 @@ function createRingPanel(ring) {
             closePanel();
         });
     }
-    
+
     const commentButton = createButton('コメントを編集する');
     commentButton.parent(buttonContainer);
     commentButton.style('width', '100%');
@@ -711,13 +711,13 @@ function createRingPanel(ring) {
 
         const magicSelect = createSelect();
         magicSelect.parent(contentArea);
-        
+
         const magicOptions = [
             "fire", "bullet", "charge"
         ];
         magicOptions.forEach(opt => { magicSelect.option(opt); });
         magicSelect.selected(ring.magic);
-        
+
         magicSelect.changed(() => {
             ring.magic = magicSelect.value();
             // objects.js の DrawRingStar が this.magic を参照するよう修正済み
@@ -731,7 +731,7 @@ function createRingPanel(ring) {
             paramContainer.style('margin-top', '8px');
             paramContainer.style('border-top', '1px solid #ddd');
             paramContainer.style('padding-top', '8px');
-            
+
             const paramLabel = createP('Add Parameter:');
             paramLabel.parent(paramContainer);
             paramLabel.style('margin', '0 0 4px 0');
@@ -741,7 +741,7 @@ function createRingPanel(ring) {
             paramSelect.parent(paramContainer);
             paramSelect.style('width', '100%');
             paramSelect.option('Select parameter...');
-            
+
             const params = templateDatas[ring.magic].parameters;
             Object.keys(params).forEach(key => {
                 paramSelect.option(key);
@@ -750,12 +750,12 @@ function createRingPanel(ring) {
             paramSelect.changed(() => {
                 const key = paramSelect.value();
                 if (key === 'Select parameter...') return;
-                
+
                 const paramDef = params[key];
                 if (paramDef) {
                     // 名前オブジェクトを追加
                     ring.items.push(new Name(0, 0, key, ring));
-                    
+
                     const type = paramDef.type;
                     const vals = String(paramDef.defaultValue).split(/\s+/);
 
@@ -765,10 +765,10 @@ function createRingPanel(ring) {
                         // 配置場所は適当に親の右下あたりにする
                         const newRingPos = { x: ring.pos.x + 150, y: ring.pos.y + 150 };
                         const newArrayRing = new ArrayRing(newRingPos);
-                        
+
                         // グローバルな rings 配列に追加
                         rings.push(newArrayRing);
-                        
+
                         // デフォルト値を ArrayRing に追加
                         vals.forEach(v => {
                             if (v) newArrayRing.items.push(new Chars(0, 0, v, newArrayRing));
@@ -785,7 +785,7 @@ function createRingPanel(ring) {
                             if (v) ring.items.push(new Chars(0, 0, v, ring));
                         });
                     }
-                    
+
                     ring.CalculateLayout();
                     paramSelect.selected('Select parameter...');
                 }
@@ -793,9 +793,9 @@ function createRingPanel(ring) {
         }
         // ------------------------
 
-    } 
+    }
     // TemplateRing 以外の場合、または isNew フラグが立っている場合
-    else if (true || ring.isNew) { 
+    else if (true || ring.isNew) {
         const typeLabel = createP('Ring Type:');
         typeLabel.parent(contentArea);
         typeLabel.style('margin', '10px 0 2px 0');
@@ -825,7 +825,7 @@ function createRingPanel(ring) {
 
                 // 既存のアイテムを引き継ぐ (先頭の 'RETURN' or 'COMPLETE' は除く)
                 newRing.items = newRing.items.concat(ring.items.slice(1));
-                
+
                 newRing.CalculateLayout();
                 newRing.isNew = false; // isNew フラグを倒す
                 newRing.angle = ring.angle; // 角度を引き継ぐ
@@ -833,7 +833,7 @@ function createRingPanel(ring) {
                 newRing.marker = ring.marker; // マーカーを引き継ぐ
 
                 rings[ringIndex] = newRing; // 配列内のインスタンスを置き換え
-                
+
                 // 既存の Joint があれば接続先を新しいリングインスタンスに更新
                 rings.forEach(r => {
                     r.items.forEach(item => {
@@ -842,7 +842,7 @@ function createRingPanel(ring) {
                         }
                     });
                 });
-                
+
                 // startRing だった場合も更新
                 if (startRing === ring) {
                     startRing = newRing;
@@ -896,10 +896,10 @@ function createJointPanel(item) {
     const executeCheckbox = createInput(null, 'checkbox');
     executeCheckbox.parent(executeContainer);
     executeCheckbox.style('cursor', 'pointer');
-    
+
     // 修正: .checked() メソッドではなく .elt.checked プロパティを使用して初期値を設定
     executeCheckbox.elt.checked = item.isExecute;
-    
+
     executeCheckbox.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
     });
@@ -948,7 +948,7 @@ function createJointPanel(item) {
         goToButton.style('width', '100%');
         goToButton.style('padding', '5px');
         goToButton.style('cursor', 'pointer');
-        
+
         goToButton.elt.addEventListener('mousedown', e => {
             e.stopPropagation();
             cameraPos.x = connectedRing.pos.x;
@@ -957,13 +957,13 @@ function createJointPanel(item) {
         });
 
         if (parentRing) {
-             const straightenButton = createButton('接続線を直線化');
-             straightenButton.parent(buttonContainer);
-             straightenButton.style('width', '100%');
-             straightenButton.style('padding', '5px');
-             straightenButton.style('cursor', 'pointer');
+            const straightenButton = createButton('接続線を直線化');
+            straightenButton.parent(buttonContainer);
+            straightenButton.style('width', '100%');
+            straightenButton.style('padding', '5px');
+            straightenButton.style('cursor', 'pointer');
 
-             straightenButton.elt.addEventListener('mousedown', e => {
+            straightenButton.elt.addEventListener('mousedown', e => {
                 e.stopPropagation();
                 item.Straighten();
                 closePanel();
@@ -1008,7 +1008,7 @@ function createConsolePanel() {
         if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
         e.preventDefault();
         isDraggingConsole = true;
-        
+
         const currentMouseX = e.touches ? e.touches[0].clientX : e.clientX;
         const currentMouseY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -1038,7 +1038,7 @@ function createConsolePanel() {
 
     header.elt.addEventListener('mousedown', startDrag);
     header.elt.addEventListener('touchstart', startDrag, { passive: false });
-    
+
     const title = createP('Console');
     title.parent(header);
     title.style('margin', '0');
@@ -1141,7 +1141,7 @@ function showXMLPanel(xmlContent) {
     panel.style('display', 'flex');
     panel.style('flex-direction', 'column');
     panel.style('padding', '15px');
-    
+
     const header = createDiv('');
     header.parent(panel);
     header.style('display', 'flex');
@@ -1243,7 +1243,7 @@ function showXMLInputPanel() {
     panel.style('display', 'flex');
     panel.style('flex-direction', 'column');
     panel.style('padding', '15px');
-    
+
     const header = createDiv('');
     header.parent(panel);
     header.style('display', 'flex');
