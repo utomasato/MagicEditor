@@ -1,22 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MagicCircleLayout startRingId="1">
  <Rings>
-  <Ring id="0" type="TemplateRing" x="447.99" y="270.62" angle="4.0354">
+  <Ring id="0" type="TemplateRing" x="273.21" y="39.66" angle="3.7591" magic="fire">
+    <Comments>
+    </Comments>
     <Items>
       <Item type="sigil" value="RETURN" />
+      <Item type="name" value="scale" />
+      <Item type="chars" value="1" />
     </Items>
   </Ring>
   <Ring id="1" type="MagicRing" x="0.00" y="0.00" angle="0.0000">
+    <Comments>
+    </Comments>
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="0" />
       <Item type="chars" value="1" />
       <Item type="chars" value="5" />
-      <Item type="joint" value="2" />
+      <Item type="joint" value="2" isExecute="false" />
       <Item type="sigil" value="for" />
     </Items>
   </Ring>
-  <Ring id="2" type="MagicRing" x="223.78" y="450.81" angle="-0.4608">
+  <Ring id="2" type="MagicRing" x="124.00" y="249.79" angle="-0.4608">
+    <Comments>
+    </Comments>
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="chars" value="60" />
@@ -30,20 +38,23 @@
       <Item type="name" value="x" />
       <Item type="sigil" value="exch" />
       <Item type="sigil" value="def" />
-      <Item type="joint" value="0" />
-      <Item type="sigil" value="exec" />
-      <Item type="joint" value="3" />
+      <Item type="joint" value="0" isExecute="true" />
+      <Item type="joint" value="3" isExecute="false" />
       <Item type="sigil" value="transform" />
     </Items>
   </Ring>
-  <Ring id="3" type="DictRing" x="307.91" y="153.71" angle="3.4175">
+  <Ring id="3" type="DictRing" x="237.43" y="-118.35" angle="3.4405">
+    <Comments>
+    </Comments>
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="name" value="position" />
-      <Item type="joint" value="4" />
+      <Item type="joint" value="4" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="4" type="ArrayRing" x="146.34" y="80.25" angle="1.9975">
+  <Ring id="4" type="ArrayRing" x="77.59" y="-195.50" angle="2.0205">
+    <Comments>
+    </Comments>
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="chars" value="x" />

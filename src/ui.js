@@ -2,6 +2,9 @@
 // UI Panel Functions
 // =============================================
 
+// 現在開いているファイルのハンドルを保持する変数
+let currentFileHandle = null;
+
 /**
  * Checks if the mouse cursor is currently over the given UI panel element.
  * @param {p5.Element} panelElement The panel element to check.
@@ -1190,6 +1193,93 @@ function showXMLPanel(xmlContent) {
     footer.style('margin-top', '10px');
     footer.style('flex-shrink', '0');
 
+    // --- 上書き保存ボタン (ファイルハンドルがある場合のみ表示) ---
+    if (currentFileHandle) {
+        const overwriteButton = createButton('💾 上書き保存 (Overwrite)');
+        overwriteButton.parent(footer);
+        overwriteButton.style('padding', '8px 15px');
+        overwriteButton.style('border', '1px solid #0056b3');
+        overwriteButton.style('background-color', '#0056b3');
+        overwriteButton.style('color', 'white');
+        overwriteButton.style('border-radius', '4px');
+        overwriteButton.style('cursor', 'pointer');
+        overwriteButton.style('margin-right', '10px');
+
+        overwriteButton.mousePressed(async () => {
+            try {
+                const xmlContent = textArea.value();
+                // 既存のハンドルに書き込む
+                const writable = await currentFileHandle.createWritable();
+                await writable.write(xmlContent);
+                await writable.close();
+                alert('上書き保存しました。');
+            } catch (err) {
+                console.error(err);
+                alert('上書き保存に失敗しました: ' + err.message);
+            }
+        });
+    }
+
+    // --- 名前を付けて保存ボタン ---
+    const saveAsButton = createButton('💾 名前を付けて保存 (Save As)');
+    saveAsButton.parent(footer);
+    saveAsButton.style('padding', '8px 15px');
+    saveAsButton.style('border', '1px solid #28a745');
+    saveAsButton.style('background-color', '#28a745');
+    saveAsButton.style('color', 'white');
+    saveAsButton.style('border-radius', '4px');
+    saveAsButton.style('cursor', 'pointer');
+    saveAsButton.style('margin-right', '10px');
+
+    saveAsButton.mousePressed(async () => {
+        try {
+            const xmlContent = textArea.value();
+
+            // Check for File System Access API support
+            if ('showSaveFilePicker' in window) {
+                const opts = {
+                    types: [{
+                        description: 'XML file',
+                        accept: { 'text/xml': ['.xml'] },
+                    }],
+                    suggestedName: 'magic_circle.xml',
+                };
+                // 保存時に新しいハンドルを取得して更新
+                const handle = await window.showSaveFilePicker(opts);
+                const writable = await handle.createWritable();
+                await writable.write(xmlContent);
+                await writable.close();
+                currentFileHandle = handle; // ハンドルを更新
+                alert('保存しました。次回から「上書き保存」が可能です。');
+
+                // パネルを再描画して「上書き保存」ボタンを表示させる
+                if (currentModalPanel) {
+                    currentModalPanel.remove();
+                    currentModalPanel = null;
+                }
+                showXMLPanel(xmlContent);
+
+            } else {
+                // Fallback
+                const blob = new Blob([xmlContent], { type: 'text/xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'magic_circle.xml';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        } catch (err) {
+            // Fail silently if user cancelled
+            if (err.name !== 'AbortError') {
+                console.error(err);
+                alert('保存に失敗しました: ' + err.message);
+            }
+        }
+    });
+
     const copyButton = createButton('クリップボードにコピー');
     copyButton.parent(footer);
     copyButton.style('padding', '8px 15px');
@@ -1271,6 +1361,52 @@ function showXMLInputPanel() {
         }
     });
 
+    // --- ファイル入力 (Fallback用) ---
+    const fileInput = createInput('', 'file');
+    fileInput.parent(panel);
+    fileInput.attribute('accept', '.xml');
+    fileInput.style('display', 'none');
+
+    // --- ツールバー（ファイルを開くボタン） ---
+    const toolbar = createDiv('');
+    toolbar.parent(panel);
+    toolbar.style('display', 'flex');
+    toolbar.style('margin-bottom', '5px');
+
+    const openFileBtn = createButton('📂 ファイルを開く (Open XML)');
+    openFileBtn.parent(toolbar);
+    openFileBtn.style('padding', '5px 10px');
+    openFileBtn.style('cursor', 'pointer');
+    openFileBtn.style('font-size', '12px');
+
+    openFileBtn.mousePressed(async () => {
+        // File System Access API を優先して使用
+        if ('showOpenFilePicker' in window) {
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'XML Files',
+                        accept: { 'text/xml': ['.xml'] }
+                    }],
+                    multiple: false
+                });
+                // ハンドルを保存（これで上書きが可能になる）
+                currentFileHandle = handle;
+
+                const file = await handle.getFile();
+                const text = await file.text();
+                textArea.value(text);
+                errorMsg.hide();
+            } catch (err) {
+                // キャンセルされた場合は無視
+                if (err.name !== 'AbortError') console.error(err);
+            }
+        } else {
+            // 非対応ブラウザは従来の方法
+            fileInput.elt.click();
+        }
+    });
+
     const textArea = createElement('textarea', 'ここにXMLをペーストしてください...');
     textArea.parent(panel);
     textArea.style('width', '100%');
@@ -1285,6 +1421,21 @@ function showXMLInputPanel() {
     textArea.elt.addEventListener('focus', () => {
         if (textArea.value() === 'ここにXMLをペーストしてください...') {
             textArea.value('');
+        }
+    });
+
+    // --- ファイルが選択されたときの処理 (Fallback) ---
+    fileInput.elt.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                textArea.value(e.target.result);
+                errorMsg.hide(); // エラーメッセージがあれば隠す
+                // 注意: <input>経由ではハンドルが取得できないため上書き不可
+                currentFileHandle = null;
+            };
+            reader.readAsText(file);
         }
     });
 
