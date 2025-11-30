@@ -193,11 +193,11 @@ function Start() {
                 }
                 console.log(activeInterpreter.stack);
             }),
-        new Button(-150, 10, 80, 40,
+        new Button(-140, 10, 70, 40,
             (instance) => { return instance.isPressed ? color(110, 110, 128) : color(220, 220, 255); },
             { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Import", color(0, 0, 0),
             () => { showXMLInputPanel(); }),
-        new Button(-65, 10, 80, 40,
+        new Button(-65, 10, 70, 40,
             (instance) => { return instance.isPressed ? color(100, 128, 110) : color(200, 255, 220); },
             { x: 1, y: 0 }, { x: 1, y: 0 }, 17, "Export", color(0, 0, 0),
             () => { exportToXML(); }),

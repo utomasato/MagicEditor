@@ -3,7 +3,7 @@
 // =============================================
 
 function InputInitialize() {
-    let inputMode = "";
+    inputMode = "";
     panStart = { x: 0, y: 0 };
     dragOffset = { x: 0, y: 0 };
     mousePos = { x: 0, y: 0 };
@@ -33,9 +33,8 @@ function MouseDownEvent() {
         if (contentPanelElement) {
             const panelRect = contentPanelElement.getBoundingClientRect();
             // マウスがパネル本体の内側なら、以降の処理をブロックしてモーダルを維持
-            if (mouseX >= panelRect.left && mouseX <= panelRect.right && mouseY >= panelRect.top && mouseY <= panelRect.bottom) {
+            if (mouseX >= panelRect.left && mouseX <= panelRect.right && mouseY >= panelRect.top && mouseY <= panelRect.bottom)
                 return;
-            }
         }
         // パネルの外側がクリックされたので、パネルを閉じる
         currentModalPanel.remove();
@@ -50,9 +49,7 @@ function MouseDownEvent() {
     if (currentUiPanel) {
         const panelRect = currentUiPanel.elt.getBoundingClientRect();
         if (mouseX < panelRect.left || mouseX > panelRect.right || mouseY < panelRect.top || mouseY > panelRect.bottom) {
-            if (currentInputElement) {
-                // finishTextInput(); 
-            } else {
+            if (!currentInputElement) {
                 currentUiPanel.remove();
                 currentUiPanel = null;
                 currentSelectElement = null;
@@ -71,7 +68,6 @@ function MouseDownEvent() {
         return;
     }
 
-    console.log(mouseButton);
     if (cursormode == "grad" && mouseButton === LEFT) {
         switch (ClickObj[0]) // クリックしたものによる分岐
         {
@@ -259,7 +255,6 @@ function DrawButtons() {
 }
 
 function CheckButtons() {
-    let isbutton = false;
     let result = null;
     for (const btn of buttons) {
         result = btn.CheckPressed();
