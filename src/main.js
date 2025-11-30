@@ -305,9 +305,9 @@ function Update() {
     // デバッグボタン
     if (CheckKeyDown(Key.D)) { debugMode = !debugMode; } // デバッグボタン
     //if (CheckKeyDown(Key.H)) { globalIsClockwise = !globalIsClockwise; }
-    // 入力モード ショートカット
-    if (CheckKeyDown(Key.A)) { cursormode = "grad"; SetMouseCursor('grab'); }
-    if (CheckKeyDown(Key.S)) { cursormode = "edit"; SetMouseCursor('default'); }
+    // 入力モード ショートカット  右クリック左クリックがあるためショートカットなし
+    // if (CheckKeyDown(Key.A)) { cursormode = "grad"; SetMouseCursor('grab'); }
+    // if (CheckKeyDown(Key.S)) { cursormode = "edit"; SetMouseCursor('default'); }
     // 追加 ショートカット    
     if (CheckKeyDown(Key.Q)) { staticButtons[0].Down(); }
     if (CheckKeyDown(Key.W)) { staticButtons[1].Down(); }

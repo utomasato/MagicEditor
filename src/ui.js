@@ -5,6 +5,114 @@
 // 現在開いているファイルのハンドルを保持する変数
 let currentFileHandle = null;
 
+// ショートカットキー (Ctrl+S / Cmd+S) の登録
+document.addEventListener('keydown', async (e) => {
+    // Ctrl+S または Cmd+S
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault(); // ブラウザの保存ダイアログを抑制
+
+        // XMLを生成
+        const xmlContent = generateLayoutXML();
+
+        try {
+            if (currentFileHandle) {
+                // ハンドルがある場合は上書き保存
+                const writable = await currentFileHandle.createWritable();
+                await writable.write(xmlContent);
+                await writable.close();
+
+                // 保存完了の簡易フィードバック
+                const msg = createDiv('Saved!');
+                msg.style('position', 'fixed');
+                msg.style('bottom', '20px');
+                msg.style('right', '20px');
+                msg.style('background', 'rgba(40, 167, 69, 0.9)');
+                msg.style('color', 'white');
+                msg.style('padding', '10px 20px');
+                msg.style('border-radius', '5px');
+                msg.style('z-index', '3000');
+                msg.style('font-family', 'sans-serif');
+                msg.style('pointer-events', 'none');
+                setTimeout(() => msg.remove(), 2000);
+
+            } else {
+                // ハンドルがない場合は新規作成（名前を付けて保存）
+                if ('showSaveFilePicker' in window) {
+                    const opts = {
+                        types: [{
+                            description: 'XML file',
+                            accept: { 'text/xml': ['.xml'] },
+                        }],
+                        suggestedName: 'magic_circle.xml',
+                    };
+                    const handle = await window.showSaveFilePicker(opts);
+                    const writable = await handle.createWritable();
+                    await writable.write(xmlContent);
+                    await writable.close();
+                    currentFileHandle = handle; // ハンドルを保存
+                    alert('保存しました。');
+                } else {
+                    // File System Access API 非対応ブラウザはダウンロード
+                    const blob = new Blob([xmlContent], { type: 'text/xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'magic_circle.xml';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            }
+        } catch (err) {
+            // キャンセルされた場合は何もしない
+            if (err.name !== 'AbortError') {
+                console.error(err);
+                alert('保存に失敗しました: ' + err.message);
+            }
+        }
+    }
+});
+
+/**
+ * 現在の状態からXML文字列を生成するヘルパー関数
+ * (io.js の exportToXML のロジックを再利用して文字列のみ返す)
+ */
+function generateLayoutXML() {
+    // 1. 各リングに一意のIDを割り振る
+    const ringIdMap = new Map();
+    rings.forEach((ring, index) => {
+        ringIdMap.set(ring, index);
+    });
+
+    const startRingId = startRing ? ringIdMap.get(startRing) : -1;
+
+    // 2. XML文字列の構築を開始
+    let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xmlString += `<MagicCircleLayout startRingId="${startRingId}">\n`;
+
+    // 3. すべてのリングをXMLに変換 (io.jsの関数を使用)
+    xmlString += ' <Rings>\n';
+    rings.forEach(ring => {
+        if (typeof ringToXML === 'function') {
+            xmlString += ringToXML(ring, ringIdMap);
+        }
+    });
+    xmlString += ' </Rings>\n';
+
+    // 4. フィールドアイテムをXMLに変換 (io.jsの関数を使用)
+    xmlString += ' <FieldItems>\n';
+    fieldItems.forEach(item => {
+        if (typeof itemToXML === 'function') {
+            xmlString += itemToXML(item, ringIdMap);
+        }
+    });
+    xmlString += ' </FieldItems>\n';
+
+    xmlString += '</MagicCircleLayout>\n';
+    return xmlString;
+}
+
 /**
  * Checks if the mouse cursor is currently over the given UI panel element.
  * @param {p5.Element} panelElement The panel element to check.
