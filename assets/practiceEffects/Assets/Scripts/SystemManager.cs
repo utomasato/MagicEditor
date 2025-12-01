@@ -25,7 +25,7 @@ public class TextureEntry
     public Texture2D texture;
 }
 
-// 追加: インスペクターに表示するための、名前とシェーダーのペアを保持するクラス
+// インスペクターに表示するための、名前とシェーダーのペアを保持するクラス
 [System.Serializable]
 public class ShaderEntry
 {
@@ -64,7 +64,7 @@ public class SystemManager : MonoBehaviour
     private Dictionary<string, Material> materialDictionary;
     private Dictionary<string, Mesh> meshDictionary;
     private Dictionary<string, Texture2D> textureDictionary;
-    private Dictionary<string, Shader> shaderDictionary; // 追加
+    private Dictionary<string, Shader> shaderDictionary;
 
     // Manages generated objects by their unique ID
     private Dictionary<string, GameObject> managedObjectsById = new Dictionary<string, GameObject>();
@@ -127,7 +127,7 @@ public class SystemManager : MonoBehaviour
             }
         }
 
-        // 追加: シェーダー辞書の構築
+        // シェーダー辞書の構築
         shaderDictionary = new Dictionary<string, Shader>();
         if (shaderList != null)
         {

@@ -303,8 +303,8 @@ function Update() {
     else if (CheckMouseUp() || CheckTouchEnded()) { MouseUpEvent(); }
 
     // デバッグボタン
-    if (CheckKeyDown(Key.D)) { debugMode = !debugMode; } // デバッグボタン
-    //if (CheckKeyDown(Key.H)) { globalIsClockwise = !globalIsClockwise; }
+    if (CheckKeyDown(Key.L)) { debugMode = !debugMode; } // デバッグボタン
+    //if (CheckKeyDown(Key.K)) { globalIsClockwise = !globalIsClockwise; }
     // 入力モード ショートカット  右クリック左クリックがあるためショートカットなし
     // if (CheckKeyDown(Key.A)) { cursormode = "grad"; SetMouseCursor('grab'); }
     // if (CheckKeyDown(Key.S)) { cursormode = "edit"; SetMouseCursor('default'); }
@@ -315,6 +315,8 @@ function Update() {
     if (CheckKeyDown(Key.R)) { staticButtons[3].Down(); }
     if (CheckKeyDown(Key.T)) { staticButtons[4].Down(); }
     if (CheckKeyDown(Key.Y)) { staticButtons[5].Down(); }
+    if (CheckKeyDown(Key.D)) { if (startRing) { alignConnectedRings(startRing); } }
+    if (CheckKeyDown(Key.F)) { if (startRing) { StraightenConnectedJoints(startRing); } }
 }
 
 function Draw() {

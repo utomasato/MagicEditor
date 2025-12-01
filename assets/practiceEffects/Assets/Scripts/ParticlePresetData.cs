@@ -519,7 +519,7 @@ public class RendererModuleData
     public Texture2D mainTexture;
 
     public Material trailMaterial;
-    // 追加: Trail用の動的マテリアル生成用フィールド
+    // Trail用の動的マテリアル生成用フィールド
     public Shader trailShader;
     public Texture2D trailTexture;
 

@@ -75,7 +75,7 @@ public static partial class MpsParser
                 s.Expect(">");
             }
             else if (k == "trailMaterialName") { if (md.TryGetValue(s.ConsumeStringInParens(), out Material tm)) m.trailMaterial = tm; }
-            // 追加: 動的トレイルマテリアル指定 (~trailMaterial <~shader (Name) ~texture (Name)>)
+            // 動的トレイルマテリアル指定 (~trailMaterial <~shader (Name) ~texture (Name)>)
             else if (k == "trailMaterial")
             {
                 s.Expect("<");

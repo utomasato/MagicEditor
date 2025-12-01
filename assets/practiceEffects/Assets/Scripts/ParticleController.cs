@@ -658,7 +658,7 @@ public class ParticleController : MonoBehaviour
             {
                 trailMatToUse = new Material(preset.renderer.trailMaterial);
             }
-            // ★追加: シェーダーも既存マテリアルも指定がない場合、デフォルトシェーダーで生成 (Textureのみ指定の場合など)
+            // シェーダーも既存マテリアルも指定がない場合、デフォルトシェーダーで生成 (Textureのみ指定の場合など)
             else
             {
                 Shader defaultTrailShader = Shader.Find("Mobile/Particles/Additive");
