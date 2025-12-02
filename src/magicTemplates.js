@@ -2,7 +2,7 @@ const templateDatas = {
     fire: {
         parameters: //このテンプレートで設定できるパラメータ
         {
-            scale: { type: "numberOrVector3", defaultValue: "2" },
+            scale: { type: "numberOrVector3", defaultValue: "1" },
             position: { type: "vector3", defaultValue: "0 0 0" },
             rotation: { type: "vector3", defaultValue: "-90 0 0" },
             color1: { type: "color", defaultValue: "1.0 0.6 0.0" },
@@ -74,6 +74,14 @@ function code2parameters(magicData, spell) {
     let prmfgs = Object.fromEntries(
         Object.entries(magicData.parameters).map(([key, value]) => [key, false])
     );
+
+    // 配列内のトークンを文字列化するヘルパー関数
+    const tokenToString = (token) => {
+        if (typeof token === 'string') return token;
+        if (typeof token === 'object' && token.type === 'variable_name') return "$" + token.value;
+        return "";
+    };
+
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (lastName) {
@@ -103,7 +111,8 @@ function code2parameters(magicData, spell) {
                         break;
                     case "vector3":
                         if (typeof token == "object" && token.type == "array" && token.value.length >= 3) {
-                            prms[lastName] = token.value.slice(0, 3).join(" ");
+                            // 修正: 変数オブジェクトを文字列に戻して結合
+                            prms[lastName] = token.value.slice(0, 3).map(tokenToString).join(" ");
                             prmfgs[lastName] = true;
                         }
                         break;
@@ -113,13 +122,13 @@ function code2parameters(magicData, spell) {
                             prmfgs[lastName] = true;
                         }
                         else if (typeof token == "object" && token.type == "array" && token.value.length >= 3) {
-                            prms[lastName] = "[ " + token.value.slice(0, 3).join(" ") + " ]";
+                            prms[lastName] = "[ " + token.value.slice(0, 3).map(tokenToString).join(" ") + " ]";
                             prmfgs[lastName] = true;
                         }
                         break
                     case "color":
                         if (typeof token == "object" && token.type == "array" && token.value.length >= 3) {
-                            prms[lastName] = token.value.slice(0, 3).join(" ");
+                            prms[lastName] = token.value.slice(0, 3).map(tokenToString).join(" ");
                             prmfgs[lastName] = true;
                         }
                         else if (typeof token == "string" && token.match(/^\(.*\)$/) && colorsDict[token.slice(1, -1).toLowerCase()]) {
