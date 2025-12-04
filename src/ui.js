@@ -824,7 +824,7 @@ function createRingPanel(ring) {
         magicSelect.parent(contentArea);
 
         const magicOptions = [
-            "fire", "bullet", "charge"
+            "fire", "bullet", "charge", "barrier",
         ];
         magicOptions.forEach(opt => { magicSelect.option(opt); });
         magicSelect.selected(ring.magic);
@@ -1008,7 +1008,7 @@ function createJointPanel(item) {
     executeCheckbox.parent(executeContainer);
     executeCheckbox.style('cursor', 'pointer');
 
-    // 修正: .checked() メソッドではなく .elt.checked プロパティを使用して初期値を設定
+    // .checked() メソッドではなく .elt.checked プロパティを使用して初期値を設定
     executeCheckbox.elt.checked = item.isExecute;
 
     executeCheckbox.elt.addEventListener('mousedown', (e) => {
@@ -1016,7 +1016,7 @@ function createJointPanel(item) {
     });
 
     executeCheckbox.changed(() => {
-        // 修正: .checked() メソッドではなく .elt.checked プロパティを使用して値を取得
+        // .checked() メソッドではなく .elt.checked プロパティを使用して値を取得
         item.isExecute = executeCheckbox.elt.checked;
         // isExecute が変わると GetLength() が変わる可能性があるため、親リングのレイアウトを再計算
         if (item.parentRing) {
@@ -1033,7 +1033,7 @@ function createJointPanel(item) {
     executeLabel.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         item.isExecute = !item.isExecute;
-        // 修正: .checked() メソッドではなく .elt.checked プロパティを使用して値を設定
+        // .checked() メソッドではなく .elt.checked プロパティを使用して値を設定
         executeCheckbox.elt.checked = item.isExecute;
         if (item.parentRing) {
             item.parentRing.CalculateLayout();

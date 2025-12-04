@@ -54,6 +54,19 @@ const templateDatas = {
         invalidVariableNames:
             ["root", "setMagic", "magic", "preset"],
     },
+    barrier: {
+        parameters: {
+            scale: { type: "numberOrVector3", defaultValue: "2" },
+            position: { type: "vector3", defaultValue: "0 0 0" },
+            rotation: { type: "vector3", defaultValue: "0 0 0" },
+        },
+        converter: //入力されたパラメータからコードに変換する変換器
+            (prms, prmfgs) => {
+                return `{dict begin ~root < ~shape (empty) > spawnobj ~setMagic { ~magic $preset magicactivate $magic $root attachtoparent } def ~preset < ~main < ~startLifetime 2 ~startSpeed 0 ~startSize 100 ~startRotation < ~x [ 0 360 ] ~y [ 0 360 ] ~z [ 0 360 ] > ~startColor [ 0.4 0.8 1 1 ] > ~emission < ~rateOverTime 2 > ~colorOverLifetime < ~gradient < ~alphaKeys [ [ 0.0 0.0 ] [ 0.3 1.0 ] [ 1.0 0.0 ] ] > > ~customData < ~x 0.2 ~y 0.2 ~z 0.85 ~w 0.35 > ~renderer < ~renderMode (Mesh) ~meshes (Sphere_1) ~material < ~texture (Smoke_4) ~shader (Aura) > ~alignment (Local) > > def 0 $setMagic $magic < ~position [ 0 0.7 0 ] > transform { $preset ~customData < ~x 0.2 ~y 0.2 ~z 2.8 ~w 1 > put $preset ~renderer get ~material < ~shader (Aura) > put } exec $setMagic $magic < ~position [ 0 0.7 0 ] > transform { $preset ~main get ~startRotation < ~y [ 0 360 ] > put $preset ~sizeOverLifetime < ~size [ [ 0 0.5 ] [ 1 1 ] ] > put $preset ~customData < ~x -0.3 ~y [ -0.3 0.3 ] ~z 0.8 ~w 0.35 > put $preset ~renderer get dup ~meshes (Ring_1) put ~material < ~texture (Smoke_4) ~shader (Aura) > put } exec $setMagic $root < ~scale 1 > transform end}`;
+            },
+        invalidVariableNames: // 入れてほしくない変数（例えば　scaleにrootとか入れられられると困る）
+            ["root", "setMagic", "magic", "preset"],
+    },
 };
 
 
