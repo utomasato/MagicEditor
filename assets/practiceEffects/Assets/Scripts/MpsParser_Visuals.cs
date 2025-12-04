@@ -22,7 +22,8 @@ public static partial class MpsParser
         {
             string k = s.Consume().Substring(1);
             if (k == "enabled") c.enabled = s.ConsumeBool();
-            else if (k == "gradient") c.color = ParseGradient(s);
+            // "gradient" に加えて "color" も受け付けるように変更
+            else if (k == "gradient" || k == "color") c.color = ParseGradient(s);
             else SkipUnknownValue(s);
         }
         return c;

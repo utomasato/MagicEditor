@@ -35,7 +35,7 @@ public class JsCallbackHandler : MonoBehaviour
         }
     }
 
-    //*
+    /*
     void Update()
     {
         // "R"キーを押すとシーンがリロードされる例
@@ -70,18 +70,47 @@ public class JsCallbackHandler : MonoBehaviour
     // Note: Test methods will use name-based logic, update them if needed for ID-based testing.
     void TestReceiveGeneralData()
     {
+        //testBullet();
+        //testCharge();
+        //testFire();
+        testBarrier();
+    }
+
+    void testBarrier()
+    {
+        string spellText;
+        string parentId;
+        string childId;
+
+        spellText = "<~shape (empty)>";
+        parentId = "test-id-from-csharp-0";
+        systemManager.CreateObjectFromMps(spellText, parentId);
+
+        // aura
+        spellText = "<~main <~startLifetime 2 ~startSpeed 0 ~startSize 100 ~startRotation <~x [0 360] ~y [0 360] ~z [0 360]> ~startColor [0.4 0.8 1 1] > ~emission <~rateOverTime 2 > ~colorOverLifetime <~gradient<~alphaKeys [[0 0] [0.3 1] [1 0]]>> ~customData < ~x 0.21 ~y 0.21 ~z 0.86 ~w 0.35 > ~renderer <~renderMode (Mesh) ~meshes (Sphere_1)  ~material <~texture (Smoke_4) ~shader (Aura)> ~alignment (Local)> > ";
+        childId = "test-id-from-csharp-1";
+        systemManager.CreateAndSpawnParticleFromMps(spellText, childId);
+        systemManager.AttachToParent(childId, parentId);
+
+        // fresnel
+        spellText = "<~main <~startLifetime 2 ~startSpeed 0 ~startSize 100 ~startRotation <~x [0 360] ~y [0 360] ~z [0 360]> ~startColor [0.4 0.8 1 1] > ~emission <~rateOverTime 2 > ~colorOverLifetime <~gradient<~alphaKeys [[0 0] [0.3 1] [1 0]]>> ~customData < ~x 0.21 ~y 0.21 ~z 2.8 ~w 1 > ~renderer <~renderMode (Mesh) ~meshes (Sphere_1)  ~material < ~shader (Aura)> ~alignment (Local)> > ";
+        childId = "test-id-from-csharp-2";
+        systemManager.CreateAndSpawnParticleFromMps(spellText, childId);
+        systemManager.AttachToParent(childId, parentId);
+
+        // ring
+        spellText = "<~main <~startLifetime 2 ~startSpeed 0 ~startSize 125 ~startRotation < ~y [0 360] > ~startColor [0.4 0.8 1 1] > ~emission <~rateOverTime 2 > ~colorOverLifetime <~gradient<~alphaKeys [[0 0] [0.3 1] [1 0]]>> ~sizeOverLifetime < ~size [[0 0.5] [1 1]] > ~customData < ~x -0.3 ~y [-0.3 0.3] ~z 0.8 ~w 0.35 > ~renderer <~renderMode (Mesh) ~meshes (Ring_1) ~material <~texture (Smoke_4) ~shader (Aura)> ~alignment (Local)> > ";
+        childId = "test-id-from-csharp-3";
+        systemManager.CreateAndSpawnParticleFromMps(spellText, childId);
+        systemManager.AttachToParent(childId, parentId);
+    }
+    void testFire()
+    {
         string spellText;
         string testId;
         string parentId;
         string childId;
 
-        /* test
-        spellText = "<~shape < > ~emission < > ~renderer < >>";
-        testId = "test-id-from-csharp-0";
-        systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
-        //*/
-
-        /* fire
         spellText = "<~shape (empty)>";
         testId = "test-id-from-csharp-0";
         systemManager.CreateObjectFromMps(spellText, testId);
@@ -100,9 +129,15 @@ public class JsCallbackHandler : MonoBehaviour
         systemManager.AttachToParent(childId, parentId);
         spellText = "<~scale 2>";
         systemManager.TransformObjectById(parentId, spellText);
-        //*/
+    }
 
-        //* bullet
+    void testBullet()
+    {
+        string spellText;
+        string testId;
+        string parentId;
+        string childId;
+
         spellText = "<~shape (empty)>";
         testId = "test-id-from-csharp-0";
         systemManager.CreateObjectFromMps(spellText, testId);
@@ -145,9 +180,14 @@ public class JsCallbackHandler : MonoBehaviour
         systemManager.AttachToParent(childId, parentId);
         spellText = "<~scale 5>";
         systemManager.TransformObjectById(parentId, spellText);
-        //*/
+    }
 
-        /* charge
+    void testCharge()
+    {
+        string spellText;
+        string testId;
+        string parentId;
+        string childId;
         spellText = "<~shape (empty)>";
         testId = "test-id-from-csharp-0";
         systemManager.CreateObjectFromMps(spellText, testId);
@@ -203,7 +243,6 @@ public class JsCallbackHandler : MonoBehaviour
 
         spellText = "<~scale 2>";
         systemManager.TransformObjectById(parentId, spellText);
-        //*/
     }
 
     void TestTransform()

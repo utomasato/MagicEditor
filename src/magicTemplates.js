@@ -111,7 +111,7 @@ function code2parameters(magicData, spell) {
                         break;
                     case "vector3":
                         if (typeof token == "object" && token.type == "array" && token.value.length >= 3) {
-                            // 修正: 変数オブジェクトを文字列に戻して結合
+                            // 変数オブジェクトを文字列に戻して結合
                             prms[lastName] = token.value.slice(0, 3).map(tokenToString).join(" ");
                             prmfgs[lastName] = true;
                         }

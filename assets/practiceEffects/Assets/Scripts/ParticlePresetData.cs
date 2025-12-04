@@ -499,7 +499,7 @@ public class CustomDataModuleData
 {
     public bool enabled;
     public ParticleSystemCustomDataMode mode = ParticleSystemCustomDataMode.Vector;
-    public uint vectorComponentCount = 0; // 0 to 4
+    public uint vectorComponentCount = 4; // 0 to 4
     public MinMaxCurveData vec1 = new MinMaxCurveData();
     public MinMaxCurveData vec2 = new MinMaxCurveData();
     public MinMaxCurveData vec3 = new MinMaxCurveData();

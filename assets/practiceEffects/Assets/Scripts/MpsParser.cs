@@ -88,7 +88,7 @@ public static partial class MpsParser
 
         public string Consume() => _position < _tokens.Length ? _tokens[_position++] : null;
 
-        // 修正: Exceptionを投げずにログのみ出力して処理を継続する
+        // Exceptionを投げずにログのみ出力して処理を継続する
         public void Expect(string token)
         {
             var consumed = Consume();

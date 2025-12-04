@@ -33,6 +33,12 @@ public class ParticleController : MonoBehaviour
     /// <returns>パーティクルシステムに適用するMinMaxCurve</returns>
     private ParticleSystem.MinMaxCurve CreatePsMinMaxCurveFromData(MinMaxCurveData data, float multiplier = 1.0f)
     {
+        // dataがnullの場合は安全にデフォルト値(0)を返す
+        if (data == null)
+        {
+            return new ParticleSystem.MinMaxCurve(0.0f);
+        }
+
         // 1. Two Curves (MinMax Curve) Mode
         // minCurveとcurve(maxCurveとして使用)の両方が存在する場合
         if (data.minCurve != null && data.minCurve.keys.Count > 0 &&
@@ -58,6 +64,7 @@ public class ParticleController : MonoBehaviour
     // データがカーブモード（Single or Double）かどうかを判定
     private bool IsCurve(MinMaxCurveData data)
     {
+        if (data == null) return false; // nullチェック追加
         return (data.curve != null && data.curve.keys.Count > 0) ||
                (data.minCurve != null && data.minCurve.keys.Count > 0);
     }
@@ -65,6 +72,7 @@ public class ParticleController : MonoBehaviour
     // データが「2つのカーブ（Two Curves）」モードかどうかを判定
     private bool IsTwoCurves(MinMaxCurveData data)
     {
+        if (data == null) return false; // nullチェック追加
         return data.minCurve != null && data.minCurve.keys.Count > 0 &&
                data.curve != null && data.curve.keys.Count > 0;
     }
@@ -80,7 +88,7 @@ public class ParticleController : MonoBehaviour
         {
             // 定数値をカーブ（始点と終点が同じ値の直線）に変換
             AnimationCurve curve = new AnimationCurve();
-            float val = data.min * multiplier;
+            float val = (data != null) ? data.min * multiplier : 0f; // nullチェック
             curve.AddKey(0.0f, val);
             curve.AddKey(1.0f, val);
             return new ParticleSystem.MinMaxCurve(1.0f, curve);
@@ -104,7 +112,7 @@ public class ParticleController : MonoBehaviour
         {
             // Constant -> Two Curves (MinとMaxに同じフラットなカーブを設定)
             AnimationCurve curve = new AnimationCurve();
-            float val = data.min * multiplier;
+            float val = (data != null) ? data.min * multiplier : 0f; // nullチェック
             curve.AddKey(0.0f, val);
             curve.AddKey(1.0f, val);
             return new ParticleSystem.MinMaxCurve(1.0f, curve, curve);
@@ -117,7 +125,26 @@ public class ParticleController : MonoBehaviour
         if (data == null) return new Gradient();
 
         Gradient grad = new Gradient();
-        // キーがない場合は白を返す
+
+        // データリストがnullの場合の安全策
+        if (data.colorKeys == null) data.colorKeys = new List<ColorKeyData>();
+        if (data.alphaKeys == null) data.alphaKeys = new List<AlphaKeyData>();
+
+        // Alphaキーのみが指定され、Colorキーがない場合はデフォルトの白を追加する
+        if (data.colorKeys.Count == 0 && data.alphaKeys.Count > 0)
+        {
+            data.colorKeys.Add(new ColorKeyData { time = 0.0f, color = Color.white });
+            data.colorKeys.Add(new ColorKeyData { time = 1.0f, color = Color.white });
+        }
+
+        // Colorキーのみが指定され、Alphaキーがない場合はデフォルトの不透明を追加する
+        if (data.alphaKeys.Count == 0 && data.colorKeys.Count > 0)
+        {
+            data.alphaKeys.Add(new AlphaKeyData { time = 0.0f, alpha = 1.0f });
+            data.alphaKeys.Add(new AlphaKeyData { time = 1.0f, alpha = 1.0f });
+        }
+
+        // キーが全くない場合はデフォルト(白)を返す
         if (data.colorKeys.Count == 0) return grad;
 
         var colorKeys = data.colorKeys.Select(k => new GradientColorKey(k.color, k.time)).ToArray();
@@ -304,7 +331,7 @@ public class ParticleController : MonoBehaviour
             shape.position = sData.position;
             shape.rotation = sData.rotation;
 
-            // 修正: meshScaleは非推奨のため scale に統合
+            // meshScaleは非推奨のため scale に統合
             shape.scale = sData.scale * sData.meshScale;
 
             // Align / Random
@@ -606,6 +633,19 @@ public class ParticleController : MonoBehaviour
                 renderer.SetMeshes(preset.renderer.meshes.ToArray());
             }
 
+            // --- Custom Vertex Streams (Custom Data Support) ---
+            // ユーザー要望により、Custom Dataなどをシェーダーに渡すためのストリームを追加
+            var streams = new List<ParticleSystemVertexStream>
+            {
+                ParticleSystemVertexStream.Position,
+                ParticleSystemVertexStream.Normal,
+                ParticleSystemVertexStream.Color,
+                ParticleSystemVertexStream.UV,
+                ParticleSystemVertexStream.UV2, // Texture Sheet Animation or Custom UV
+                ParticleSystemVertexStream.Custom1XYZW // Custom Data (Vector4)
+            };
+            renderer.SetActiveVertexStreams(streams);
+
             // --- Material Logic ---
             // どのルートでマテリアルが作られたかに関わらず、テクスチャ指定があれば適用する
             Material matToUse = null;
@@ -641,7 +681,15 @@ public class ParticleController : MonoBehaviour
             {
                 if (preset.renderer.mainTexture != null)
                 {
+                    // 標準のmainTextureプロパティにセット（_MainTexなど）
                     matToUse.mainTexture = preset.renderer.mainTexture;
+
+                    // 追加: カスタムシェーダー用に "_Texture" プロパティにもセットを試みる
+                    // ShaderGraphなどでReference名を "_Texture" にしている場合に有効
+                    if (matToUse.HasProperty("_Texture"))
+                    {
+                        matToUse.SetTexture("_Texture", preset.renderer.mainTexture);
+                    }
                 }
                 renderer.material = matToUse;
             }
@@ -676,7 +724,14 @@ public class ParticleController : MonoBehaviour
             {
                 if (preset.renderer.trailTexture != null)
                 {
+                    // 標準のmainTextureプロパティにセット
                     trailMatToUse.mainTexture = preset.renderer.trailTexture;
+
+                    // 追加: カスタムシェーダー用に "_Texture" プロパティにもセットを試みる
+                    if (trailMatToUse.HasProperty("_Texture"))
+                    {
+                        trailMatToUse.SetTexture("_Texture", preset.renderer.trailTexture);
+                    }
                 }
                 renderer.trailMaterial = trailMatToUse;
             }

@@ -562,7 +562,7 @@ class Chars extends RingItem {
         return false;
     }
 
-    // --- 修正：Chars の SpellToken を $ プレフィックスと数値対応に変更 ---
+    // --- Chars の SpellToken を $ プレフィックスと数値対応に変更 ---
     SpellToken() {
         const value = this.value;
 
