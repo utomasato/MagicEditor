@@ -19,6 +19,15 @@ function InputInitialize() {
     editingItem = null;
 }
 
+function mouseWheelTurned(event) {
+    if (event.deltaY > 0) { // 奥側
+        ZoomOut();
+    } else if (event.deltaY < 0) { // 手前側
+        ZoomIn();
+    } else {
+    }
+}
+
 function MouseDownEvent() {
     lastPressedButton = null;
     if (isUIHidden) {
@@ -94,7 +103,8 @@ function MouseDownEvent() {
             case "item":
                 StartDragItem(fieldItems[ClickObj[1]], ClickObj[1]);
                 break;
-            default: StartPan(GetMousePos());
+            default:
+                StartPan(GetMousePos());
         }
     }
     else if (cursormode == "edit" || mouseButton === RIGHT) {
@@ -128,7 +138,8 @@ function MouseDownEvent() {
                 else if (fieldItem.type === 'sigil') { createSigilDropdown(fieldItem); }
                 else { createTextInput(fieldItem); }
                 break;
-            default: StartPan(GetMousePos());
+            default:
+                StartPan(GetMousePos());
         }
     }
 }
