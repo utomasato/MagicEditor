@@ -139,7 +139,10 @@ function MouseDownEvent() {
                 else { createTextInput(fieldItem); }
                 break;
             default:
-                StartPan(GetMousePos());
+                if (mouseButton === RIGHT) // 右クリック
+                    StartPan(GetMousePos());
+                else
+                    StartPan(GetMousePos());
         }
     }
 }
