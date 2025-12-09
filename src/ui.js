@@ -1598,3 +1598,91 @@ function showXMLInputPanel() {
     overwriteButton.style('cursor', 'pointer');
     overwriteButton.mousePressed(() => handleImport('overwrite'));
 }
+
+/**
+ * 右クリックでオブジェクトを追加するためのパネルを作成します。
+ */
+function createAddObjectPanel() {
+    if (currentUiPanel) {
+        currentUiPanel.remove();
+        currentUiPanel = null;
+    }
+
+    const closePanel = () => {
+        if (currentUiPanel) {
+            currentUiPanel.remove();
+            currentUiPanel = null;
+        }
+    };
+
+    const panelResult = createBasePanel('Add Object', closePanel);
+    if (!panelResult) return;
+
+    const { contentArea } = panelResult;
+
+    // 現在のマウス位置（ワールド座標）を取得して、オブジェクトの生成位置とする
+    // mousePosはグローバル変数と想定
+    const spawnX = typeof mousePos !== 'undefined' ? mousePos.x : 0;
+    const spawnY = typeof mousePos !== 'undefined' ? mousePos.y : 0;
+    const spawnPos = { x: spawnX, y: spawnY };
+
+    const items = [
+        { label: 'Ring', type: 'MagicRing' },
+        { label: 'Sigil', type: 'Sigil' },
+        { label: 'Num', type: 'Num' },
+        { label: 'String', type: 'String' },
+        { label: 'Name', type: 'Name' },
+        { label: 'Template', type: 'TemplateRing' }
+    ];
+
+    items.forEach(item => {
+        const btn = createButton(item.label);
+        btn.parent(contentArea);
+        btn.style('width', '100%');
+        btn.style('padding', '8px');
+        btn.style('margin-bottom', '4px');
+        btn.style('text-align', 'left');
+        btn.style('cursor', 'pointer');
+        btn.style('border', '1px solid #ccc');
+        btn.style('background', '#fff');
+        btn.style('border-radius', '4px');
+
+        btn.elt.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+
+            let newObj = null;
+            switch (item.type) {
+                case 'MagicRing':
+                    newObj = new MagicRing({ x: spawnPos.x, y: spawnPos.y });
+                    rings.push(newObj);
+                    break;
+                case 'TemplateRing':
+                    newObj = new TemplateRing({ x: spawnPos.x, y: spawnPos.y });
+                    rings.push(newObj);
+                    break;
+                case 'Sigil':
+                    newObj = new Sigil(spawnPos.x, spawnPos.y, "add", null);
+                    fieldItems.push(newObj);
+                    break;
+                case 'Num':
+                    newObj = new Chars(spawnPos.x, spawnPos.y, "0", null);
+                    fieldItems.push(newObj);
+                    break;
+                case 'String':
+                    newObj = new StringToken(spawnPos.x, spawnPos.y, "string", null);
+                    fieldItems.push(newObj);
+                    break;
+                case 'Name':
+                    newObj = new Name(spawnPos.x, spawnPos.y, "name", null);
+                    fieldItems.push(newObj);
+                    break;
+            }
+
+            if (newObj) {
+                newObj.isNew = true;
+            }
+
+            closePanel();
+        });
+    });
+}

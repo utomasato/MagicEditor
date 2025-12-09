@@ -3,6 +3,9 @@
 // =============================================
 
 function InputInitialize() {
+    // 右クリックメニューを無効化（ブラウザ標準メニューが出ないようにする）
+    document.oncontextmenu = () => false;
+
     inputMode = "";
     panStart = { x: 0, y: 0 };
     dragOffset = { x: 0, y: 0 };
@@ -139,10 +142,11 @@ function MouseDownEvent() {
                 else { createTextInput(fieldItem); }
                 break;
             default:
-                if (mouseButton === RIGHT) // 右クリック
+                if (mouseButton === RIGHT) {
+                    createAddObjectPanel();
+                } else {
                     StartPan(GetMousePos());
-                else
-                    StartPan(GetMousePos());
+                }
         }
     }
 }
@@ -303,7 +307,7 @@ function EndDragRing() {
         });
         rings = rings.filter(item => item !== selectRing);
         if (selectRing === startRing) {
-            startRing = rings.find(r => isRingStartable(r)) || (selectRingrings.length > 0 ? rings[0] : null);
+            startRing = rings.find(r => isRingStartable(r)) || (rings.length > 0 ? rings[0] : null);
             if (startRing) startRing.isStartPoint = true;
         }
         fieldItems.forEach(item => {
