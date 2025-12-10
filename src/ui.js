@@ -831,7 +831,6 @@ function createRingPanel(ring) {
 
         magicSelect.changed(() => {
             ring.magic = magicSelect.value();
-            // objects.js の DrawRingStar が this.magic を参照するよう修正済み
             closePanel(); // パネルを閉じる
         });
 
@@ -1004,7 +1003,7 @@ function createRingPanel(ring) {
         typeSelect.option('MagicRing');
         typeSelect.option('ArrayRing');
         typeSelect.option('DictRing');
-        typeSelect.option('TemplateRing'); // TemplateRing を選択肢に追加
+        typeSelect.option('TemplateRing');
         typeSelect.selected(ring.constructor.name);
 
         typeSelect.changed(() => {
@@ -1017,7 +1016,7 @@ function createRingPanel(ring) {
                 if (newType === 'MagicRing') { newRing = new MagicRing(ring.pos); }
                 else if (newType === 'ArrayRing') { newRing = new ArrayRing(ring.pos); }
                 else if (newType === 'DictRing') { newRing = new DictRing(ring.pos); }
-                else if (newType === 'TemplateRing') { newRing = new TemplateRing(ring.pos); } // TemplateRing の分岐を追加
+                else if (newType === 'TemplateRing') { newRing = new TemplateRing(ring.pos); }
                 else { newRing = new MagicRing(ring.pos); } // デフォルト
 
                 // 既存のアイテムを引き継ぐ (先頭の 'RETURN' or 'COMPLETE' は除く)
@@ -1050,11 +1049,80 @@ function createRingPanel(ring) {
     }
 }
 
+// =============================================
+// Color Conversion Helpers
+// =============================================
+
+function rgbToHsv(r, g, b) {
+    let max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, v = max;
+    let d = max - min;
+    s = max === 0 ? 0 : d / max;
+
+    if (max === min) {
+        h = 0; // achromatic
+    } else {
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [h, s, v];
+}
+
+function hsvToRgb(h, s, v) {
+    let r, g, b;
+    let i = Math.floor(h * 6);
+    let f = h * 6 - i;
+    let p = v * (1 - s);
+    let q = v * (1 - f * s);
+    let t = v * (1 - (1 - f) * s);
+
+    switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+    }
+    return [r, g, b];
+}
+
+function rgbToHex(r, g, b) {
+    const toHex = (c) => {
+        const hex = Math.round(c * 255).toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    };
+    return (toHex(r) + toHex(g) + toHex(b)).toUpperCase();
+}
+
+function hexToRgb(hex) {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16) / 255,
+        g: parseInt(result[2], 16) / 255,
+        b: parseInt(result[3], 16) / 255
+    } : null;
+}
 /**
  * ArrayRingの色編集用パネルを作成します。
  */
 function createColorPickerPanel(ring) {
+    // パネルを閉じる処理（レイアウト再計算を含む）
     const closePanel = () => {
+        if (ring && typeof ring.CalculateLayout === 'function') {
+            ring.CalculateLayout();
+        }
+
         if (currentUiPanel) {
             currentUiPanel.remove();
             currentUiPanel = null;
@@ -1066,95 +1134,394 @@ function createColorPickerPanel(ring) {
     if (!panelResult) return;
     const { contentArea } = panelResult;
 
+    // パネル全体のスタイル調整
+    currentUiPanel.style('background-color', '#282828');
+    currentUiPanel.style('color', '#ddd');
+    currentUiPanel.style('width', '240px');
+
+    // 初期値の取得
     const getRGBA = () => {
-        if (ring.items.length < 5) return { r: 0, g: 0, b: 0, a: 1 };
+        if (ring.items.length < 5) return { r: 1, g: 1, b: 1, a: 1 };
         return {
-            r: Math.floor(parseFloat(ring.items[1].value) * 255),
-            g: Math.floor(parseFloat(ring.items[2].value) * 255),
-            b: Math.floor(parseFloat(ring.items[3].value) * 255),
+            r: parseFloat(ring.items[1].value),
+            g: parseFloat(ring.items[2].value),
+            b: parseFloat(ring.items[3].value),
             a: parseFloat(ring.items[4].value)
         };
     };
 
-    const previewContainer = createDiv('');
-    previewContainer.parent(contentArea);
-    previewContainer.style('height', '40px');
-    previewContainer.style('margin-bottom', '10px');
-    previewContainer.style('border', '1px solid #ccc');
-    previewContainer.style('border-radius', '4px');
-    previewContainer.style('background-image', 'linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)');
-    previewContainer.style('background-size', '10px 10px');
-    previewContainer.style('background-position', '0 0, 5px 5px');
+    let rgba = getRGBA();
+    let [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
 
-    const previewColor = createDiv('');
-    previewColor.parent(previewContainer);
-    previewColor.style('width', '100%');
-    previewColor.style('height', '100%');
+    // =============================================
+    // Visual Picker Area (Ring + Square)
+    // =============================================
+    const pickerContainer = createDiv('');
+    pickerContainer.parent(contentArea);
+    pickerContainer.style('position', 'relative');
+    pickerContainer.style('width', '200px');
+    pickerContainer.style('height', '200px');
+    pickerContainer.style('margin', '0 auto 10px auto');
+    pickerContainer.style('user-select', 'none');
 
-    const updatePreview = () => {
-        const c = getRGBA();
-        previewColor.style('background-color', `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`);
+    // --- 1. Hue Ring (外側のリング) ---
+    const hueRing = createDiv('');
+    hueRing.parent(pickerContainer);
+    hueRing.style('position', 'absolute');
+    hueRing.style('top', '0');
+    hueRing.style('left', '0');
+    hueRing.style('width', '100%');
+    hueRing.style('height', '100%');
+    hueRing.style('border-radius', '50%');
+    // Unityと同様の時計回りのグラデーション
+    hueRing.style('background', 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)');
+    hueRing.style('cursor', 'crosshair');
+
+    // Hue Selector Knob
+    const hueKnob = createDiv('');
+    hueKnob.parent(hueRing);
+    hueKnob.style('position', 'absolute');
+    hueKnob.style('width', '12px');
+    hueKnob.style('height', '12px');
+    hueKnob.style('border', '2px solid white');
+    hueKnob.style('border-radius', '50%');
+    hueKnob.style('transform', 'translate(-50%, -50%)');
+    hueKnob.style('pointer-events', 'none');
+    hueKnob.style('box-shadow', '0 0 2px rgba(0,0,0,0.5)');
+
+    // --- 2. Mask (リングと四角の間の隙間) ---
+    const mask = createDiv('');
+    mask.parent(pickerContainer);
+    mask.style('position', 'absolute');
+    mask.style('top', '15%');
+    mask.style('left', '15%');
+    mask.style('width', '70%');
+    mask.style('height', '70%');
+    mask.style('background-color', '#282828');
+    mask.style('border-radius', '50%');
+    mask.style('pointer-events', 'none');
+
+    // --- 3. SV Square (内側の四角) ---
+    const svSquare = createDiv('');
+    svSquare.parent(pickerContainer);
+    svSquare.style('position', 'absolute');
+    svSquare.style('top', '50%');
+    svSquare.style('left', '50%');
+    svSquare.style('width', '50%');
+    svSquare.style('height', '50%');
+    svSquare.style('transform', 'translate(-50%, -50%)');
+    svSquare.style('cursor', 'crosshair');
+
+    // 白（彩度）のグラデーション（左→右）
+    const svWhite = createDiv('');
+    svWhite.parent(svSquare);
+    svWhite.style('position', 'absolute');
+    svWhite.style('width', '100%');
+    svWhite.style('height', '100%');
+    svWhite.style('background', 'linear-gradient(to right, #fff, rgba(255,255,255,0))');
+
+    // 黒（明度）のグラデーション（透明→黒）
+    const svBlack = createDiv('');
+    svBlack.parent(svSquare);
+    svBlack.style('position', 'absolute');
+    svBlack.style('width', '100%');
+    svBlack.style('height', '100%');
+    svBlack.style('background', 'linear-gradient(to bottom, transparent, #000)');
+
+    // SV Selector Knob
+    const svKnob = createDiv('');
+    svKnob.parent(svSquare);
+    svKnob.style('position', 'absolute');
+    svKnob.style('width', '10px');
+    svKnob.style('height', '10px');
+    svKnob.style('border', '2px solid black');
+    svKnob.style('outline', '1px solid white');
+    svKnob.style('border-radius', '50%');
+    svKnob.style('transform', 'translate(-50%, -50%)');
+    svKnob.style('pointer-events', 'none');
+
+    // =============================================
+    // UI Update Logic
+    // =============================================
+
+    // 数値をフォーマットするヘルパー関数
+    const formatFloat = (val) => {
+        // 3桁で丸めて数値化することで不要な0 ("0.500" -> 0.5) を除去
+        let s = parseFloat(val.toFixed(3)).toString();
+        // 整数になってしまった場合 ("1") は ".0" を付与して "1.0" にする
+        if (s.indexOf('.') === -1) {
+            s += '.0';
+        }
+        return s;
     };
-    updatePreview();
 
-    const createSliderRow = (label, index, min, max, step, isAlpha = false) => {
-        const row = createDiv('');
-        row.parent(contentArea);
-        row.style('display', 'flex');
-        row.style('align-items', 'center');
-        row.style('gap', '5px');
-        row.style('margin-bottom', '5px');
+    const applyToRing = () => {
+        ring.items[1].value = formatFloat(rgba.r);
+        ring.items[2].value = formatFloat(rgba.g);
+        ring.items[3].value = formatFloat(rgba.b);
+        ring.items[4].value = formatFloat(rgba.a);
+    };
 
-        const labelDiv = createDiv(label);
-        labelDiv.parent(row);
-        labelDiv.style('width', '20px');
-        labelDiv.style('font-size', '12px');
+    const updateUI = (updateInputs = true) => {
+        // Hue Ring Knob Position
+        const angle = h * Math.PI * 2;
+        const r = 100 * 0.92;
+        const knobX = 100 + 90 * Math.sin(angle);
+        const knobY = 100 - 90 * Math.cos(angle);
+        hueKnob.style('left', `${knobX}px`);
+        hueKnob.style('top', `${knobY}px`);
 
-        const currentVal = parseFloat(ring.items[index].value);
-        const sliderVal = isAlpha ? currentVal * 255 : currentVal * 255;
+        // SV Square Background
+        const pureColor = hsvToRgb(h, 1, 1);
+        svSquare.style('background-color', `rgb(${pureColor[0] * 255},${pureColor[1] * 255},${pureColor[2] * 255})`);
 
-        const slider = createSlider(min, max, sliderVal, step);
-        slider.parent(row);
-        slider.style('flex-grow', '1');
+        // SV Knob Position
+        svKnob.style('left', `${s * 100}%`);
+        svKnob.style('top', `${(1 - v) * 100}%`);
 
-        const valDisp = createDiv(isAlpha ? currentVal.toFixed(2) : Math.floor(sliderVal));
-        valDisp.parent(row);
-        valDisp.style('width', '30px');
-        valDisp.style('text-align', 'right');
-        valDisp.style('font-size', '12px');
+        if (updateInputs) {
+            updateSliders();
+        }
+    };
 
-        slider.input(() => {
-            const val = slider.value();
-            let normalizedVal = val / 255;
+    // マウス操作: Hue Ring
+    const handleHueDrag = (e) => {
+        const rect = hueRing.elt.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
 
-            ring.items[index].value = normalizedVal.toFixed(isAlpha ? 3 : 3);
+        let angle = Math.atan2(dy, dx);
+        angle += Math.PI / 2;
+        if (angle < 0) angle += Math.PI * 2;
 
-            valDisp.html(isAlpha ? normalizedVal.toFixed(2) : val);
-            updatePreview();
+        h = angle / (Math.PI * 2);
+
+        const rgb = hsvToRgb(h, s, v);
+        rgba.r = rgb[0]; rgba.g = rgb[1]; rgba.b = rgb[2];
+        applyToRing();
+        updateUI();
+    };
+
+    // マウス操作: SV Square
+    const handleSVDrag = (e) => {
+        const rect = svSquare.elt.getBoundingClientRect();
+        let x = (e.clientX - rect.left) / rect.width;
+        let y = (e.clientY - rect.top) / rect.height;
+
+        x = Math.max(0, Math.min(1, x));
+        y = Math.max(0, Math.min(1, y));
+
+        s = x;
+        v = 1 - y;
+
+        const rgb = hsvToRgb(h, s, v);
+        rgba.r = rgb[0]; rgba.g = rgb[1]; rgba.b = rgb[2];
+        applyToRing();
+        updateUI();
+    };
+
+    const setupDrag = (element, handler) => {
+        element.elt.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            handler(e);
+            const moveHandler = (ev) => handler(ev);
+            const upHandler = () => {
+                window.removeEventListener('mousemove', moveHandler);
+                window.removeEventListener('mouseup', upHandler);
+            };
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', upHandler);
         });
     };
 
-    createSliderRow('R', 1, 0, 255, 1);
-    createSliderRow('G', 2, 0, 255, 1);
-    createSliderRow('B', 3, 0, 255, 1);
-    createSliderRow('A', 4, 0, 255, 1, true);
+    setupDrag(hueRing, handleHueDrag);
+    setupDrag(svSquare, handleSVDrag);
 
-    const footer = createDiv('');
-    footer.parent(contentArea);
-    footer.style('margin-top', '10px');
-    footer.style('display', 'flex');
-    footer.style('justify-content', 'flex-end');
+    // =============================================
+    // Sliders & Hex Area
+    // =============================================
+    const controlsContainer = createDiv('');
+    controlsContainer.parent(contentArea);
+    controlsContainer.style('display', 'flex');
+    controlsContainer.style('flex-direction', 'column');
+    controlsContainer.style('gap', '4px');
+    controlsContainer.style('padding-top', '10px');
 
-    const backButton = createButton('完了');
-    backButton.parent(footer);
-    backButton.style('cursor', 'pointer');
-    backButton.style('padding', '4px 12px');
-    backButton.elt.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        ring.CalculateLayout(); // CalculateLayoutを実行
-        closePanel();
-        setTimeout(() => createRingPanel(ring), 10);
+    const sliders = {};
+    const inputs = {};
+
+    const createSliderRow = (label, colorKey) => {
+        const row = createDiv('');
+        row.parent(controlsContainer);
+        row.style('display', 'flex');
+        row.style('align-items', 'center');
+        row.style('gap', '8px');
+
+        const labelDiv = createDiv(label);
+        labelDiv.parent(row);
+        labelDiv.style('width', '15px');
+        labelDiv.style('font-size', '12px');
+        labelDiv.style('color', '#ccc');
+
+        const sliderContainer = createDiv('');
+        sliderContainer.parent(row);
+        sliderContainer.style('flex-grow', '1');
+        sliderContainer.style('position', 'relative');
+        sliderContainer.style('height', '18px');
+
+        const bg = createDiv('');
+        bg.parent(sliderContainer);
+        bg.style('width', '100%');
+        bg.style('height', '100%');
+        bg.style('border-radius', '3px');
+        bg.style('position', 'absolute');
+        bg.style('z-index', '0');
+
+        const slider = createInput('', 'range');
+        slider.parent(sliderContainer);
+        slider.style('width', '100%');
+        slider.style('height', '100%');
+        slider.style('position', 'absolute');
+        slider.style('top', '0');
+        slider.style('left', '0');
+        slider.style('opacity', '0');
+        slider.style('cursor', 'pointer');
+        slider.style('margin', '0');
+        slider.attribute('min', '0');
+        slider.attribute('max', '255');
+        slider.attribute('step', '1');
+
+        const handle = createDiv('');
+        handle.parent(sliderContainer);
+        handle.style('position', 'absolute');
+        handle.style('top', '0');
+        handle.style('bottom', '0');
+        handle.style('width', '4px');
+        handle.style('background', 'white');
+        handle.style('box-shadow', '0 0 2px black');
+        handle.style('pointer-events', 'none');
+        handle.style('z-index', '1');
+
+        const numInput = createInput('0');
+        numInput.parent(row);
+        numInput.style('width', '40px');
+        numInput.style('background', '#444');
+        numInput.style('color', '#fff');
+        numInput.style('border', '1px solid #555');
+        numInput.style('border-radius', '3px');
+        numInput.style('text-align', 'right');
+        numInput.style('font-size', '12px');
+
+        sliders[colorKey] = { slider, bg, handle };
+        inputs[colorKey] = numInput;
+
+        slider.input(() => {
+            const val = parseFloat(slider.value()) / 255;
+            rgba[colorKey] = val;
+
+            if (colorKey !== 'a') {
+                [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
+            }
+            applyToRing();
+            updateUI(false);
+            updateSliderVisuals();
+            numInput.value(Math.floor(val * 255));
+            updateHex();
+        });
+
+        numInput.input(() => {
+            let val = parseInt(numInput.value());
+            if (isNaN(val)) val = 0;
+            val = Math.max(0, Math.min(255, val));
+            rgba[colorKey] = val / 255;
+            if (colorKey !== 'a') {
+                [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
+            }
+            applyToRing();
+            updateUI();
+        });
+    };
+
+    createSliderRow('R', 'r');
+    createSliderRow('G', 'g');
+    createSliderRow('B', 'b');
+    createSliderRow('A', 'a');
+
+    // Hex Input
+    const hexRow = createDiv('');
+    hexRow.parent(controlsContainer);
+    hexRow.style('display', 'flex');
+    hexRow.style('justify-content', 'space-between');
+    hexRow.style('align-items', 'center');
+    hexRow.style('margin-top', '4px');
+
+    const hexLabel = createDiv('Hexadecimal');
+    hexLabel.parent(hexRow);
+    hexLabel.style('font-size', '12px');
+    hexLabel.style('color', '#ccc');
+
+    const hexInput = createInput('FFFFFF');
+    hexInput.parent(hexRow);
+    hexInput.style('width', '80px');
+    hexInput.style('background', '#444');
+    hexInput.style('color', '#fff');
+    hexInput.style('border', '1px solid #555');
+    hexInput.style('border-radius', '3px');
+    hexInput.style('padding', '2px');
+
+    hexInput.elt.addEventListener('change', () => {
+        const rgb = hexToRgb(hexInput.value());
+        if (rgb) {
+            rgba.r = rgb.r; rgba.g = rgb.g; rgba.b = rgb.b;
+            [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
+            applyToRing();
+            updateUI();
+        }
     });
+
+    const updateSliderVisuals = () => {
+        const r = Math.floor(rgba.r * 255);
+        const g = Math.floor(rgba.g * 255);
+        const b = Math.floor(rgba.b * 255);
+
+        sliders.r.bg.style('background', `linear-gradient(to right, rgb(0,${g},${b}), rgb(255,${g},${b}))`);
+        sliders.r.handle.style('left', `${rgba.r * 100}%`);
+
+        sliders.g.bg.style('background', `linear-gradient(to right, rgb(${r},0,${b}), rgb(${r},255,${b}))`);
+        sliders.g.handle.style('left', `${rgba.g * 100}%`);
+
+        sliders.b.bg.style('background', `linear-gradient(to right, rgb(${r},${g},0), rgb(${r},${g},255))`);
+        sliders.b.handle.style('left', `${rgba.b * 100}%`);
+
+        sliders.a.bg.style('background', `linear-gradient(to right, rgba(${r},${g},${b},0), rgba(${r},${g},${b},1)), url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIklEQVQYV2NkYGD4D8SMQAwCcOAfeCnDjISwU8fA8H8wAwBi2xH7s8Xw+gAAAABJRU5ErkJggg==')`);
+        sliders.a.bg.style('background-blend-mode', 'normal');
+        sliders.a.handle.style('left', `${rgba.a * 100}%`);
+    };
+
+    const updateSliders = () => {
+        sliders.r.slider.value(rgba.r * 255);
+        inputs.r.value(Math.floor(rgba.r * 255));
+
+        sliders.g.slider.value(rgba.g * 255);
+        inputs.g.value(Math.floor(rgba.g * 255));
+
+        sliders.b.slider.value(rgba.b * 255);
+        inputs.b.value(Math.floor(rgba.b * 255));
+
+        sliders.a.slider.value(rgba.a * 255);
+        inputs.a.value(Math.floor(rgba.a * 255));
+
+        updateSliderVisuals();
+        updateHex();
+    };
+
+    const updateHex = () => {
+        hexInput.value(rgbToHex(rgba.r, rgba.g, rgba.b));
+    };
+
+    updateUI();
 }
 
 

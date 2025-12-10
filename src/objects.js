@@ -336,7 +336,10 @@ class ArrayRing extends MagicRing {
         switch (this.visualEffect) {
             case "color":
                 const [r, g, b, a] = this.items.slice(1).map((item) => parseFloat(item.value) * 255);
-                FillRect(-this.innerradius * 0.6, -this.innerradius * 0.6, this.innerradius * 1.2, this.innerradius * 1.2, color(r, g, b, a));
+                stroke(0);
+                strokeWeight(1);
+                fill(r, g, b, a);
+                rect(-this.innerradius * 0.6, -this.innerradius * 0.6, this.innerradius * 1.2, this.innerradius * 1.2);
                 break;
             case "gradient":
                 break;
