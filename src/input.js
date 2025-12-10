@@ -96,7 +96,8 @@ function MouseDownEvent() {
                     case "ring":
                         const iteminfo = ClickObj[1][2];
                         if (iteminfo.item && iteminfo.index != 0) {
-                            StartDragItem(iteminfo.item, iteminfo.index);
+                            if (!selectRing.visualEffect)
+                                StartDragItem(iteminfo.item, iteminfo.index);
                         } else {
                             StartRotateRing(selectRing, mousePos);
                         }
@@ -379,23 +380,25 @@ function EndDragItem() {
             break;
         case "ring":
             const newring = obj[1][0];
-            const iteminfo = newring.CheckPosItem(mousePos);
+            if (newring.visualEffect == null || newring.visualEffect === '-') {
+                const iteminfo = newring.CheckPosItem(mousePos);
 
-            if (iteminfo.item == null) {
-                newring.InsertItem(draggedItem, iteminfo.index);
-            } else {
-                if (newring == originalRing) {
-                    if (originalIndex <= iteminfo.index + 1 && iteminfo.index)
-                        newring.InsertItem(draggedItem, iteminfo.index);
-                    else
-                        newring.InsertItem(draggedItem, iteminfo.index + 1);
+                if (iteminfo.item == null) {
+                    newring.InsertItem(draggedItem, iteminfo.index);
                 } else {
-                    newring.InsertItem(draggedItem, iteminfo.index + 1);
+                    if (newring == originalRing) {
+                        if (originalIndex <= iteminfo.index + 1 && iteminfo.index)
+                            newring.InsertItem(draggedItem, iteminfo.index);
+                        else
+                            newring.InsertItem(draggedItem, iteminfo.index + 1);
+                    } else {
+                        newring.InsertItem(draggedItem, iteminfo.index + 1);
+                    }
                 }
+                draggedItem.parentRing = newring;
+                newring.CalculateLayout();
+                break;
             }
-            draggedItem.parentRing = newring;
-            newring.CalculateLayout();
-            break;
         default:
             draggedItem.parentRing = null;
             fieldItems.push(draggedItem);

@@ -876,6 +876,7 @@ function createRingPanel(ring) {
                         // 配置場所は適当に親の右下あたりにする
                         const newRingPos = { x: ring.pos.x + 150, y: ring.pos.y + 150 };
                         const newArrayRing = new ArrayRing(newRingPos);
+                        if (type === 'color') newArrayRing.visualEffect = 'color';
 
                         // グローバルな rings 配列に追加
                         rings.push(newArrayRing);
@@ -907,6 +908,91 @@ function createRingPanel(ring) {
     }
     // TemplateRing 以外の場合、または isNew フラグが立っている場合
     else if (true || ring.isNew) {
+
+        // --- ArrayRing Option ---
+        if (ring instanceof ArrayRing) {
+            const visualLabel = createP('Visual Effect:');
+            visualLabel.parent(contentArea);
+            visualLabel.style('margin', '10px 0 2px 0');
+            visualLabel.style('border-top', '1px solid #ddd');
+            visualLabel.style('padding-top', '8px');
+
+            const visualSelect = createSelect();
+            visualSelect.parent(contentArea);
+            visualSelect.style('width', '100%');
+
+            const options = ['-', 'color', 'gradient', 'curve'];
+            options.forEach(opt => visualSelect.option(opt));
+
+            // Initialize property if missing
+            if (!ring.visualEffect) ring.visualEffect = '-';
+            visualSelect.selected(ring.visualEffect);
+
+            visualSelect.changed(() => {
+                switch (visualSelect.value()) {
+                    case 'color':
+                        ring.items = [new Sigil(0, 0, "COMPLETE", ring), new Chars(0, 0, "1.0", ring), new Chars(0, 0, "0.5", ring), new Chars(0, 0, "0.0", ring), new Chars(0, 0, "1.0", ring),];
+                        break;
+                }
+                ring.visualEffect = visualSelect.value();
+                ring.CalculateLayout();
+                // パネル再描画
+                closePanel();
+                setTimeout(() => createRingPanel(ring), 10);
+            });
+
+            // --- Color Preview Rectangle ---
+            if (ring.visualEffect === 'color') {
+                const colorContainer = createDiv('');
+                colorContainer.parent(contentArea);
+                colorContainer.style('margin-top', '8px');
+                colorContainer.style('cursor', 'pointer');
+                colorContainer.style('border', '1px solid #999');
+                colorContainer.style('border-radius', '4px');
+                colorContainer.style('height', '30px');
+                colorContainer.style('display', 'flex');
+                colorContainer.style('align-items', 'center');
+                colorContainer.style('justify-content', 'center');
+                // 市松模様（透明度確認用）
+                colorContainer.style('background-image', 'linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)');
+                colorContainer.style('background-size', '10px 10px');
+                colorContainer.style('background-position', '0 0, 5px 5px');
+
+                // 現在の値を取得
+                let r = 0, g = 0, b = 0, a = 1;
+                if (ring.items.length >= 5) {
+                    r = parseFloat(ring.items[1].value) * 255;
+                    g = parseFloat(ring.items[2].value) * 255;
+                    b = parseFloat(ring.items[3].value) * 255;
+                    a = parseFloat(ring.items[4].value);
+                }
+
+                const colorPreview = createDiv('');
+                colorPreview.parent(colorContainer);
+                colorPreview.style('width', '100%');
+                colorPreview.style('height', '100%');
+                colorPreview.style('background-color', `rgba(${r}, ${g}, ${b}, ${a})`);
+                colorPreview.style('display', 'flex');
+                colorPreview.style('align-items', 'center');
+                colorPreview.style('justify-content', 'center');
+
+                const label = createDiv('Edit Color');
+                label.parent(colorPreview);
+                label.style('font-size', '10px');
+                label.style('color', a > 0.5 ? (r + g + b > 380 ? 'black' : 'white') : 'black');
+                label.style('text-shadow', '0 0 2px rgba(128,128,128,0.5)');
+                label.style('pointer-events', 'none');
+
+                colorContainer.elt.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    closePanel();
+                    // カラーピッカーパネルを開く
+                    createColorPickerPanel(ring);
+                });
+            }
+        }
+        // ------------------------
+
         const typeLabel = createP('Ring Type:');
         typeLabel.parent(contentArea);
         typeLabel.style('margin', '10px 0 2px 0');
@@ -962,6 +1048,113 @@ function createRingPanel(ring) {
             closePanel();
         });
     }
+}
+
+/**
+ * ArrayRingの色編集用パネルを作成します。
+ */
+function createColorPickerPanel(ring) {
+    const closePanel = () => {
+        if (currentUiPanel) {
+            currentUiPanel.remove();
+            currentUiPanel = null;
+        }
+        editingItem = null;
+    };
+
+    const panelResult = createBasePanel('Color Picker', closePanel);
+    if (!panelResult) return;
+    const { contentArea } = panelResult;
+
+    const getRGBA = () => {
+        if (ring.items.length < 5) return { r: 0, g: 0, b: 0, a: 1 };
+        return {
+            r: Math.floor(parseFloat(ring.items[1].value) * 255),
+            g: Math.floor(parseFloat(ring.items[2].value) * 255),
+            b: Math.floor(parseFloat(ring.items[3].value) * 255),
+            a: parseFloat(ring.items[4].value)
+        };
+    };
+
+    const previewContainer = createDiv('');
+    previewContainer.parent(contentArea);
+    previewContainer.style('height', '40px');
+    previewContainer.style('margin-bottom', '10px');
+    previewContainer.style('border', '1px solid #ccc');
+    previewContainer.style('border-radius', '4px');
+    previewContainer.style('background-image', 'linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)');
+    previewContainer.style('background-size', '10px 10px');
+    previewContainer.style('background-position', '0 0, 5px 5px');
+
+    const previewColor = createDiv('');
+    previewColor.parent(previewContainer);
+    previewColor.style('width', '100%');
+    previewColor.style('height', '100%');
+
+    const updatePreview = () => {
+        const c = getRGBA();
+        previewColor.style('background-color', `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`);
+    };
+    updatePreview();
+
+    const createSliderRow = (label, index, min, max, step, isAlpha = false) => {
+        const row = createDiv('');
+        row.parent(contentArea);
+        row.style('display', 'flex');
+        row.style('align-items', 'center');
+        row.style('gap', '5px');
+        row.style('margin-bottom', '5px');
+
+        const labelDiv = createDiv(label);
+        labelDiv.parent(row);
+        labelDiv.style('width', '20px');
+        labelDiv.style('font-size', '12px');
+
+        const currentVal = parseFloat(ring.items[index].value);
+        const sliderVal = isAlpha ? currentVal * 255 : currentVal * 255;
+
+        const slider = createSlider(min, max, sliderVal, step);
+        slider.parent(row);
+        slider.style('flex-grow', '1');
+
+        const valDisp = createDiv(isAlpha ? currentVal.toFixed(2) : Math.floor(sliderVal));
+        valDisp.parent(row);
+        valDisp.style('width', '30px');
+        valDisp.style('text-align', 'right');
+        valDisp.style('font-size', '12px');
+
+        slider.input(() => {
+            const val = slider.value();
+            let normalizedVal = val / 255;
+
+            ring.items[index].value = normalizedVal.toFixed(isAlpha ? 3 : 3);
+
+            valDisp.html(isAlpha ? normalizedVal.toFixed(2) : val);
+            updatePreview();
+        });
+    };
+
+    createSliderRow('R', 1, 0, 255, 1);
+    createSliderRow('G', 2, 0, 255, 1);
+    createSliderRow('B', 3, 0, 255, 1);
+    createSliderRow('A', 4, 0, 255, 1, true);
+
+    const footer = createDiv('');
+    footer.parent(contentArea);
+    footer.style('margin-top', '10px');
+    footer.style('display', 'flex');
+    footer.style('justify-content', 'flex-end');
+
+    const backButton = createButton('完了');
+    backButton.parent(footer);
+    backButton.style('cursor', 'pointer');
+    backButton.style('padding', '4px 12px');
+    backButton.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        ring.CalculateLayout(); // CalculateLayoutを実行
+        closePanel();
+        setTimeout(() => createRingPanel(ring), 10);
+    });
 }
 
 

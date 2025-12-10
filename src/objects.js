@@ -49,6 +49,10 @@ class MagicRing {
     }
 
     CalculateLayout() {
+        if (typeof this.CanAcceptItem === 'function') {
+            this.items = this.items.filter(item => this.CanAcceptItem(item));
+        }
+
         this.layouts = [];
         let totalLength = 0;
 
@@ -146,6 +150,7 @@ class MagicRing {
 
         PushTransform();
         Translate(this.pos.x, this.pos.y);
+        PushTransform();
         Rotate(this.angle);
         if (debugMode) {
             FillCircle(0, 0, this.outerradius + config.ringRotateHandleWidth, color(200, 200, 200, 100));
@@ -174,6 +179,8 @@ class MagicRing {
         }
         this.DrawComments();
         PopTransform();
+        if (!isUIHidden) this.DrawOption();
+        PopTransform();
     }
 
     DrawRingShape() {
@@ -196,6 +203,8 @@ class MagicRing {
         }
         PopTransform();
     }
+
+    DrawOption() { }
 
     DrawComments() {
         this.comments.forEach(comment => {
@@ -306,11 +315,35 @@ class ArrayRing extends MagicRing {
         this.spellstart = "[ ";
         this.spellend = "]";
 
+        // 視覚効果プロパティ (初期値: '-')
+        this.visualEffect = '-';
+
         this.CalculateLayout();
+    }
+
+    // cloneメソッドを追加してvisualEffectを引き継ぐ
+    clone(clonedMap = new Map()) {
+        const newRing = super.clone(clonedMap);
+        newRing.visualEffect = this.visualEffect;
+        return newRing;
     }
 
     DrawRingStar() {
         // 星を描画しない
+    }
+
+    DrawOption() {
+        switch (this.visualEffect) {
+            case "color":
+                const [r, g, b, a] = this.items.slice(1).map((item) => parseFloat(item.value) * 255);
+                FillRect(-this.innerradius * 0.6, -this.innerradius * 0.6, this.innerradius * 1.2, this.innerradius * 1.2, color(r, g, b, a));
+                break;
+            case "gradient":
+                break;
+            case "curve":
+                break;
+            default:
+        }
     }
 
     CanAcceptItem(item) {
@@ -480,7 +513,9 @@ class Sigil extends RingItem {
         const ClickObj = CheckMouseObject(false);
         if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
-            const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
+            const mouseAngle = (ring.visualEffect == null || ring.visualEffect === '-')
+                ? Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y)
+                : 0;
             if (globalIsClockwise)
                 DrawSigil(this.value, GetMouseX(), GetMouseY(), -mouseAngle + PI, zoomSize);
             else
@@ -535,7 +570,9 @@ class Chars extends RingItem {
         const ClickObj = CheckMouseObject(false);
         if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
-            const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
+            const mouseAngle = (ring.visualEffect == null || ring.visualEffect === '-')
+                ? Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y)
+                : PI;
             PushTransform();
             Translate(GetMouseX(), GetMouseY());
             Rotate(-mouseAngle);
@@ -637,7 +674,9 @@ class StringToken extends RingItem {
         Translate(GetMouseX(), GetMouseY());
         if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
-            const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
+            const mouseAngle = (ring.visualEffect == null || ring.visualEffect === '-')
+                ? Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y)
+                : PI;
             Rotate(-mouseAngle);
             if (!globalIsClockwise) Rotate(PI);
         }
@@ -714,7 +753,9 @@ class Name extends RingItem {
         Translate(GetMouseX(), GetMouseY());
         if (ClickObj[0] == "ring") {
             const ring = ClickObj[1][0];
-            const mouseAngle = Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y);
+            const mouseAngle = (ring.visualEffect == null || ring.visualEffect === '-')
+                ? Math.atan2(ring.pos.x - mousePos.x, ring.pos.y - mousePos.y)
+                : 0;
             Rotate(-mouseAngle);
             if (!globalIsClockwise) Rotate(PI);
         }
