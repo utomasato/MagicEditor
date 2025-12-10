@@ -358,6 +358,9 @@ class ArrayRing extends MagicRing {
         if (item.type === 'name') {
             return false;
         }
+        if (item.type === 'string_token' && this.visualEffect === 'color') {
+            return false;
+        }
 
         return true;
     }

@@ -905,7 +905,6 @@ function createRingPanel(ring) {
         // ------------------------
 
     }
-    // TemplateRing 以外の場合、または isNew フラグが立っている場合
     else if (true || ring.isNew) {
 
         // --- ArrayRing Option ---
@@ -928,15 +927,42 @@ function createRingPanel(ring) {
             visualSelect.selected(ring.visualEffect);
 
             visualSelect.changed(() => {
+                ring.visualEffect = visualSelect.value();
+                if (typeof ring.CanAcceptItem === 'function') {
+                    ring.items = ring.items.filter(item => ring.CanAcceptItem(item));
+                }
+                ring.items = ring.items.slice(0, 5);
                 switch (visualSelect.value()) {
                     case 'color':
-                        ring.items = [new Sigil(0, 0, "COMPLETE", ring), new Chars(0, 0, "1.0", ring), new Chars(0, 0, "0.5", ring), new Chars(0, 0, "0.0", ring), new Chars(0, 0, "1.0", ring),];
+                        const head = ring.items.length > 0 ? ring.items[0] : new Sigil(0, 0, "COMPLETE", ring);
+                        let validItems = ring.items.slice(1).filter(item => {
+                            return item instanceof Chars &&
+                                item.value !== null &&
+                                item.value.trim() !== "" &&
+                                isFinite(item.value);
+                        });
+
+                        if (validItems.length > 4) validItems = validItems.slice(0, 4);
+
+                        validItems.forEach(item => {
+                            let val = parseFloat(item.value);
+                            if (val < 0.0) val = 0.0;
+                            if (val > 1.0) val = 1.0;
+                            item.value = val.toString();
+                        });
+
+                        // Fill missing with defaults (R=0, G=0, B=0, A=1)
+                        const defaults = ["0.0", "0.0", "0.0", "1.0"];
+                        for (let i = validItems.length; i < 4; i++) {
+                            validItems.push(new Chars(0, 0, defaults[i], ring));
+                        }
+
+                        ring.items = [head, ...validItems];
                         break;
                 }
-                ring.visualEffect = visualSelect.value();
-                ring.CalculateLayout();
                 // パネル再描画
                 closePanel();
+                ring.CalculateLayout();
                 setTimeout(() => createRingPanel(ring), 10);
             });
 
@@ -1139,6 +1165,19 @@ function createColorPickerPanel(ring) {
     currentUiPanel.style('color', '#ddd');
     currentUiPanel.style('width', '240px');
 
+    // 背景が暗いため、ヘッダー（タイトルと×ボタン）の文字色を白に変更します
+    const headerElt = currentUiPanel.elt.children[0]; // createBasePanelで作られたヘッダーDiv
+    if (headerElt) {
+        // タイトル要素 (通常は最初の子要素)
+        if (headerElt.children[0]) {
+            headerElt.children[0].style.color = '#ffffff';
+        }
+        // 閉じるボタン要素 (通常は2番目の子要素)
+        if (headerElt.children[1]) {
+            headerElt.children[1].style.color = '#ffffff';
+        }
+    }
+
     // 初期値の取得
     const getRGBA = () => {
         if (ring.items.length < 5) return { r: 1, g: 1, b: 1, a: 1 };
@@ -1260,6 +1299,9 @@ function createColorPickerPanel(ring) {
         ring.items[2].value = formatFloat(rgba.g);
         ring.items[3].value = formatFloat(rgba.b);
         ring.items[4].value = formatFloat(rgba.a);
+        if (ring && typeof ring.CalculateLayout === 'function') {
+            ring.CalculateLayout();
+        }
     };
 
     const updateUI = (updateInputs = true) => {

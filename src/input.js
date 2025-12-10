@@ -96,7 +96,7 @@ function MouseDownEvent() {
                     case "ring":
                         const iteminfo = ClickObj[1][2];
                         if (iteminfo.item && iteminfo.index != 0) {
-                            if (!selectRing.visualEffect)
+                            if (selectRing.visualEffect == null || selectRing.visualEffect === '-')
                                 StartDragItem(iteminfo.item, iteminfo.index);
                         } else {
                             StartRotateRing(selectRing, mousePos);

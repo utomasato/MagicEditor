@@ -61,7 +61,13 @@ function ringToXML(ring, ringIdMap) {
         magicAttr = ` magic="${escapeXML(ring.magic)}"`;
     }
 
-    let xml = `  <Ring id="${ringId}" type="${ringType}" x="${ring.pos.x.toFixed(2)}" y="${ring.pos.y.toFixed(2)}" angle="${ring.angle.toFixed(4)}"${markerAttr}${magicAttr}>\n`;
+    // ArrayRingの場合、visualEffectプロパティを属性に追加
+    let visualEffectAttr = '';
+    if (ringType === 'ArrayRing' && ring.visualEffect) {
+        visualEffectAttr = ` visualEffect="${escapeXML(ring.visualEffect)}"`;
+    }
+
+    let xml = `  <Ring id="${ringId}" type="${ringType}" x="${ring.pos.x.toFixed(2)}" y="${ring.pos.y.toFixed(2)}" angle="${ring.angle.toFixed(4)}"${markerAttr}${magicAttr}${visualEffectAttr}>\n`;
 
     // コメントの保存
     if (ring.comments && Array.isArray(ring.comments)) {
@@ -155,11 +161,13 @@ function importFromXML(xmlString, mode) {
         const angle = parseFloat(ringEl.getAttribute('angle'));
         const marker = ringEl.getAttribute('marker'); // マーカー属性の読み込み
         const magic = ringEl.getAttribute('magic');   // magic属性の読み込み (TemplateRing用)
+        const visualEffect = ringEl.getAttribute('visualEffect'); // visualEffect属性の読み込み (ArrayRing用)
 
         let newRing;
         switch (type) {
             case 'ArrayRing':
                 newRing = new ArrayRing({ x, y });
+                if (visualEffect) newRing.visualEffect = visualEffect; // visualEffectがあれば設定
                 break;
             case 'DictRing':
                 newRing = new DictRing({ x, y });
