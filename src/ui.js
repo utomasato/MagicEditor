@@ -1018,15 +1018,13 @@ function createRingPanel(ring) {
                         break;
 
                     case "gradient":
-                        // gradientモード用初期化: 初期キーフレーム(0.0と1.0)を作成
-                        // 既存のgradientデータがある場合は保持したいが、切り替え時はリセットする挙動とする
-                        // (必要に応じて parseGradientData でチェックしてもよい)
                         ring.items = ring.items.slice(0, 1); // Headのみ残す
 
                         // 初期キーフレーム作成 (Start: 白, End: 白)
                         const initKeys = [0.0, 1.0];
                         initKeys.forEach(t => {
                             const keyRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
+                            keyRing.visualEffect = "gradient-sub"
                             rings.push(keyRing);
                             // [Time, R, G, B, A]
                             keyRing.items.push(new Chars(0, 0, t.toFixed(1), keyRing));

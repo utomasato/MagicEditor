@@ -342,6 +342,56 @@ class ArrayRing extends MagicRing {
                 rect(-this.innerradius * 0.6, -this.innerradius * 0.6, this.innerradius * 1.2, this.innerradius * 1.2);
                 break;
             case "gradient":
+                const wide = this.innerradius * 1.6;
+                const height = this.innerradius * 0.6;
+
+                const ctx = drawingContext;
+                ctx.save();
+
+                // 左 (-wide/2, 0) から 右 (wide/2, 0) へのグラデーションを作成
+                const grd = ctx.createLinearGradient(-wide / 2, 0, wide / 2, 0);
+
+                let hasValidStops = false;
+
+                this.items.slice(1).forEach((item) => {
+                    if (!item) return;
+
+                    // 文字列トークンを解析: "[ 0.0 1.0 ... ]" -> 数値配列
+                    const rawText = item.SpellToken().replace(/[\[\]]/g, "").trim();
+                    if (!rawText) return;
+
+                    const params = rawText.split(/\s+/).map(Number);
+
+                    // [time, r, g, b, a] が揃っているか確認
+                    if (params.length >= 5 && !params.some(isNaN)) {
+                        const offset = Math.max(0, Math.min(1, params[0]));
+                        const r = Math.floor(params[1] * 255);
+                        const g = Math.floor(params[2] * 255);
+                        const b = Math.floor(params[3] * 255);
+                        const a = params[4];
+
+                        try {
+                            grd.addColorStop(offset, `rgba(${r},${g},${b},${a})`);
+                            hasValidStops = true;
+                        } catch (e) {
+                            console.warn("Gradient stop error:", e);
+                        }
+                    }
+                });
+
+                if (hasValidStops) {
+                    // グラデーションで塗りつぶし
+                    ctx.fillStyle = grd;
+                    ctx.fillRect(-wide / 2, -height / 2, wide, height);
+                }
+
+                // 枠線を描画
+                noFill();
+                stroke(0);
+                strokeWeight(1);
+                rect(-wide / 2, -height / 2, wide, height);
+
+                ctx.restore();
                 break;
             case "curve":
                 break;
