@@ -127,7 +127,6 @@ function isMouseOverPanel(panelElement) {
     }
     return false;
 }
-
 function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCallback) {
     if (currentUiPanel) return null;
 
@@ -153,11 +152,63 @@ function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCall
     header.style('display', 'flex');
     header.style('justify-content', 'space-between');
     header.style('align-items', 'center');
+    header.style('cursor', 'move'); // ドラッグ可能カーソル
+
+    // --- ドラッグ機能の実装 ---
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+
+    const startDrag = (e) => {
+        // ボタンなどのインタラクティブ要素上ではドラッグを開始しない
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+
+        e.preventDefault();
+        isDragging = true;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        // 現在のパネル位置からのオフセットを計算
+        const pos = currentUiPanel.position();
+        dragOffset.x = clientX - pos.x;
+        dragOffset.y = clientY - pos.y;
+
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchmove', doDrag, { passive: false });
+        window.addEventListener('touchend', stopDrag);
+    };
+
+    const doDrag = (e) => {
+        if (!isDragging) return;
+        e.preventDefault(); // タッチデバイスでのスクロール防止
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        currentUiPanel.position(clientX - dragOffset.x, clientY - dragOffset.y);
+    };
+
+    const stopDrag = () => {
+        isDragging = false;
+        window.removeEventListener('mousemove', doDrag);
+        window.removeEventListener('mouseup', stopDrag);
+        window.removeEventListener('touchmove', doDrag);
+        window.removeEventListener('touchend', stopDrag);
+    };
+
+    // ヘッダーにドラッグイベントを登録
+    header.elt.addEventListener('mousedown', startDrag);
+    header.elt.addEventListener('touchstart', startDrag, { passive: false });
+    // ------------------------
+
     const title = createP(titleText);
     title.parent(header);
     title.style('margin', '0');
     title.style('font-weight', 'bold');
     title.style('color', '#333');
+    // タイトル要素上でもドラッグイベントがバブリングするので、これ以上の設定は不要
+
     const closeButton = createButton('×');
     closeButton.parent(header);
     closeButton.style('border', 'none');
@@ -165,7 +216,10 @@ function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCall
     closeButton.style('font-size', '18px');
     closeButton.style('cursor', 'pointer');
     closeButton.style('padding', '0 4px');
+    // 閉じるボタンクリック時にドラッグが始まらないようイベント伝播を止める
     closeButton.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); closeCallback(); });
+    closeButton.elt.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: false });
+
     const contentArea = createDiv('');
     contentArea.parent(currentUiPanel);
 
@@ -209,8 +263,7 @@ function createBasePanel(titleText, closeCallback, deleteCallback, duplicateCall
         }
     }
 
-    // setTimeout(..., 0) を使うことで、呼び出し元の関数（createRingPanelなど）が
-    // コンテンツを追加し終わった「後」にサイズ計算を実行させる
+    // 初期配置の調整（画面外にはみ出ないように）
     setTimeout(() => {
         if (!currentUiPanel) return;
 
@@ -928,12 +981,16 @@ function createRingPanel(ring) {
 
             visualSelect.changed(() => {
                 ring.visualEffect = visualSelect.value();
+
+                // アイテムのフィルタリングと初期化
                 if (typeof ring.CanAcceptItem === 'function') {
                     ring.items = ring.items.filter(item => ring.CanAcceptItem(item));
                 }
-                ring.items = ring.items.slice(0, 5);
+
                 switch (visualSelect.value()) {
                     case 'color':
+                        // colorモード用初期化: 最初の5要素を確保
+                        ring.items = ring.items.slice(0, 5);
                         const head = ring.items.length > 0 ? ring.items[0] : new Sigil(0, 0, "COMPLETE", ring);
                         let validItems = ring.items.slice(1).filter(item => {
                             return item instanceof Chars &&
@@ -951,7 +1008,7 @@ function createRingPanel(ring) {
                             item.value = val.toString();
                         });
 
-                        // Fill missing with defaults (R=0, G=0, B=0, A=1)
+                        // デフォルト値 (R=0, G=0, B=0, A=1) で埋める
                         const defaults = ["0.0", "0.0", "0.0", "1.0"];
                         for (let i = validItems.length; i < 4; i++) {
                             validItems.push(new Chars(0, 0, defaults[i], ring));
@@ -959,10 +1016,39 @@ function createRingPanel(ring) {
 
                         ring.items = [head, ...validItems];
                         break;
+
+                    case "gradient":
+                        // gradientモード用初期化: 初期キーフレーム(0.0と1.0)を作成
+                        // 既存のgradientデータがある場合は保持したいが、切り替え時はリセットする挙動とする
+                        // (必要に応じて parseGradientData でチェックしてもよい)
+                        ring.items = ring.items.slice(0, 1); // Headのみ残す
+
+                        // 初期キーフレーム作成 (Start: 白, End: 白)
+                        const initKeys = [0.0, 1.0];
+                        initKeys.forEach(t => {
+                            const keyRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
+                            rings.push(keyRing);
+                            // [Time, R, G, B, A]
+                            keyRing.items.push(new Chars(0, 0, t.toFixed(1), keyRing));
+                            keyRing.items.push(new Chars(0, 0, "1.0", keyRing));
+                            keyRing.items.push(new Chars(0, 0, "1.0", keyRing));
+                            keyRing.items.push(new Chars(0, 0, "1.0", keyRing));
+                            keyRing.items.push(new Chars(0, 0, "1.0", keyRing));
+                            keyRing.CalculateLayout();
+                            ring.items.push(new Joint(0, 0, keyRing, ring));
+                        });
+                        break;
+
+                    case "curve":
+                        // curveモード (現状ロジックなし、必要なら追加)
+                        ring.items = ring.items.slice(0, 1);
+                        break;
                 }
+
                 // パネル再描画
                 closePanel();
                 ring.CalculateLayout();
+                if (typeof alignConnectedRings === 'function') alignConnectedRings(ring);
                 setTimeout(() => createRingPanel(ring), 10);
             });
 
@@ -978,7 +1064,7 @@ function createRingPanel(ring) {
                 colorContainer.style('display', 'flex');
                 colorContainer.style('align-items', 'center');
                 colorContainer.style('justify-content', 'center');
-                // 市松模様（透明度確認用）
+                // 市松模様
                 colorContainer.style('background-image', 'linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)');
                 colorContainer.style('background-size', '10px 10px');
                 colorContainer.style('background-position', '0 0, 5px 5px');
@@ -1011,12 +1097,98 @@ function createRingPanel(ring) {
                 colorContainer.elt.addEventListener('mousedown', (e) => {
                     e.stopPropagation();
                     closePanel();
-                    // カラーピッカーパネルを開く
                     createColorPickerPanel(ring);
                 });
             }
+
+            // --- Gradient Preview / Editor Button ---
+            if (ring.visualEffect === 'gradient') {
+                const gradContainer = createDiv('');
+                gradContainer.parent(contentArea);
+                gradContainer.style('margin-top', '8px');
+                gradContainer.style('cursor', 'pointer');
+                gradContainer.style('border', '1px solid #999');
+                gradContainer.style('border-radius', '4px');
+                gradContainer.style('height', '30px');
+                gradContainer.style('position', 'relative');
+
+                // 市松模様
+                gradContainer.style('background-image', 'linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%)');
+                gradContainer.style('background-size', '10px 10px');
+                gradContainer.style('background-position', '0 0, 5px 5px');
+
+                // グラディエントの簡易プレビュー生成
+                const { alphaKeys, colorKeys } = parseGradientData(ring);
+
+                let gradientCSS = 'linear-gradient(to right, #888, #888)';
+                if (colorKeys.length > 0) {
+                    const stops = [];
+                    // 10ステップでサンプリングしてCSSグラディエントを作る
+                    for (let i = 0; i <= 10; i++) {
+                        const t = i / 10;
+
+                        // カラー補間
+                        let c = { r: 1, g: 1, b: 1 };
+                        if (t <= colorKeys[0].t) c = colorKeys[0];
+                        else if (t >= colorKeys[colorKeys.length - 1].t) c = colorKeys[colorKeys.length - 1];
+                        else {
+                            for (let k = 0; k < colorKeys.length - 1; k++) {
+                                if (t >= colorKeys[k].t && t <= colorKeys[k + 1].t) {
+                                    const r = (t - colorKeys[k].t) / (colorKeys[k + 1].t - colorKeys[k].t);
+                                    c = {
+                                        r: colorKeys[k].r + (colorKeys[k + 1].r - colorKeys[k].r) * r,
+                                        g: colorKeys[k].g + (colorKeys[k + 1].g - colorKeys[k].g) * r,
+                                        b: colorKeys[k].b + (colorKeys[k + 1].b - colorKeys[k].b) * r
+                                    };
+                                    break;
+                                }
+                            }
+                        }
+
+                        // アルファ補間
+                        let a = 1;
+                        if (alphaKeys.length > 0) {
+                            if (t <= alphaKeys[0].t) a = alphaKeys[0].val;
+                            else if (t >= alphaKeys[alphaKeys.length - 1].t) a = alphaKeys[alphaKeys.length - 1].val;
+                            else {
+                                for (let k = 0; k < alphaKeys.length - 1; k++) {
+                                    if (t >= alphaKeys[k].t && t <= alphaKeys[k + 1].t) {
+                                        const r = (t - alphaKeys[k].t) / (alphaKeys[k + 1].t - alphaKeys[k].t);
+                                        a = alphaKeys[k].val + (alphaKeys[k + 1].val - alphaKeys[k].val) * r;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        stops.push(`rgba(${Math.floor(c.r * 255)},${Math.floor(c.g * 255)},${Math.floor(c.b * 255)},${a}) ${t * 100}%`);
+                    }
+                    gradientCSS = `linear-gradient(to right, ${stops.join(', ')})`;
+                }
+
+                const previewDiv = createDiv('');
+                previewDiv.parent(gradContainer);
+                previewDiv.style('width', '100%');
+                previewDiv.style('height', '100%');
+                previewDiv.style('background', gradientCSS);
+
+                const label = createDiv('Edit Gradient');
+                label.parent(gradContainer);
+                label.style('position', 'absolute');
+                label.style('top', '50%');
+                label.style('left', '50%');
+                label.style('transform', 'translate(-50%, -50%)');
+                label.style('font-size', '10px');
+                label.style('color', 'white');
+                label.style('text-shadow', '0 0 2px black');
+                label.style('pointer-events', 'none');
+
+                gradContainer.elt.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    closePanel();
+                    createGradientEditorPanel(ring);
+                });
+            }
         }
-        // ------------------------
 
         const typeLabel = createP('Ring Type:');
         typeLabel.parent(contentArea);
@@ -1073,6 +1245,586 @@ function createRingPanel(ring) {
             closePanel();
         });
     }
+}
+
+// =============================================
+// Gradient Editor Helpers
+// =============================================
+
+/**
+ * リングのJointからグラディエントのキー（Alpha/Color）を抽出します。
+ * 戻り値: { alphaKeys: [{t, val, id}], colorKeys: [{t, r, g, b, id}] }
+ */
+function parseGradientData(ring) {
+    const alphaKeys = [];
+    const colorKeys = [];
+
+    // Jointで接続された子リング（キーフレーム）を走査
+    ring.items.forEach(item => {
+        if (item && item.type === 'joint' && item.value instanceof ArrayRing) {
+            const childRing = item.value;
+
+            // ArrayRingは先頭に "COMPLETE" があるため、データは index 1 から始まる
+            // 期待する構造: [COMPLETE, Time, R, G, B, A] (長さ6以上)
+            if (childRing.items.length >= 6) {
+                const getVal = (idx) => {
+                    const it = childRing.items[idx];
+                    return (it && it.value) ? parseFloat(it.value) : 0;
+                };
+
+                const t = getVal(1); // Time
+                const r = getVal(2);
+                const g = getVal(3);
+                const b = getVal(4);
+                const a = getVal(5);
+
+                const id = Math.random().toString(36).substr(2, 9);
+
+                alphaKeys.push({ t, val: a, id: id + "_a" });
+                colorKeys.push({ t, r, g, b, id: id + "_c" });
+            }
+        }
+    });
+
+    // 時間順にソート
+    alphaKeys.sort((a, b) => a.t - b.t);
+    colorKeys.sort((a, b) => a.t - b.t);
+
+    return { alphaKeys, colorKeys };
+}
+
+/**
+ * 分離された Alpha/Color キーを統合し、リングの Joint として再構築します。
+ * ArrayRingの構造 [COMPLETE, Time, R, G, B, A] を維持します。
+ */
+function applyGradientToRing(ring, alphaKeys, colorKeys) {
+    // 1. 全てのユニークな時間ポイントを収集
+    const timeSet = new Set();
+    alphaKeys.forEach(k => timeSet.add(k.t));
+    colorKeys.forEach(k => timeSet.add(k.t));
+    const times = Array.from(timeSet).sort((a, b) => a - b);
+
+    const lerpVal = (v0, v1, t) => v0 + (v1 - v0) * t;
+
+    // 2. 補間関数
+    const getAlphaAt = (t) => {
+        if (alphaKeys.length === 0) return 1;
+        if (t <= alphaKeys[0].t) return alphaKeys[0].val;
+        if (t >= alphaKeys[alphaKeys.length - 1].t) return alphaKeys[alphaKeys.length - 1].val;
+        for (let i = 0; i < alphaKeys.length - 1; i++) {
+            if (t >= alphaKeys[i].t && t <= alphaKeys[i + 1].t) {
+                const range = alphaKeys[i + 1].t - alphaKeys[i].t;
+                const ratio = range === 0 ? 0 : (t - alphaKeys[i].t) / range;
+                return lerpVal(alphaKeys[i].val, alphaKeys[i + 1].val, ratio);
+            }
+        }
+        return 1;
+    };
+
+    const getColorAt = (t) => {
+        if (colorKeys.length === 0) return { r: 1, g: 1, b: 1 };
+        if (t <= colorKeys[0].t) return { r: colorKeys[0].r, g: colorKeys[0].g, b: colorKeys[0].b };
+        if (t >= colorKeys[colorKeys.length - 1].t) return { r: colorKeys[colorKeys.length - 1].r, g: colorKeys[colorKeys.length - 1].g, b: colorKeys[colorKeys.length - 1].b };
+        for (let i = 0; i < colorKeys.length - 1; i++) {
+            if (t >= colorKeys[i].t && t <= colorKeys[i + 1].t) {
+                const range = colorKeys[i + 1].t - colorKeys[i].t;
+                const ratio = range === 0 ? 0 : (t - colorKeys[i].t) / range;
+                return {
+                    r: lerpVal(colorKeys[i].r, colorKeys[i + 1].r, ratio),
+                    g: lerpVal(colorKeys[i].g, colorKeys[i + 1].g, ratio),
+                    b: lerpVal(colorKeys[i].b, colorKeys[i + 1].b, ratio)
+                };
+            }
+        }
+        return { r: 1, g: 1, b: 1 };
+    };
+
+    // 4. リングアイテムの更新
+
+    // 現在接続されている Joint とその先の子リングを取得
+    const existingJoints = ring.items.filter(item => item instanceof Joint && item.value instanceof ArrayRing);
+
+    // 親リングの先頭（COMPLETE）を確保
+    // 通常 ArrayRing なら items[0] は COMPLETE シジル
+    let newItems = [];
+    if (ring.items.length > 0 && ring.items[0] instanceof Sigil) {
+        newItems.push(ring.items[0]);
+    } else {
+        newItems.push(new Sigil(0, 0, "COMPLETE", ring));
+    }
+
+    times.forEach((t, i) => {
+        const a = getAlphaAt(t);
+        const c = getColorAt(t);
+        const fmt = (n) => parseFloat(n.toFixed(3)).toString();
+
+        let targetRing;
+        let targetJoint;
+
+        if (i < existingJoints.length) {
+            // --- 既存再利用 ---
+            targetJoint = existingJoints[i];
+            targetRing = targetJoint.value;
+
+            // アイテム数が足りない場合は補充 ( [COMPLETE, Time, R, G, B, A] )
+            // items[0] は COMPLETE なので、長さが 6 未満なら追加
+            while (targetRing.items.length < 6) {
+                targetRing.items.push(new Chars(0, 0, "0", targetRing));
+            }
+
+            // 値更新 (Index 1〜5)
+            targetRing.items[1].value = fmt(t);
+            targetRing.items[2].value = fmt(c.r);
+            targetRing.items[3].value = fmt(c.g);
+            targetRing.items[4].value = fmt(c.b);
+            targetRing.items[5].value = fmt(a);
+
+            targetRing.CalculateLayout();
+        } else {
+            // --- 新規作成 ---
+            // new ArrayRing() した時点で items[0] に COMPLETE が入っている
+            targetRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
+            rings.push(targetRing);
+
+            targetRing.items.push(new Chars(0, 0, fmt(t), targetRing)); // 1: Time
+            targetRing.items.push(new Chars(0, 0, fmt(c.r), targetRing)); // 2: R
+            targetRing.items.push(new Chars(0, 0, fmt(c.g), targetRing)); // 3: G
+            targetRing.items.push(new Chars(0, 0, fmt(c.b), targetRing)); // 4: B
+            targetRing.items.push(new Chars(0, 0, fmt(a), targetRing));   // 5: A
+
+            targetRing.CalculateLayout();
+            targetJoint = new Joint(0, 0, targetRing, ring);
+        }
+
+        newItems.push(targetJoint);
+    });
+
+    // 余分なリングの削除
+    if (existingJoints.length > times.length) {
+        for (let i = times.length; i < existingJoints.length; i++) {
+            const joint = existingJoints[i];
+            const childRing = joint.value;
+            const globalIdx = rings.indexOf(childRing);
+            if (globalIdx !== -1) {
+                rings.splice(globalIdx, 1);
+            }
+        }
+    }
+
+    ring.items = newItems;
+    ring.CalculateLayout();
+    if (typeof alignConnectedRings === 'function') {
+        alignConnectedRings(ring);
+    }
+}
+
+/**
+ * グラディエントエディタパネルを作成します。
+ * (selectionState引数で、パネル再開時の選択状態を復元)
+ */
+function createGradientEditorPanel(ring, selectionState = null) {
+    const closePanel = () => {
+        if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; }
+        window.removeEventListener('mousemove', onDrag);
+        window.removeEventListener('mouseup', onStopDrag);
+    };
+
+    const panelResult = createBasePanel('Gradient Editor', closePanel);
+    if (!panelResult) return;
+    const { contentArea } = panelResult;
+
+    // パネルスタイル設定
+    currentUiPanel.style('width', '360px');
+    currentUiPanel.style('background-color', '#333');
+    currentUiPanel.style('color', '#eee');
+
+    // --- ヘッダーの視認性向上 ---
+    // createBasePanelで作られたヘッダー要素を取得し、文字色を白にする
+    const headerElt = currentUiPanel.elt.children[0];
+    if (headerElt) {
+        // タイトル
+        if (headerElt.children[0]) headerElt.children[0].style.color = '#ffffff';
+        // 閉じるボタン
+        if (headerElt.children[1]) headerElt.children[1].style.color = '#ffffff';
+    }
+
+    // --- State Initialization ---
+    let { alphaKeys, colorKeys } = parseGradientData(ring);
+
+    if (alphaKeys.length === 0) {
+        alphaKeys = [{ t: 0, val: 1, id: 'a_start' }, { t: 1, val: 1, id: 'a_end' }];
+    }
+    if (colorKeys.length === 0) {
+        colorKeys = [{ t: 0, r: 1, g: 1, b: 1, id: 'c_start' }, { t: 1, r: 1, g: 1, b: 1, id: 'c_end' }];
+    }
+
+    let selectedKey = null;
+    let selectedType = null;
+
+    // 状態復元
+    if (selectionState) {
+        const keys = selectionState.type === 'alpha' ? alphaKeys : colorKeys;
+        if (selectionState.index >= 0 && selectionState.index < keys.length) {
+            selectedKey = keys[selectionState.index];
+            selectedType = selectionState.type;
+        }
+    }
+
+    // --- Logic Functions ---
+    const lerpAlpha = (t) => {
+        if (alphaKeys.length === 0) return 1;
+        if (t <= alphaKeys[0].t) return alphaKeys[0].val;
+        if (t >= alphaKeys[alphaKeys.length - 1].t) return alphaKeys[alphaKeys.length - 1].val;
+        for (let i = 0; i < alphaKeys.length - 1; i++) {
+            if (t >= alphaKeys[i].t && t <= alphaKeys[i + 1].t) {
+                const range = alphaKeys[i + 1].t - alphaKeys[i].t;
+                const ratio = range === 0 ? 0 : (t - alphaKeys[i].t) / range;
+                return alphaKeys[i].val + (alphaKeys[i + 1].val - alphaKeys[i].val) * ratio;
+            }
+        }
+        return 1;
+    };
+
+    const lerpColor = (t) => {
+        if (colorKeys.length === 0) return { r: 1, g: 1, b: 1 };
+        if (t <= colorKeys[0].t) return colorKeys[0];
+        if (t >= colorKeys[colorKeys.length - 1].t) return colorKeys[colorKeys.length - 1];
+        for (let i = 0; i < colorKeys.length - 1; i++) {
+            if (t >= colorKeys[i].t && t <= colorKeys[i + 1].t) {
+                const range = colorKeys[i + 1].t - colorKeys[i].t;
+                const ratio = range === 0 ? 0 : (t - colorKeys[i].t) / range;
+                return {
+                    r: colorKeys[i].r + (colorKeys[i + 1].r - colorKeys[i].r) * ratio,
+                    g: colorKeys[i].g + (colorKeys[i + 1].g - colorKeys[i].g) * ratio,
+                    b: colorKeys[i].b + (colorKeys[i + 1].b - colorKeys[i].b) * ratio
+                };
+            }
+        }
+        return { r: 1, g: 1, b: 1 };
+    };
+
+    const updatePreview = () => {
+        const stops = [];
+        const steps = 20;
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const a = lerpAlpha(t);
+            const c = lerpColor(t);
+            stops.push(`rgba(${c.r * 255},${c.g * 255},${c.b * 255},${a}) ${t * 100}%`);
+        }
+        gradientPreview.style('background', `linear-gradient(to right, ${stops.join(', ')})`);
+    };
+
+    const saveData = () => {
+        applyGradientToRing(ring, alphaKeys, colorKeys);
+    };
+
+    // --- UI Layout ---
+    const topContainer = createDiv('');
+    topContainer.parent(contentArea);
+    topContainer.style('padding', '10px 10px 0 10px');
+
+    const editorHeight = 80;
+    const barHeight = 30;
+
+    const editorContainer = createDiv('');
+    editorContainer.parent(topContainer);
+    editorContainer.style('position', 'relative');
+    editorContainer.style('height', `${editorHeight}px`);
+    editorContainer.style('margin-bottom', '10px');
+    editorContainer.style('user-select', 'none');
+
+    // バー
+    const gradientBar = createDiv('');
+    gradientBar.parent(editorContainer);
+    gradientBar.style('position', 'absolute');
+    gradientBar.style('left', '10px');
+    gradientBar.style('right', '10px');
+    gradientBar.style('top', '25px');
+    gradientBar.style('height', `${barHeight}px`);
+    gradientBar.style('border', '1px solid #555');
+    gradientBar.style('background-image', 'linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%), linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%)');
+    gradientBar.style('background-size', '10px 10px');
+    gradientBar.style('background-color', '#333');
+    gradientBar.style('cursor', 'pointer');
+
+    // プレビュー
+    const gradientPreview = createDiv('');
+    gradientPreview.parent(gradientBar);
+    gradientPreview.style('width', '100%');
+    gradientPreview.style('height', '100%');
+    gradientPreview.style('pointer-events', 'none');
+
+    // コントロール
+    const controlsDiv = createDiv('');
+    controlsDiv.parent(contentArea);
+    controlsDiv.style('padding', '10px');
+    controlsDiv.style('background', '#2a2a2a');
+    controlsDiv.style('border-radius', '4px');
+    controlsDiv.style('display', 'flex');
+    controlsDiv.style('gap', '10px');
+    controlsDiv.style('align-items', 'center');
+    controlsDiv.style('min-height', '40px');
+
+    // --- マーカー描画 ---
+    const renderMarkers = () => {
+        const existing = editorContainer.elt.querySelectorAll('.marker');
+        existing.forEach(e => e.remove());
+
+        const createMarker = (key, type) => {
+            const m = createDiv('');
+            m.addClass('marker');
+            m.parent(editorContainer);
+            m.style('position', 'absolute');
+            m.style('width', '12px');
+            m.style('height', '12px');
+            m.style('cursor', 'pointer');
+            m.style('z-index', '100');
+            m.style('left', '10px');
+            m.style('margin-left', `calc(${key.t} * (100% - 20px) - 6px)`);
+
+            const isSelected = (selectedKey === key);
+            const borderCol = isSelected ? 'orange' : '#fff';
+
+            const shape = createDiv('');
+            shape.parent(m);
+            shape.style('width', '100%');
+            shape.style('height', '100%');
+            shape.style('box-sizing', 'border-box');
+
+            if (type === 'alpha') {
+                m.style('top', '10px');
+                shape.style('background', `rgb(${Math.floor(key.val * 255)}, ${Math.floor(key.val * 255)}, ${Math.floor(key.val * 255)})`);
+                shape.style('border', `2px solid ${borderCol}`);
+                shape.style('border-radius', '2px 2px 50% 50%');
+            } else {
+                m.style('top', `${25 + barHeight + 5}px`);
+                shape.style('background', `rgb(${key.r * 255},${key.g * 255},${key.b * 255})`);
+                shape.style('border', `2px solid ${borderCol}`);
+                shape.style('border-radius', '50% 50% 2px 2px');
+            }
+
+            m.elt.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                selectedKey = key;
+                selectedType = type;
+                renderMarkers();
+                updateControls();
+
+                const startX = e.clientX;
+                const trackWidth = editorContainer.elt.offsetWidth - 20;
+                const startT = key.t;
+
+                const dragMove = (ev) => {
+                    const dx = ev.clientX - startX;
+                    let newT = startT + dx / trackWidth;
+                    newT = Math.max(0, Math.min(1, newT));
+                    key.t = newT;
+
+                    if (type === 'alpha') alphaKeys.sort((a, b) => a.t - b.t);
+                    else colorKeys.sort((a, b) => a.t - b.t);
+
+                    renderMarkers();
+                    updatePreview();
+                    updateControls();
+                };
+
+                const dragUp = () => {
+                    window.removeEventListener('mousemove', dragMove);
+                    window.removeEventListener('mouseup', dragUp);
+                    saveData();
+                };
+
+                window.addEventListener('mousemove', dragMove);
+                window.addEventListener('mouseup', dragUp);
+            });
+        };
+
+        alphaKeys.forEach(k => createMarker(k, 'alpha'));
+        colorKeys.forEach(k => createMarker(k, 'color'));
+    };
+
+    // バークリック
+    gradientBar.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const rect = gradientBar.elt.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        let t = x / rect.width;
+        t = Math.max(0, Math.min(1, t));
+
+        const y = e.clientY - rect.top;
+        if (y < rect.height / 2) {
+            const newVal = lerpAlpha(t);
+            const newKey = { t, val: newVal, id: Date.now() };
+            alphaKeys.push(newKey);
+            alphaKeys.sort((a, b) => a.t - b.t);
+            selectedKey = newKey;
+            selectedType = 'alpha';
+        } else {
+            const newCol = lerpColor(t);
+            const newKey = { t, ...newCol, id: Date.now() };
+            colorKeys.push(newKey);
+            colorKeys.sort((a, b) => a.t - b.t);
+            selectedKey = newKey;
+            selectedType = 'color';
+        }
+        renderMarkers();
+        updatePreview();
+        updateControls();
+        saveData();
+    });
+
+    const updateControls = () => {
+        controlsDiv.html('');
+        if (!selectedKey) {
+            const help = createDiv('Click bar to add key.<br>Click marker to edit.');
+            help.parent(controlsDiv);
+            help.style('color', '#888');
+            help.style('font-size', '12px');
+            return;
+        }
+
+        const locGroup = createDiv('');
+        locGroup.parent(controlsDiv);
+        locGroup.style('display', 'flex');
+        locGroup.style('align-items', 'center');
+        createDiv('Loc:').parent(locGroup).style('font-size', '12px').style('color', '#ccc').style('margin-right', '4px');
+        const locInput = createInput((selectedKey.t * 100).toFixed(1));
+        locInput.parent(locGroup);
+        locInput.style('width', '35px');
+        locInput.style('background', '#444');
+        locInput.style('color', 'white');
+        locInput.style('border', 'none');
+        locInput.style('text-align', 'right');
+        createDiv('%').parent(locGroup).style('font-size', '12px').style('color', '#ccc').style('margin-left', '2px');
+
+        locInput.elt.onchange = () => {
+            let val = parseFloat(locInput.value());
+            if (isNaN(val)) return;
+            selectedKey.t = Math.max(0, Math.min(100, val)) / 100;
+            if (selectedType === 'alpha') alphaKeys.sort((a, b) => a.t - b.t);
+            else colorKeys.sort((a, b) => a.t - b.t);
+            renderMarkers();
+            updatePreview();
+            saveData();
+        };
+
+        if (selectedType === 'alpha') {
+            const valGroup = createDiv('');
+            valGroup.parent(controlsDiv);
+            valGroup.style('display', 'flex');
+            valGroup.style('align-items', 'center');
+            valGroup.style('margin-left', '8px');
+            createDiv('Alpha:').parent(valGroup).style('font-size', '12px').style('color', '#ccc').style('margin-right', '4px');
+
+            const alphaSlider = createInput(Math.floor(selectedKey.val * 255), 'range');
+            alphaSlider.parent(valGroup);
+            alphaSlider.attribute('min', 0);
+            alphaSlider.attribute('max', 255);
+            alphaSlider.style('width', '60px');
+
+            const alphaNum = createInput(Math.floor(selectedKey.val * 255));
+            alphaNum.parent(valGroup);
+            alphaNum.style('width', '30px');
+            alphaNum.style('background', '#444');
+            alphaNum.style('color', 'white');
+            alphaNum.style('border', 'none');
+            alphaNum.style('text-align', 'right');
+            alphaNum.style('margin-left', '4px');
+
+            const onAlphaChange = (v) => {
+                selectedKey.val = v / 255;
+                renderMarkers();
+                updatePreview();
+                saveData();
+            };
+            alphaSlider.input(() => { alphaNum.value(alphaSlider.value()); onAlphaChange(alphaSlider.value()); });
+            alphaNum.input(() => {
+                let v = parseInt(alphaNum.value()) || 0;
+                v = Math.max(0, Math.min(255, v));
+                alphaSlider.value(v);
+                onAlphaChange(v);
+            });
+
+        } else {
+            const colGroup = createDiv('');
+            colGroup.parent(controlsDiv);
+            colGroup.style('display', 'flex');
+            colGroup.style('align-items', 'center');
+            colGroup.style('margin-left', '8px');
+            createDiv('Color:').parent(colGroup).style('font-size', '12px').style('color', '#ccc').style('margin-right', '4px');
+
+            const colorBox = createDiv('');
+            colorBox.parent(colGroup);
+            colorBox.style('width', '30px');
+            colorBox.style('height', '20px');
+            colorBox.style('background', `rgb(${selectedKey.r * 255}, ${selectedKey.g * 255}, ${selectedKey.b * 255})`);
+            colorBox.style('border', '1px solid white');
+            colorBox.style('cursor', 'pointer');
+
+            colorBox.elt.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+
+                const idx = colorKeys.indexOf(selectedKey);
+
+                const mockRing = {
+                    items: [
+                        null,
+                        { value: selectedKey.r },
+                        { value: selectedKey.g },
+                        { value: selectedKey.b },
+                        { value: 1.0 }
+                    ],
+                    CalculateLayout: () => {
+                        selectedKey.r = parseFloat(mockRing.items[1].value);
+                        selectedKey.g = parseFloat(mockRing.items[2].value);
+                        selectedKey.b = parseFloat(mockRing.items[3].value);
+                        saveData();
+                    },
+                    onColorPickerClose: () => {
+                        createGradientEditorPanel(ring, { type: 'color', index: idx });
+                    }
+                };
+
+                closePanel();
+                createColorPickerPanel(mockRing);
+            });
+        }
+
+        const delBtn = createButton('Del');
+        delBtn.parent(controlsDiv);
+        delBtn.style('margin-left', 'auto');
+        delBtn.style('background', '#d33');
+        delBtn.style('color', 'white');
+        delBtn.style('border', 'none');
+        delBtn.style('border-radius', '3px');
+        delBtn.style('cursor', 'pointer');
+        delBtn.style('padding', '2px 6px');
+
+        delBtn.elt.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            if (selectedType === 'alpha' && alphaKeys.length > 1) {
+                alphaKeys = alphaKeys.filter(k => k !== selectedKey);
+            } else if (selectedType === 'color' && colorKeys.length > 1) {
+                colorKeys = colorKeys.filter(k => k !== selectedKey);
+            } else {
+                alert("Cannot delete the last key.");
+                return;
+            }
+            selectedKey = null;
+            renderMarkers();
+            updatePreview();
+            updateControls();
+            saveData();
+        });
+    };
+
+    updatePreview();
+    renderMarkers();
+    updateControls();
+    let onDrag, onStopDrag;
 }
 
 // =============================================
@@ -1145,15 +1897,24 @@ function hexToRgb(hex) {
 function createColorPickerPanel(ring) {
     // パネルを閉じる処理（レイアウト再計算を含む）
     const closePanel = () => {
-        if (ring && typeof ring.CalculateLayout === 'function') {
-            ring.CalculateLayout();
-        }
-
+        // 1. まず現在のパネルをUIから完全に削除する
         if (currentUiPanel) {
             currentUiPanel.remove();
             currentUiPanel = null;
         }
         editingItem = null;
+
+        // 2. その後でリングの計算や、次のパネル（グラディエントエディタ）を開くコールバックを実行する
+        if (ring) {
+            if (typeof ring.CalculateLayout === 'function') {
+                ring.CalculateLayout();
+            }
+            // グラディエントエディタ復帰用フック
+            // (currentUiPanelがnullになった後で呼ぶ必要がある)
+            if (typeof ring.onColorPickerClose === 'function') {
+                ring.onColorPickerClose();
+            }
+        }
     };
 
     const panelResult = createBasePanel('Color Picker', closePanel);
@@ -1165,17 +1926,10 @@ function createColorPickerPanel(ring) {
     currentUiPanel.style('color', '#ddd');
     currentUiPanel.style('width', '240px');
 
-    // 背景が暗いため、ヘッダー（タイトルと×ボタン）の文字色を白に変更します
-    const headerElt = currentUiPanel.elt.children[0]; // createBasePanelで作られたヘッダーDiv
+    const headerElt = currentUiPanel.elt.children[0];
     if (headerElt) {
-        // タイトル要素 (通常は最初の子要素)
-        if (headerElt.children[0]) {
-            headerElt.children[0].style.color = '#ffffff';
-        }
-        // 閉じるボタン要素 (通常は2番目の子要素)
-        if (headerElt.children[1]) {
-            headerElt.children[1].style.color = '#ffffff';
-        }
+        if (headerElt.children[0]) headerElt.children[0].style.color = '#ffffff';
+        if (headerElt.children[1]) headerElt.children[1].style.color = '#ffffff';
     }
 
     // 初期値の取得
@@ -1203,7 +1957,7 @@ function createColorPickerPanel(ring) {
     pickerContainer.style('margin', '0 auto 10px auto');
     pickerContainer.style('user-select', 'none');
 
-    // --- 1. Hue Ring (外側のリング) ---
+    // --- 1. Hue Ring ---
     const hueRing = createDiv('');
     hueRing.parent(pickerContainer);
     hueRing.style('position', 'absolute');
@@ -1212,11 +1966,9 @@ function createColorPickerPanel(ring) {
     hueRing.style('width', '100%');
     hueRing.style('height', '100%');
     hueRing.style('border-radius', '50%');
-    // Unityと同様の時計回りのグラデーション
     hueRing.style('background', 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)');
     hueRing.style('cursor', 'crosshair');
 
-    // Hue Selector Knob
     const hueKnob = createDiv('');
     hueKnob.parent(hueRing);
     hueKnob.style('position', 'absolute');
@@ -1228,7 +1980,7 @@ function createColorPickerPanel(ring) {
     hueKnob.style('pointer-events', 'none');
     hueKnob.style('box-shadow', '0 0 2px rgba(0,0,0,0.5)');
 
-    // --- 2. Mask (リングと四角の間の隙間) ---
+    // --- 2. Mask ---
     const mask = createDiv('');
     mask.parent(pickerContainer);
     mask.style('position', 'absolute');
@@ -1240,7 +1992,7 @@ function createColorPickerPanel(ring) {
     mask.style('border-radius', '50%');
     mask.style('pointer-events', 'none');
 
-    // --- 3. SV Square (内側の四角) ---
+    // --- 3. SV Square ---
     const svSquare = createDiv('');
     svSquare.parent(pickerContainer);
     svSquare.style('position', 'absolute');
@@ -1251,7 +2003,6 @@ function createColorPickerPanel(ring) {
     svSquare.style('transform', 'translate(-50%, -50%)');
     svSquare.style('cursor', 'crosshair');
 
-    // 白（彩度）のグラデーション（左→右）
     const svWhite = createDiv('');
     svWhite.parent(svSquare);
     svWhite.style('position', 'absolute');
@@ -1259,7 +2010,6 @@ function createColorPickerPanel(ring) {
     svWhite.style('height', '100%');
     svWhite.style('background', 'linear-gradient(to right, #fff, rgba(255,255,255,0))');
 
-    // 黒（明度）のグラデーション（透明→黒）
     const svBlack = createDiv('');
     svBlack.parent(svSquare);
     svBlack.style('position', 'absolute');
@@ -1267,7 +2017,6 @@ function createColorPickerPanel(ring) {
     svBlack.style('height', '100%');
     svBlack.style('background', 'linear-gradient(to bottom, transparent, #000)');
 
-    // SV Selector Knob
     const svKnob = createDiv('');
     svKnob.parent(svSquare);
     svKnob.style('position', 'absolute');
@@ -1283,14 +2032,9 @@ function createColorPickerPanel(ring) {
     // UI Update Logic
     // =============================================
 
-    // 数値をフォーマットするヘルパー関数
     const formatFloat = (val) => {
-        // 3桁で丸めて数値化することで不要な0 ("0.500" -> 0.5) を除去
         let s = parseFloat(val.toFixed(3)).toString();
-        // 整数になってしまった場合 ("1") は ".0" を付与して "1.0" にする
-        if (s.indexOf('.') === -1) {
-            s += '.0';
-        }
+        if (s.indexOf('.') === -1) s += '.0';
         return s;
     };
 
@@ -1305,19 +2049,15 @@ function createColorPickerPanel(ring) {
     };
 
     const updateUI = (updateInputs = true) => {
-        // Hue Ring Knob Position
         const angle = h * Math.PI * 2;
-        const r = 100 * 0.92;
         const knobX = 100 + 90 * Math.sin(angle);
         const knobY = 100 - 90 * Math.cos(angle);
         hueKnob.style('left', `${knobX}px`);
         hueKnob.style('top', `${knobY}px`);
 
-        // SV Square Background
         const pureColor = hsvToRgb(h, 1, 1);
         svSquare.style('background-color', `rgb(${pureColor[0] * 255},${pureColor[1] * 255},${pureColor[2] * 255})`);
 
-        // SV Knob Position
         svKnob.style('left', `${s * 100}%`);
         svKnob.style('top', `${(1 - v) * 100}%`);
 
@@ -1326,7 +2066,6 @@ function createColorPickerPanel(ring) {
         }
     };
 
-    // マウス操作: Hue Ring
     const handleHueDrag = (e) => {
         const rect = hueRing.elt.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
@@ -1339,14 +2078,12 @@ function createColorPickerPanel(ring) {
         if (angle < 0) angle += Math.PI * 2;
 
         h = angle / (Math.PI * 2);
-
         const rgb = hsvToRgb(h, s, v);
         rgba.r = rgb[0]; rgba.g = rgb[1]; rgba.b = rgb[2];
         applyToRing();
         updateUI();
     };
 
-    // マウス操作: SV Square
     const handleSVDrag = (e) => {
         const rect = svSquare.elt.getBoundingClientRect();
         let x = (e.clientX - rect.left) / rect.width;
