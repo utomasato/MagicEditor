@@ -1,0 +1,541 @@
+/* =========================================
+   UI Styles for Magic Circle Generator
+   ========================================= */
+
+/* --- Base Panel Style --- */
+.ui-panel {
+    z-index: 1000;
+    background-color: rgba(240, 240, 240, 0.95);
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+    position: absolute;
+    min-width: 200px;
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Dark Theme Panel (Console, Visual Editor) */
+.ui-panel.dark-theme {
+    background-color: rgba(40, 40, 40, 0.95);
+    color: #eee;
+}
+
+/* --- Panel Header --- */
+.ui-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    padding-bottom: 4px;
+}
+
+.ui-panel.dark-theme .ui-panel-header {
+    background-color: rgba(50, 50, 50, 0.9);
+    padding: 8px;
+    margin: -8px -8px 8px -8px;
+    border-radius: 6px 6px 0 0;
+    border-bottom: 1px solid #555;
+}
+
+.ui-panel-title {
+    margin: 0;
+    font-weight: bold;
+    color: inherit;
+}
+
+/* --- Buttons --- */
+.ui-btn-close {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.ui-btn-close:hover {
+    opacity: 1.0;
+}
+
+.ui-btn {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    transition: background-color 0.2s;
+    color: #333;
+    text-align: center;
+}
+
+.ui-btn:hover {
+    background-color: #f5f5f5;
+}
+
+.ui-btn-block {
+    width: 100%;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Contextual Buttons */
+.ui-btn-danger {
+    border-color: #ff4d4d;
+    color: #ff4d4d;
+    background: #fff;
+}
+
+.ui-btn-danger:hover {
+    background-color: #fff0f0;
+}
+
+.ui-btn-primary {
+    border-color: #4d4dff;
+    color: #4d4dff;
+    background: #fff;
+}
+
+.ui-btn-primary:hover {
+    background-color: #f0f0ff;
+}
+
+/* --- Form Elements --- */
+.ui-input,
+.ui-select {
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.ui-input-dark {
+    background: #444;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+/* --- Layout Helpers --- */
+.ui-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ui-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ui-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+}
+
+.ui-divider {
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.ui-label {
+    font-size: 12px;
+    color: #666;
+}
+
+/* =========================================
+   Visual Editor (Color Picker)
+   ========================================= */
+.cp-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 10px auto;
+    user-select: none;
+}
+
+.cp-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+    cursor: crosshair;
+}
+
+.cp-knob {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.cp-mask {
+    position: absolute;
+    top: 15%;
+    left: 15%;
+    width: 70%;
+    height: 70%;
+    background-color: #282828;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.cp-sv-square {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50%;
+    height: 50%;
+    transform: translate(-50%, -50%);
+    cursor: crosshair;
+}
+
+.cp-sv-grad-white {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
+}
+
+.cp-sv-grad-black {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, #000);
+}
+
+/* Sliders */
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 10px;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.slider-label {
+    width: 15px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.slider-track-container {
+    flex-grow: 1;
+    position: relative;
+    height: 18px;
+}
+
+.slider-bg {
+    width: 100%;
+    height: 100%;
+    border-radius: 3px;
+    position: absolute;
+    z-index: 0;
+}
+
+.slider-input-range {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+}
+
+.slider-handle-visual {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: white;
+    box-shadow: 0 0 2px black;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.slider-value-display {
+    width: 40px;
+    text-align: right;
+    font-size: 12px;
+    color: #fff;
+}
+
+.hex-input {
+    width: 80px;
+    background: #444;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 2px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 12px;
+}
+
+/* =========================================
+   Gradient Editor
+   ========================================= */
+.ge-editor-container {
+    position: relative;
+    height: 80px;
+    margin-bottom: 10px;
+    user-select: none;
+}
+
+.ge-bar {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 25px;
+    height: 30px;
+    border: 1px solid #555;
+    background-image: linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%),
+        linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%);
+    background-size: 10px 10px;
+    background-color: #333;
+    cursor: pointer;
+}
+
+.ge-preview-layer {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ge-marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    cursor: pointer;
+    z-index: 100;
+}
+
+.ge-marker-shape {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.ge-controls {
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 4px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-height: 40px;
+}
+
+/* =========================================
+   Ring & Comment Panel
+   ========================================= */
+.comment-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.comment-grid-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 100px;
+    gap: 5px;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+.comment-grid-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 100px;
+    gap: 5px;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.comment-cell {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px;
+    height: 24px;
+    line-height: 16px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.start-indicator {
+    margin: 5px 0 0 0;
+    padding: 4px;
+    font-size: 12px;
+    font-style: italic;
+    color: #333;
+    background-color: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.preview-box {
+    margin-top: 8px;
+    cursor: pointer;
+    border: 1px solid #999;
+    border-radius: 4px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%),
+        linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%);
+    background-size: 10px 10px;
+    background-position: 0 0, 5px 5px;
+    position: relative;
+}
+
+.preview-label {
+    font-size: 10px;
+    color: white;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+}
+
+/* =========================================
+   Console Panel
+   ========================================= */
+.console-panel {
+    background-color: rgba(30, 30, 30, 0.85);
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    font-family: monospace;
+    color: #eee;
+}
+
+.console-header {
+    padding: 8px;
+    background-color: rgba(50, 50, 50, 0.9);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    border-radius: 6px 6px 0 0;
+}
+
+.console-text {
+    padding: 8px;
+    margin: 0;
+    flex-grow: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-y: auto;
+}
+
+.resize-handle {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: se-resize;
+}
+
+/* =========================================
+   IO Modal
+   ========================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    width: 80vw;
+    height: 80vh;
+    max-width: 800px;
+    max-height: 600px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.modal-textarea {
+    width: 100%;
+    flex-grow: 1;
+    resize: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    flex-shrink: 0;
+}
