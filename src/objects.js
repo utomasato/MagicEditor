@@ -318,6 +318,10 @@ class ArrayRing extends MagicRing {
         // 視覚効果プロパティ (初期値: '-')
         this.visualEffect = '-';
 
+        // カーブ用最大値・最小値
+        this.maxValue = 1.0;
+        this.minValue = 0.0;
+
         this.CalculateLayout();
     }
 
@@ -325,6 +329,8 @@ class ArrayRing extends MagicRing {
     clone(clonedMap = new Map()) {
         const newRing = super.clone(clonedMap);
         newRing.visualEffect = this.visualEffect;
+        newRing.maxValue = this.maxValue;
+        newRing.minValue = this.minValue;
         return newRing;
     }
 
@@ -335,65 +341,127 @@ class ArrayRing extends MagicRing {
     DrawOption() {
         switch (this.visualEffect) {
             case "color":
-                const [r, g, b, a] = this.items.slice(1).map((item) => parseFloat(item.value) * 255);
+                {
+                    const width = this.innerradius * 1.2;
+                    const height = width;
+                    const [r, g, b, a] = this.items.slice(1).map((item) => parseFloat(item.value) * 255);
+                    stroke(0);
+                    strokeWeight(1);
+                    fill(r, g, b, a);
+                    rect(-width / 2, -height / 2, width, height);
+                    break;
+                }
+            case "gradient":
+                {
+                    const width = this.innerradius * 1.6;
+                    const height = this.innerradius * 0.6;
+                    const ctx = drawingContext;
+                    ctx.save();
+
+                    // 左 (-width/2, 0) から 右 (width/2, 0) へのグラデーションを作成
+                    const grd = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
+
+                    let hasValidStops = false;
+
+                    this.items.slice(1).forEach((item) => {
+                        if (!item) return;
+
+                        // 文字列トークンを解析: "[ 0.0 1.0 ... ]" -> 数値配列
+                        const rawText = item.SpellToken().replace(/[\[\]]/g, "").trim();
+                        if (!rawText) return;
+
+                        const params = rawText.split(/\s+/).map(Number);
+
+                        // [time, r, g, b, a] が揃っているか確認
+                        if (params.length >= 5 && !params.some(isNaN)) {
+                            const offset = Math.max(0, Math.min(1, params[0]));
+                            const r = Math.floor(params[1] * 255);
+                            const g = Math.floor(params[2] * 255);
+                            const b = Math.floor(params[3] * 255);
+                            const a = params[4];
+
+                            try {
+                                grd.addColorStop(offset, `rgba(${r},${g},${b},${a})`);
+                                hasValidStops = true;
+                            } catch (e) {
+                                console.warn("Gradient stop error:", e);
+                            }
+                        }
+                    });
+
+                    if (hasValidStops) {
+                        // グラデーションで塗りつぶし
+                        ctx.fillStyle = grd;
+                        ctx.fillRect(-width / 2, -height / 2, width, height);
+                    }
+
+                    // 枠線を描画
+                    noFill();
+                    stroke(0);
+                    strokeWeight(1);
+                    rect(-width / 2, -height / 2, width, height);
+
+                    ctx.restore();
+                    break;
+                }
+            case "curve":
+                const width = this.innerradius * 1.2;
+                const height = width;
+                // 枠線を描画
+                fill(0, 0, 0, 200);
                 stroke(0);
                 strokeWeight(1);
-                fill(r, g, b, a);
-                rect(-this.innerradius * 0.6, -this.innerradius * 0.6, this.innerradius * 1.2, this.innerradius * 1.2);
-                break;
-            case "gradient":
-                const wide = this.innerradius * 1.6;
-                const height = this.innerradius * 0.6;
+                rect(-width / 2, -height / 2, width, height);
 
-                const ctx = drawingContext;
-                ctx.save();
-
-                // 左 (-wide/2, 0) から 右 (wide/2, 0) へのグラデーションを作成
-                const grd = ctx.createLinearGradient(-wide / 2, 0, wide / 2, 0);
-
-                let hasValidStops = false;
-
+                // ポイントを収集
+                const points = [];
                 this.items.slice(1).forEach((item) => {
                     if (!item) return;
-
-                    // 文字列トークンを解析: "[ 0.0 1.0 ... ]" -> 数値配列
                     const rawText = item.SpellToken().replace(/[\[\]]/g, "").trim();
                     if (!rawText) return;
-
                     const params = rawText.split(/\s+/).map(Number);
 
-                    // [time, r, g, b, a] が揃っているか確認
-                    if (params.length >= 5 && !params.some(isNaN)) {
-                        const offset = Math.max(0, Math.min(1, params[0]));
-                        const r = Math.floor(params[1] * 255);
-                        const g = Math.floor(params[2] * 255);
-                        const b = Math.floor(params[3] * 255);
-                        const a = params[4];
-
-                        try {
-                            grd.addColorStop(offset, `rgba(${r},${g},${b},${a})`);
-                            hasValidStops = true;
-                        } catch (e) {
-                            console.warn("Gradient stop error:", e);
-                        }
+                    // [t, value]
+                    if (params.length >= 2 && !params.some(isNaN)) {
+                        points.push({ t: params[0], val: params[1] });
                     }
                 });
 
-                if (hasValidStops) {
-                    // グラデーションで塗りつぶし
-                    ctx.fillStyle = grd;
-                    ctx.fillRect(-wide / 2, -height / 2, wide, height);
+                points.sort((a, b) => a.t - b.t);
+
+                if (points.length >= 2) {
+                    noFill();
+                    stroke(0, 255, 0);
+                    strokeWeight(2);
+
+                    const minVal = (this.minValue !== undefined) ? this.minValue : 0.0;
+                    const maxVal = (this.maxValue !== undefined) ? this.maxValue : 1.0;
+
+                    // Catmull-Rom スプライン補間 (Unity Auto Curve 近似)
+                    beginShape();
+                    // 最初の点を重複させる（始点の制御点として機能）
+                    {
+                        const p = points[0];
+                        const x = map(p.t, 0, 1, -width / 2, width / 2);
+                        const y = map(p.val, minVal, maxVal, height / 2, -height / 2);
+                        curveVertex(x, y);
+                    }
+
+                    points.forEach(p => {
+                        const x = map(p.t, 0, 1, -width / 2, width / 2);
+                        const y = map(p.val, minVal, maxVal, height / 2, -height / 2); // 1.0 is top (negative Y in p5 coords)
+                        curveVertex(x, y);
+                    });
+
+                    // 最後の点を重複させる（終点の制御点として機能）
+                    {
+                        const p = points[points.length - 1];
+                        const x = map(p.t, 0, 1, -width / 2, width / 2);
+                        const y = map(p.val, minVal, maxVal, height / 2, -height / 2);
+                        curveVertex(x, y);
+                    }
+                    endShape();
                 }
-
-                // 枠線を描画
-                noFill();
-                stroke(0);
-                strokeWeight(1);
-                rect(-wide / 2, -height / 2, wide, height);
-
-                ctx.restore();
-                break;
-            case "curve":
                 break;
             default:
         }
@@ -612,8 +680,8 @@ class Chars extends RingItem {
         PushTransform();
         Rotate(angle);
         if (!globalIsClockwise) Rotate(PI);
-        const radwide = this.GetLength() / radius * TWO_PI;
-        Rotate((radwide / 2 - itemRadWidth.char / 2) * direction);
+        const radwidth = this.GetLength() / radius * TWO_PI;
+        Rotate((radwidth / 2 - itemRadWidth.char / 2) * direction);
         const chars = this.value.split('');
         chars.forEach(char => {
             DrawText(config.fontSize, char, 0, radius * direction, config.fontColor, CENTER);
@@ -695,8 +763,8 @@ class StringToken extends RingItem {
         PushTransform();
         Rotate(angle);
         if (!globalIsClockwise) Rotate(PI);
-        const radwide = this.GetLength() / radius * TWO_PI;
-        Rotate((radwide / 2 - itemRadWidth.stringSide) * direction);
+        const radwidth = this.GetLength() / radius * TWO_PI;
+        Rotate((radwidth / 2 - itemRadWidth.stringSide) * direction);
         arc(0, radius * direction, config.stringSideWidth * TWO_PI * 2, config.stringSideWidth * TWO_PI * 2, HALF_PI, -HALF_PI);
         Rotate(-itemRadWidth.char / 2 * direction);
         const chars = this.value.split('');
@@ -792,8 +860,8 @@ class Name extends RingItem {
         Rotate(angle);
         DrawSigil("name", 0, -radius);
         if (!globalIsClockwise) Rotate(PI);
-        const radwide = (this.value.length * config.charWidth + (this.value.length - 1) * config.charSpacing) / radius * TWO_PI;
-        Rotate((radwide / 2 - itemRadWidth.char / 2) * direction);
+        const radwidth = (this.value.length * config.charWidth + (this.value.length - 1) * config.charSpacing) / radius * TWO_PI;
+        Rotate((radwidth / 2 - itemRadWidth.char / 2) * direction);
         const chars = this.value.split('');
         chars.forEach(char => {
             DrawText(config.fontSize, char, 0, radius * direction, config.fontColor, CENTER);

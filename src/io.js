@@ -65,6 +65,10 @@ function ringToXML(ring, ringIdMap) {
     let visualEffectAttr = '';
     if (ringType === 'ArrayRing' && ring.visualEffect) {
         visualEffectAttr = ` visualEffect="${escapeXML(ring.visualEffect)}"`;
+        // カーブ表示の場合、最大値・最小値を保存
+        if (ring.visualEffect === 'curve') {
+            visualEffectAttr += ` minValue="${ring.minValue}" maxValue="${ring.maxValue}"`;
+        }
     }
 
     let xml = `  <Ring id="${ringId}" type="${ringType}" x="${ring.pos.x.toFixed(2)}" y="${ring.pos.y.toFixed(2)}" angle="${ring.angle.toFixed(4)}"${markerAttr}${magicAttr}${visualEffectAttr}>\n`;
@@ -163,11 +167,22 @@ function importFromXML(xmlString, mode) {
         const magic = ringEl.getAttribute('magic');   // magic属性の読み込み (TemplateRing用)
         const visualEffect = ringEl.getAttribute('visualEffect'); // visualEffect属性の読み込み (ArrayRing用)
 
+        // ArrayRing用カーブ設定の読み込み
+        const minValue = ringEl.getAttribute('minValue');
+        const maxValue = ringEl.getAttribute('maxValue');
+
         let newRing;
         switch (type) {
             case 'ArrayRing':
                 newRing = new ArrayRing({ x, y });
-                if (visualEffect) newRing.visualEffect = visualEffect; // visualEffectがあれば設定
+                if (visualEffect) {
+                    newRing.visualEffect = visualEffect; // visualEffectがあれば設定
+                    // visualEffectがcurveで、値が保存されていれば適用
+                    if (visualEffect === 'curve') {
+                        if (minValue !== null) newRing.minValue = parseFloat(minValue);
+                        if (maxValue !== null) newRing.maxValue = parseFloat(maxValue);
+                    }
+                }
                 break;
             case 'DictRing':
                 newRing = new DictRing({ x, y });

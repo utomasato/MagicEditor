@@ -358,6 +358,73 @@
 }
 
 /* =========================================
+   Curve Editor
+   ========================================= */
+.ce-editor-container {
+    position: relative;
+    height: 180px;
+    margin-bottom: 10px;
+    user-select: none;
+    background: #222;
+    border: 1px solid #444;
+    margin-left: 10px;
+    margin-right: 10px;
+    cursor: crosshair;
+}
+
+.ce-grid-line-h,
+.ce-grid-line-v {
+    position: absolute;
+    background-color: #444;
+}
+
+.ce-grid-line-h {
+    left: 0;
+    right: 0;
+    height: 1px;
+}
+
+.ce-grid-line-v {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+
+.ce-svg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.ce-point {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #eee;
+    border: 2px solid #333;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 20;
+}
+
+.ce-point:hover {
+    background: #fff;
+    border-color: #000;
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.ce-point.selected {
+    background: #ffcc00;
+    border-color: #fff;
+    z-index: 21;
+}
+
+/* =========================================
    Ring & Comment Panel
    ========================================= */
 .comment-list-container {

@@ -125,6 +125,10 @@ function MouseDownEvent() {
 
                 if (ringItemInfo && ringItemInfo.item) {
                     const itemInRing = ringItemInfo.item;
+                    if (ringObject instanceof ArrayRing && ringObject.visualEffect !== '-' && ringObject.visualEffect !== null) {
+                        return;
+                    }
+
                     if (itemInRing.type === 'joint') { createJointPanel(itemInRing); }
                     else if (itemInRing.type === 'sigil') {
                         if (itemInRing.value === "RETURN" || itemInRing.value === "COMPLETE") {

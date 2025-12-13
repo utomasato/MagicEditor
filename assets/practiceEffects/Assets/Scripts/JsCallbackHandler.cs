@@ -192,7 +192,7 @@ public class JsCallbackHandler : MonoBehaviour
         testId = "test-id-from-csharp-0";
         systemManager.CreateObjectFromMps(spellText, testId);
         // trail
-        spellText = "<~main <~duration 2 ~startLifetime 1 ~startSpeed 0 ~startColor [1 0.5 0 1] > ~emission <~rateOverTime 0 ~bursts [<~count 20>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 15] (hello)] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [0.2 1] [1 1]]>> ~trails <~lifetime [0.1 0.2] ~minVertexDistance 0.1 ~sizeAffectsWidth false ~widthOverTrail [[0 0.05] [1 0]]> ~renderer <~renderMode (None) ~trailMaterial < ~shader (Additive) ~texture (Smoke_2)> > >";
+        spellText = "<~main <~duration 2 ~startLifetime 1 ~startSpeed 0 ~startColor [1 0.5 0 1] > ~emission <~rateOverTime 0 ~bursts [<~count 20>]> ~shape <~shape (Sphere) ~radius 4 ~radiusThickness 0.2> ~velocityOverLifetime <~orbitalY [[0 0] [1 15]] ~radial -5> ~colorOverLifetime < ~gradient < ~alphaKeys [[0 0] [0.2 1] [1 1]]>> ~trails <~lifetime [0.1 0.2] ~minVertexDistance 0.1 ~sizeAffectsWidth false ~widthOverTrail [[0 0.05] [1 0]]> ~renderer <~renderMode (None) ~trailMaterial < ~shader (Additive) ~texture (Smoke_2)> > >";
         testId = "test-id-from-csharp-1";
         systemManager.CreateAndSpawnParticleFromMps(spellText, testId);
         parentId = "test-id-from-csharp-0";

@@ -249,14 +249,31 @@ function createRingPanel(ring) {
                         ring.items = ring.items.slice(0, 1);
                         [0.0, 1.0].forEach(t => {
                             const keyRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
-                            keyRing.visualEffect = "gradient-sub"; rings.push(keyRing);
+                            keyRing.visualEffect = "gradient-sub";
+                            rings.push(keyRing);
                             keyRing.items.push(new Chars(0, 0, t.toFixed(1), keyRing));
                             for (let i = 0; i < 4; i++) keyRing.items.push(new Chars(0, 0, "1.0", keyRing));
-                            keyRing.CalculateLayout(); ring.items.push(new Joint(0, 0, keyRing, ring));
+                            keyRing.CalculateLayout();
+                            ring.items.push(new Joint(0, 0, keyRing, ring));
+                        });
+                        break;
+                    case "curve":
+                        ring.items = ring.items.slice(0, 1);
+                        [{ t: 0, v: 0 }, { t: 1, v: 1 }].forEach(p => {
+                            const keyRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
+                            rings.push(keyRing);
+                            keyRing.visualEffect = "curve-sub";
+                            keyRing.items.push(new Chars(0, 0, p.t.toFixed(1), keyRing));
+                            keyRing.items.push(new Chars(0, 0, p.v.toFixed(1), keyRing));
+                            keyRing.CalculateLayout();
+                            ring.items.push(new Joint(0, 0, keyRing, ring));
                         });
                         break;
                 }
-                closePanel(); ring.CalculateLayout(); if (typeof alignConnectedRings === 'function') alignConnectedRings(ring); setTimeout(() => createRingPanel(ring), 10);
+                closePanel();
+                ring.CalculateLayout();
+                if (typeof alignConnectedRings === 'function') alignConnectedRings(ring);
+                setTimeout(() => createRingPanel(ring), 10);
             });
 
             if (ring.visualEffect === 'color') {
@@ -273,19 +290,56 @@ function createRingPanel(ring) {
                 const { alphaKeys, colorKeys } = parseGradientData(ring);
                 let gradientCSS = 'linear-gradient(to right, #888, #888)';
                 if (colorKeys.length > 0) {
-                    const stops = [];
-                    for (let i = 0; i <= 10; i++) {
-                        const t = i / 10;
-                        // (簡易補間ロジック省略 - ui_visual.jsのものと重複するため、実運用では共通化推奨だがここでは埋め込み)
-                        // ...
-                        stops.push(`rgba(128,128,128,1) ${t * 100}%`); // 簡易表示
-                    }
-                    // プレビューは正確でなくてもエディタを開けばよいので、ここではシンプルな表示にするか、ui_visualのロジックを持ってくる
-                    gradientCSS = `linear-gradient(to right, white, black)`; // 簡易
+                    gradientCSS = `linear-gradient(to right, white, black)`;
                 }
                 createDiv('').parent(gradContainer).style('width', '100%').style('height', '100%').style('background', gradientCSS);
                 createDiv('Edit Gradient').parent(gradContainer).addClass('preview-label').style('position', 'absolute').style('top', '50%').style('left', '50%').style('transform', 'translate(-50%, -50%)');
                 gradContainer.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); closePanel(); createGradientEditorPanel(ring); });
+            }
+
+            if (ring.visualEffect === 'curve') {
+                const curveContainer = createDiv('').parent(contentArea).addClass('preview-box');
+
+                // SVG Preview
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(svgNS, "svg");
+                svg.setAttribute("width", "100%");
+                svg.setAttribute("height", "100%");
+                svg.style.backgroundColor = "#222";
+
+                const polyline = document.createElementNS(svgNS, "polyline");
+                polyline.setAttribute("fill", "none");
+                polyline.setAttribute("stroke", "#0f0");
+                polyline.setAttribute("stroke-width", "2");
+
+                const points = [];
+                ring.items.forEach(item => {
+                    if (item && item.type === 'joint' && item.value instanceof ArrayRing) {
+                        const childRing = item.value;
+                        if (childRing.items.length >= 3) {
+                            const getVal = (idx) => (childRing.items[idx] && childRing.items[idx].value) ? parseFloat(childRing.items[idx].value) : 0;
+                            points.push({ t: getVal(1), val: getVal(2) });
+                        }
+                    }
+                });
+                points.sort((a, b) => a.t - b.t);
+
+                // Using viewBox
+                svg.setAttribute("viewBox", "0 0 100 100");
+                svg.setAttribute("preserveAspectRatio", "none");
+
+                let pointsStr = "";
+                points.forEach(p => {
+                    pointsStr += `${p.t * 100},${(1 - p.val) * 100} `;
+                });
+                polyline.setAttribute("points", pointsStr);
+
+                svg.appendChild(polyline);
+                curveContainer.elt.appendChild(svg);
+
+                createDiv('Edit Curve').parent(curveContainer).addClass('preview-label').style('position', 'absolute').style('top', '50%').style('left', '50%').style('transform', 'translate(-50%, -50%)');
+
+                curveContainer.elt.addEventListener('mousedown', (e) => { e.stopPropagation(); closePanel(); createCurveEditorPanel(ring); });
             }
         }
 

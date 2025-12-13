@@ -497,7 +497,362 @@ function createGradientEditorPanel(ring, selectionState = null) {
     let onDrag, onStopDrag;
 }
 
-// Helper functions (same as before)
+/**
+ * カーブエディタパネルを作成します。
+ */
+function createCurveEditorPanel(ring) {
+    const closePanel = () => {
+        if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; }
+    };
+
+    const panelResult = createBasePanel('Curve Editor', closePanel);
+    if (!panelResult) return;
+    const { contentArea } = panelResult;
+
+    // ダークテーマ適用
+    currentUiPanel.addClass('dark-theme');
+    currentUiPanel.style('width', '360px');
+
+    // State Initialization
+    let { points, maxValue, minValue } = parseCurveData(ring);
+    if (points.length === 0) {
+        points = [{ t: 0, val: minValue, id: 'start' }, { t: 1, val: maxValue, id: 'end' }];
+    }
+
+    let selectedPoint = null;
+
+    const saveData = () => applyCurveToRing(ring, points, maxValue, minValue);
+
+    // UI Layout
+    // Min/Max Value Input Area
+    const headerControls = createDiv('');
+    headerControls.parent(contentArea);
+    headerControls.addClass('ui-row');
+    headerControls.style('justify-content', 'flex-end');
+    headerControls.style('padding-bottom', '5px');
+
+    // Min Value Input
+    createDiv('Min:').parent(headerControls).addClass('ui-label');
+    const minValInput = createDiv(minValue.toString());
+    minValInput.parent(headerControls);
+    minValInput.addClass('hex-input');
+    minValInput.style('width', '40px');
+    minValInput.style('margin-right', '10px');
+
+    minValInput.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const inputVal = prompt("Enter Min Value:", minValue);
+        if (inputVal !== null) {
+            const val = parseFloat(inputVal);
+            if (!isNaN(val)) {
+                minValue = val;
+                minValInput.html(minValue);
+                render();
+                updateControls();
+                saveData();
+            }
+        }
+    });
+
+    // Max Value Input
+    createDiv('Max:').parent(headerControls).addClass('ui-label');
+    const maxValInput = createDiv(maxValue.toString());
+    maxValInput.parent(headerControls);
+    maxValInput.addClass('hex-input'); // Reuse hex-input style
+    maxValInput.style('width', '40px');
+
+    maxValInput.elt.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const inputVal = prompt("Enter Max Value:", maxValue);
+        if (inputVal !== null) {
+            const val = parseFloat(inputVal);
+            if (!isNaN(val) && val > minValue) {
+                maxValue = val;
+                maxValInput.html(maxValue); // Update display
+                render();
+                updateControls();
+                saveData();
+            }
+        }
+    });
+
+    const editorContainer = createDiv('');
+    editorContainer.parent(contentArea);
+    editorContainer.addClass('ce-editor-container');
+
+    // グリッド線とラベルを更新する関数
+    const updateGrid = () => {
+        // 既存のグリッド要素を削除
+        editorContainer.elt.querySelectorAll('.ce-grid-line-h').forEach(e => e.remove());
+        editorContainer.elt.querySelectorAll('.ce-grid-line-v').forEach(e => e.remove());
+        editorContainer.elt.querySelectorAll('.ce-grid-label').forEach(e => e.remove());
+        editorContainer.elt.querySelectorAll('.ce-grid-line-h-zero').forEach(e => e.remove());
+
+        // 縦線（時間軸）
+        for (let i = 1; i < 4; i++) {
+            createDiv('').parent(editorContainer).addClass('ce-grid-line-v').style('left', `${i * 25}%`);
+        }
+
+        // 横線と目盛り（値軸）
+        const steps = 4;
+        for (let i = 0; i <= steps; i++) {
+            const ratio = i / steps;
+            const val = minValue + (maxValue - minValue) * ratio;
+            const yPos = (1 - ratio) * 100; // topからの%
+
+            // 線 (端以外)
+            if (i > 0 && i < steps) {
+                // 通常のグリッド線
+                if (Math.abs(val) > 0.001) {
+                    const line = createDiv('');
+                    line.parent(editorContainer);
+                    line.addClass('ce-grid-line-h');
+                    line.style('top', `${yPos}%`);
+                }
+            }
+
+            // ラベル (左寄せ)
+            const label = createDiv(val.toFixed(2));
+            label.parent(editorContainer);
+            label.addClass('ce-grid-label');
+            label.style('position', 'absolute');
+            label.style('left', '2px'); // 左寄せ
+            label.style('top', `${yPos}%`);
+            label.style('transform', 'translateY(-50%)');
+            label.style('font-size', '10px');
+            label.style('color', '#888');
+            label.style('pointer-events', 'none');
+            label.style('text-shadow', '1px 1px 0 #000');
+        }
+
+        // Y=0 の線 (範囲内にある場合)
+        if (minValue <= 0 && maxValue >= 0) {
+            const zeroRatio = (0 - minValue) / (maxValue - minValue);
+            const zeroYPos = (1 - zeroRatio) * 100;
+
+            const zeroLine = createDiv('');
+            zeroLine.parent(editorContainer);
+            zeroLine.addClass('ce-grid-line-h-zero');
+            // スタイルを直接適用 (またはCSSに追加)
+            zeroLine.style('position', 'absolute');
+            zeroLine.style('left', '0');
+            zeroLine.style('right', '0');
+            zeroLine.style('height', '2px');
+            zeroLine.style('background-color', 'rgba(255, 255, 255, 0.5)'); // 太めの白線
+            zeroLine.style('top', `${zeroYPos}%`);
+            zeroLine.style('pointer-events', 'none');
+        }
+    };
+
+    // SVG Layer for lines
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svgLayer = document.createElementNS(svgNS, "svg");
+    svgLayer.setAttribute("class", "ce-svg-layer");
+    editorContainer.elt.appendChild(svgLayer);
+
+    const polyline = document.createElementNS(svgNS, "path"); // pathに変更
+    polyline.setAttribute("fill", "none");
+    polyline.setAttribute("stroke", "#00ff00");
+    polyline.setAttribute("stroke-width", "2");
+    svgLayer.appendChild(polyline);
+
+    const controlsDiv = createDiv('');
+    controlsDiv.parent(contentArea);
+    controlsDiv.addClass('ge-controls'); // Reuse styles
+
+    const render = () => {
+        updateGrid();
+
+        // Render Points
+        editorContainer.elt.querySelectorAll('.ce-point').forEach(e => e.remove());
+
+        // Sort points by t
+        points.sort((a, b) => a.t - b.t);
+
+        const width = editorContainer.elt.offsetWidth;
+        const height = editorContainer.elt.offsetHeight;
+
+        // Catmull-Rom スプラインを使用してパスを生成
+        const pathD = getSplinePath(points, width, height, maxValue, minValue);
+        polyline.setAttribute("d", pathD);
+
+        const range = maxValue - minValue;
+
+        points.forEach(p => {
+            const x = p.t * width;
+            const normalizedVal = (p.val - minValue) / range;
+            const y = (1 - normalizedVal) * height;
+
+            const dot = createDiv('');
+            dot.parent(editorContainer);
+            dot.addClass('ce-point');
+            dot.style('left', `${x}px`);
+            dot.style('top', `${y}px`);
+
+            if (p === selectedPoint) dot.addClass('selected');
+
+            dot.elt.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                selectedPoint = p;
+                render();
+                updateControls();
+
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startT = p.t;
+                const startVal = p.val;
+
+                const dragMove = (ev) => {
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+
+                    p.t = Math.max(0, Math.min(1, startT + dx / width));
+
+                    // 値の更新ロジック修正
+                    const valChange = -(dy / height) * range;
+                    p.val = Math.max(minValue, Math.min(maxValue, startVal + valChange));
+
+                    render();
+                    updateControls();
+                };
+
+                const dragUp = () => {
+                    window.removeEventListener('mousemove', dragMove);
+                    window.removeEventListener('mouseup', dragUp);
+                    saveData();
+                };
+                window.addEventListener('mousemove', dragMove);
+                window.addEventListener('mouseup', dragUp);
+            });
+        });
+    };
+
+    editorContainer.elt.addEventListener('dblclick', (e) => {
+        // Add point
+        const rect = editorContainer.elt.getBoundingClientRect();
+        const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+        // Y coordinate to Value
+        const yRatio = 1 - (e.clientY - rect.top) / rect.height; // 0 (bottom) to 1 (top)
+        const range = maxValue - minValue;
+        const val = Math.max(minValue, Math.min(maxValue, minValue + yRatio * range));
+
+        const newPoint = { t, val, id: Date.now() };
+        points.push(newPoint);
+        selectedPoint = newPoint;
+        render();
+        updateControls();
+        saveData();
+    });
+
+    const updateControls = () => {
+        controlsDiv.html('');
+        if (!selectedPoint) {
+            createDiv('Double click or use Add btn to key.<br>Drag point to move.').parent(controlsDiv).style('color', '#888').style('font-size', '12px');
+        }
+
+        const inputGroup = createDiv('').parent(controlsDiv).addClass('ui-row');
+        if (selectedPoint) {
+            createDiv('T:').parent(inputGroup).addClass('ui-label');
+            const tInput = createInput((selectedPoint.t).toFixed(3)).parent(inputGroup).addClass('ui-input-dark').style('width', '40px');
+
+            createDiv('V:').parent(inputGroup).addClass('ui-label');
+            const vInput = createInput((selectedPoint.val).toFixed(3)).parent(inputGroup).addClass('ui-input-dark').style('width', '40px');
+
+            const updateFromInputs = () => {
+                selectedPoint.t = Math.max(0, Math.min(1, parseFloat(tInput.value()) || 0));
+                selectedPoint.val = Math.max(minValue, Math.min(maxValue, parseFloat(vInput.value()) || 0));
+                render();
+                saveData();
+            };
+
+            tInput.changed(updateFromInputs);
+            vInput.changed(updateFromInputs);
+        }
+
+        const btnGroup = createDiv('').parent(controlsDiv).addClass('ui-row').style('margin-left', 'auto').style('gap', '4px');
+
+        const addBtn = createButton('Add').parent(btnGroup).addClass('ui-btn').style('padding', '2px 6px');
+        addBtn.elt.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            const newPoint = { t: 0.5, val: minValue + (maxValue - minValue) * 0.5, id: Date.now() };
+            points.push(newPoint);
+            selectedPoint = newPoint;
+            render();
+            updateControls();
+            saveData();
+        });
+
+        const delBtn = createButton('Del').parent(btnGroup).addClass('ui-btn').addClass('ui-btn-danger').style('padding', '2px 6px');
+        delBtn.elt.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            if (points.length > 2) {
+                if (selectedPoint) {
+                    points = points.filter(p => p !== selectedPoint);
+                    selectedPoint = null;
+                    render();
+                    updateControls();
+                    saveData();
+                } else {
+                    alert("Select a point to delete.");
+                }
+            } else {
+                alert("Cannot delete. Minimum 2 points required.");
+            }
+        });
+    };
+
+    // Observe Resize to redraw (simple hack)
+    const ro = new ResizeObserver(() => render());
+    ro.observe(editorContainer.elt);
+
+    render();
+    updateControls();
+}
+
+/**
+ * Catmull-RomスプラインをSVGの三次ベジェ曲線パスデータに変換します。
+ * @param {Array} points - ソートされた {t, val} の配列
+ * @param {number} width - 描画領域の幅
+ * @param {number} height - 描画領域の高さ
+ * @param {number} maxValue - 値の最大値
+ * @param {number} minValue - 値の最小値
+ * @returns {string} SVG path要素のd属性文字列
+ */
+function getSplinePath(points, width, height, maxValue, minValue) {
+    if (points.length < 2) return "";
+
+    const range = maxValue - minValue;
+    if (range === 0) return "";
+
+    // 座標変換ヘルパー
+    const toX = t => t * width;
+    const toY = v => (1 - (v - minValue) / range) * height; // Y反転 & スケール
+
+    const p = points.map(pt => ({ x: toX(pt.t), y: toY(pt.val) }));
+
+    let d = `M ${p[0].x} ${p[0].y}`;
+
+    for (let i = 0; i < p.length - 1; i++) {
+        const p0 = i > 0 ? p[i - 1] : p[0];
+        const p1 = p[i];
+        const p2 = p[i + 1];
+        const p3 = i < p.length - 2 ? p[i + 2] : p2;
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+
+    return d;
+}
+
+
+// Helper functions
 function parseGradientData(ring) {
     const alphaKeys = [], colorKeys = [];
     ring.items.forEach(item => {
@@ -575,6 +930,73 @@ function applyGradientToRing(ring, alphaKeys, colorKeys) {
 
     if (existingJoints.length > times.length) {
         for (let i = times.length; i < existingJoints.length; i++) {
+            const joint = existingJoints[i], childRing = joint.value;
+            const globalIdx = rings.indexOf(childRing);
+            if (globalIdx !== -1) rings.splice(globalIdx, 1);
+        }
+    }
+    ring.items = newItems; ring.CalculateLayout();
+    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring);
+}
+
+// Curve Utility Functions
+function parseCurveData(ring) {
+    const points = [];
+    //リングのプロパティから取得
+    let maxValue = ring.maxValue !== undefined ? ring.maxValue : 1.0;
+    let minValue = ring.minValue !== undefined ? ring.minValue : 0.0;
+
+    ring.items.forEach(item => {
+        if (item && item.type === 'joint' && item.value instanceof ArrayRing) {
+            const childRing = item.value;
+            if (childRing.items.length >= 3) {
+                const getVal = (idx) => (childRing.items[idx] && childRing.items[idx].value) ? parseFloat(childRing.items[idx].value) : 0;
+                const t = getVal(1);
+                const val = getVal(2);
+                const id = Math.random().toString(36).substr(2, 9);
+                points.push({ t, val, id });
+            }
+        }
+    });
+    points.sort((a, b) => a.t - b.t);
+    return { points, maxValue, minValue };
+}
+
+function applyCurveToRing(ring, points, maxValue, minValue) {
+    points.sort((a, b) => a.t - b.t);
+    const existingJoints = ring.items.filter(item => item instanceof Joint && item.value instanceof ArrayRing);
+    let newItems = [];
+    if (ring.items.length > 0 && ring.items[0] instanceof Sigil) newItems.push(ring.items[0]);
+    else newItems.push(new Sigil(0, 0, "COMPLETE", ring));
+
+    // Min/Maxをリングのプロパティに保存
+    ring.maxValue = maxValue;
+    ring.minValue = minValue;
+
+    const fmt = (n) => parseFloat(n.toFixed(3)).toString();
+
+    points.forEach((p, i) => {
+        let targetRing, targetJoint;
+        if (i < existingJoints.length) {
+            targetJoint = existingJoints[i]; targetRing = targetJoint.value;
+            while (targetRing.items.length < 3) targetRing.items.push(new Chars(0, 0, "0", targetRing));
+            targetRing.items[1].value = fmt(p.t);
+            targetRing.items[2].value = fmt(p.val);
+            targetRing.CalculateLayout();
+        } else {
+            targetRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
+            rings.push(targetRing);
+            targetRing.items.push(new Chars(0, 0, fmt(p.t), targetRing));
+            targetRing.items.push(new Chars(0, 0, fmt(p.val), targetRing));
+            targetRing.CalculateLayout();
+            targetJoint = new Joint(0, 0, targetRing, ring);
+        }
+        newItems.push(targetJoint);
+    });
+
+    // Cleanup extra
+    if (existingJoints.length > points.length) {
+        for (let i = points.length; i < existingJoints.length; i++) {
             const joint = existingJoints[i], childRing = joint.value;
             const globalIdx = rings.indexOf(childRing);
             if (globalIdx !== -1) rings.splice(globalIdx, 1);
