@@ -35,7 +35,7 @@ public class JsCallbackHandler : MonoBehaviour
         }
     }
 
-    /*
+    //*
     void Update()
     {
         // "R"キーを押すとシーンがリロードされる例
@@ -82,7 +82,7 @@ public class JsCallbackHandler : MonoBehaviour
         string parentId;
         string childId;
 
-        spellText = "<~shape (empty)>";
+        spellText = "<~shape (cube)>";
         parentId = "test-id-from-csharp-0";
         systemManager.CreateObjectFromMps(spellText, parentId);
 
