@@ -1,4 +1,141 @@
 /**
+ * リングから軽量なデータ（JSON化可能なオブジェクトや配列）を抽出します。
+ * 参照を切るために、必ず新しいオブジェクトとして返します。
+ */
+function getRingData(ring, mode) {
+    if (mode === 'color') {
+        const r = (ring.items[1] && ring.items[1].value) ? ring.items[1].value : "0";
+        const g = (ring.items[2] && ring.items[2].value) ? ring.items[2].value : "0";
+        const b = (ring.items[3] && ring.items[3].value) ? ring.items[3].value : "0";
+        const a = (ring.items[4] && ring.items[4].value) ? ring.items[4].value : "1";
+        return [r, g, b, a];
+    } else if (mode === 'gradient') {
+        const data = [];
+        ring.items.forEach(item => {
+            if (item && item.type === 'joint' && item.value instanceof ArrayRing) {
+                const sub = item.value;
+                const getV = (i) => (sub.items[i] ? sub.items[i].value : "0");
+                // {t, r, g, b, a} の形式で保存
+                data.push({
+                    t: getV(1), r: getV(2), g: getV(3), b: getV(4), a: getV(5)
+                });
+            }
+        });
+        return JSON.parse(JSON.stringify(data)); // Deep Copy
+    } else if (mode === 'curve') {
+        const data = [];
+        ring.items.forEach(item => {
+            if (item && item.type === 'joint' && item.value instanceof ArrayRing) {
+                const sub = item.value;
+                const getV = (i) => (sub.items[i] ? sub.items[i].value : "0");
+                // {t, val} の形式で保存
+                data.push({ t: getV(1), val: getV(2) });
+            }
+        });
+        return {
+            points: JSON.parse(JSON.stringify(data)), // Deep Copy
+            min: ring.minValue,
+            max: ring.maxValue
+        };
+    }
+    return null;
+}
+
+/**
+ * 軽量データをリングに適用します。
+ * 既存のオブジェクトを可能な限り再利用し、増減が必要な場合のみ生成・削除を行います。
+ */
+function applyRingData(ring, data, mode) {
+    const fmt = (n) => typeof n === 'string' ? n : parseFloat(n).toFixed(3);
+
+    if (mode === 'color') {
+        // items[1]～[4]の値を書き換えるだけ（オブジェクト増減なし）
+        for (let i = 0; i < 4; i++) {
+            if (!ring.items[i + 1]) ring.items[i + 1] = new Chars(0, 0, "0", ring);
+            ring.items[i + 1].value = data[i];
+        }
+        ring.CalculateLayout();
+    }
+    else if (mode === 'gradient' || mode === 'curve') {
+        // 既存のJoint(と接続されたSubRing)を取得
+        const existingJoints = ring.items.filter(item => item && item.type === 'joint' && item.value instanceof ArrayRing);
+        const points = (mode === 'curve') ? data.points : data;
+
+        // Curve用のプロパティ更新
+        if (mode === 'curve') {
+            ring.minValue = data.min;
+            ring.maxValue = data.max;
+        }
+
+        // 1. データを順に適用（既存があれば再利用、なければ新規作成）
+        points.forEach((pt, i) => {
+            let targetRing;
+
+            if (i < existingJoints.length) {
+                // 既存を再利用
+                targetRing = existingJoints[i].value;
+            } else {
+                // 不足分は新規作成
+                targetRing = new ArrayRing({ x: ring.pos.x + 100, y: ring.pos.y + 100 });
+                // グローバル配列に追加
+                rings.push(targetRing);
+
+                // 必要な数のアイテム枠を作成 (Curve:3, Gradient:6)
+                const count = (mode === 'gradient') ? 6 : 3;
+                targetRing.items = [new Sigil(0, 0, "COMPLETE", targetRing)]; // 先頭
+                for (let k = 1; k < count; k++) {
+                    targetRing.items.push(new Chars(0, 0, "0", targetRing));
+                }
+
+                const newJoint = new Joint(0, 0, targetRing, ring);
+                ring.items.push(newJoint);
+            }
+
+            // 値を流し込む (再利用時も新規時もここを通る)
+            if (mode === 'gradient') {
+                if (targetRing.items[1]) targetRing.items[1].value = fmt(pt.t);
+                if (targetRing.items[2]) targetRing.items[2].value = fmt(pt.r);
+                if (targetRing.items[3]) targetRing.items[3].value = fmt(pt.g);
+                if (targetRing.items[4]) targetRing.items[4].value = fmt(pt.b);
+                if (targetRing.items[5]) targetRing.items[5].value = fmt(pt.a);
+            } else {
+                if (targetRing.items[1]) targetRing.items[1].value = fmt(pt.t);
+                if (targetRing.items[2]) targetRing.items[2].value = fmt(pt.val);
+            }
+            targetRing.CalculateLayout();
+        });
+
+        // 2. 余分なJoint/SubRingを削除
+        if (existingJoints.length > points.length) {
+            const itemsToRemove = [];
+            for (let i = points.length; i < existingJoints.length; i++) {
+                const joint = existingJoints[i];
+                const subRing = joint.value;
+
+                // itemsからJointを削除するためのマーク
+                itemsToRemove.push(joint);
+
+                // グローバルringsからサブリングを削除 (これでゴミが残らない)
+                const idx = rings.indexOf(subRing);
+                if (idx !== -1) rings.splice(idx, 1);
+            }
+            // 親リングのitems配列からJointを除去
+            ring.items = ring.items.filter(item => !itemsToRemove.includes(item));
+        }
+
+        ring.CalculateLayout();
+    }
+
+    // レイアウト調整（システム操作のためUndo記録はしない: false）
+    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring, false);
+}
+
+// Actionクラスから呼べるようにグローバルに公開
+window.getRingData = getRingData;
+window.applyRingData = applyRingData;
+
+
+/**
  * ArrayRingの色編集用パネルを作成します。
  */
 function createColorPickerPanel(ring) {
@@ -32,72 +169,74 @@ function createColorPickerPanel(ring) {
     let rgba = getRGBA();
     let [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
 
+    // --- Undo用: 操作開始時のデータを取得 ---
+    let startData = getRingData(ring, 'color');
+
+    // --- Action記録関数 ---
+    const recordAction = () => {
+        const newData = getRingData(ring, 'color');
+        // 値が変わっていなければ記録しない
+        if (JSON.stringify(startData) === JSON.stringify(newData)) return;
+
+        redoStack = [];
+        actionStack.push(new Action("array_data_sync", {
+            ring: ring,
+            oldData: startData, // 値の配列
+            newData: newData,   // 値の配列
+            mode: 'color'
+        }));
+
+        // 次の操作のために更新
+        startData = newData;
+    };
+
     // ===========================================================================
-    // Visual Picker Area (Ring + Square)
+    // Visual Picker Area
     // ===========================================================================
     const pickerContainer = createDiv('');
     pickerContainer.parent(contentArea);
     pickerContainer.addClass('cp-container');
 
-    // --- 1. Hue Ring ---
     const hueRing = createDiv('');
     hueRing.parent(pickerContainer);
     hueRing.addClass('cp-ring');
-
     const hueKnob = createDiv('');
     hueKnob.parent(hueRing);
     hueKnob.addClass('cp-knob');
 
-    // --- 2. Mask ---
-    const mask = createDiv('');
-    mask.parent(pickerContainer);
-    mask.addClass('cp-mask');
+    createDiv('').parent(pickerContainer).addClass('cp-mask');
 
-    // --- 3. SV Square ---
     const svSquare = createDiv('');
     svSquare.parent(pickerContainer);
     svSquare.addClass('cp-sv-square');
-
-    // グラデーションレイヤー
     createDiv('').parent(svSquare).addClass('cp-sv-grad-white');
     createDiv('').parent(svSquare).addClass('cp-sv-grad-black');
-
     const svKnob = createDiv('');
     svKnob.parent(svSquare);
     svKnob.addClass('cp-knob');
-    svKnob.style('border-color', 'black'); // SVノブは黒枠
+    svKnob.style('border-color', 'black');
     svKnob.style('outline', '1px solid white');
 
     // ===========================================================================
     // UI Update Logic
     // ===========================================================================
-    const formatFloat = (val) => {
-        let s = parseFloat(val.toFixed(3)).toString();
-        if (s.indexOf('.') === -1) s += '.0';
-        return s;
-    };
 
-    const applyToRing = () => {
-        ring.items[1].value = formatFloat(rgba.r);
-        ring.items[2].value = formatFloat(rgba.g);
-        ring.items[3].value = formatFloat(rgba.b);
-        ring.items[4].value = formatFloat(rgba.a);
-        if (ring && typeof ring.CalculateLayout === 'function') ring.CalculateLayout();
+    // UI操作中は、Actionを介さずに直接applyRingDataを呼ぶ（軽量化）
+    const applyToRingLocal = () => {
+        const data = [rgba.r, rgba.g, rgba.b, rgba.a].map(n => n.toFixed(3));
+        applyRingData(ring, data, 'color');
     };
 
     const updateUI = (updateInputs = true) => {
-        // Hueノブ位置
         const angle = h * Math.PI * 2;
         const knobX = 100 + 90 * Math.sin(angle);
         const knobY = 100 - 90 * Math.cos(angle);
         hueKnob.style('left', `${knobX}px`);
         hueKnob.style('top', `${knobY}px`);
 
-        // SV矩形背景色
         const pureColor = hsvToRgb(h, 1, 1);
         svSquare.style('background-color', `rgb(${pureColor[0] * 255},${pureColor[1] * 255},${pureColor[2] * 255})`);
 
-        // SVノブ位置
         svKnob.style('left', `${s * 100}%`);
         svKnob.style('top', `${(1 - v) * 100}%`);
 
@@ -116,7 +255,7 @@ function createColorPickerPanel(ring) {
         h = angle / (Math.PI * 2);
         const rgb = hsvToRgb(h, s, v);
         rgba.r = rgb[0]; rgba.g = rgb[1]; rgba.b = rgb[2];
-        applyToRing();
+        applyToRingLocal();
         updateUI();
     };
 
@@ -128,18 +267,20 @@ function createColorPickerPanel(ring) {
         v = 1 - y;
         const rgb = hsvToRgb(h, s, v);
         rgba.r = rgb[0]; rgba.g = rgb[1]; rgba.b = rgb[2];
-        applyToRing();
+        applyToRingLocal();
         updateUI();
     };
 
     const setupDrag = (element, handler) => {
         element.elt.addEventListener('mousedown', (e) => {
             e.stopPropagation();
+            startData = getRingData(ring, 'color'); // ドラッグ開始時のデータを保存
             handler(e);
             const moveHandler = (ev) => handler(ev);
             const upHandler = () => {
                 window.removeEventListener('mousemove', moveHandler);
                 window.removeEventListener('mouseup', upHandler);
+                recordAction(); // ドラッグ終了時に変更があれば記録
             };
             window.addEventListener('mousemove', moveHandler);
             window.addEventListener('mouseup', upHandler);
@@ -163,29 +304,30 @@ function createColorPickerPanel(ring) {
         const row = createDiv('');
         row.parent(controlsContainer);
         row.addClass('slider-row');
-
         createDiv(label).parent(row).addClass('slider-label');
-
         const sliderContainer = createDiv('');
         sliderContainer.parent(row);
         sliderContainer.addClass('slider-track-container');
-
         const bg = createDiv('').parent(sliderContainer).addClass('slider-bg');
         const slider = createInput('', 'range').parent(sliderContainer).addClass('slider-input-range');
         slider.attribute('min', '0').attribute('max', '255').attribute('step', '1');
-
         const handle = createDiv('').parent(sliderContainer).addClass('slider-handle-visual');
-
         const numLabel = createDiv('0').parent(row).addClass('slider-value-display');
-
         sliders[colorKey] = { slider, bg, handle };
         inputs[colorKey] = numLabel;
 
+        // Events
+        slider.elt.addEventListener('mousedown', () => {
+            startData = getRingData(ring, 'color');
+        });
+        slider.elt.addEventListener('change', () => {
+            recordAction();
+        });
         slider.input(() => {
             const val = parseFloat(slider.value()) / 255;
             rgba[colorKey] = val;
             if (colorKey !== 'a') [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
-            applyToRing();
+            applyToRingLocal();
             updateUI(false);
             updateSliderVisuals();
             numLabel.html(Math.floor(val * 255));
@@ -198,21 +340,19 @@ function createColorPickerPanel(ring) {
     createSliderRow('B', 'b');
     createSliderRow('A', 'a');
 
-    // --- Hex Input Area ---
     const hexRow = createDiv('');
     hexRow.parent(controlsContainer);
     hexRow.addClass('slider-row');
     hexRow.style('justify-content', 'space-between');
     hexRow.style('margin-top', '4px');
-
     createDiv('Hexadecimal').parent(hexRow).addClass('slider-label').style('width', 'auto');
-
     const hexInput = createDiv('FFFFFF');
     hexInput.parent(hexRow);
     hexInput.addClass('hex-input');
 
     hexInput.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
+        startData = getRingData(ring, 'color');
         const currentHex = rgbToHex(rgba.r, rgba.g, rgba.b);
         const inputVal = prompt("Enter Hex Color (e.g., FFFFFF or #FFFFFF):", currentHex);
         if (inputVal !== null) {
@@ -220,8 +360,9 @@ function createColorPickerPanel(ring) {
             if (rgb) {
                 rgba.r = rgb.r; rgba.g = rgb.g; rgba.b = rgb.b;
                 [h, s, v] = rgbToHsv(rgba.r, rgba.g, rgba.b);
-                applyToRing();
+                applyToRingLocal();
                 updateUI();
+                recordAction();
             }
         }
     });
@@ -275,6 +416,10 @@ function createGradientEditorPanel(ring, selectionState = null) {
     if (alphaKeys.length === 0) alphaKeys = [{ t: 0, val: 1, id: 'a_start' }, { t: 1, val: 1, id: 'a_end' }];
     if (colorKeys.length === 0) colorKeys = [{ t: 0, r: 1, g: 1, b: 1, id: 'c_start' }, { t: 1, r: 1, g: 1, b: 1, id: 'c_end' }];
 
+    // ID付与 (UI用)
+    const addId = (k) => { if (!k.id) k.id = Math.random().toString(36).substr(2, 9); return k; };
+    alphaKeys.forEach(addId); colorKeys.forEach(addId);
+
     let selectedKey = null, selectedType = null;
     if (selectionState) {
         const keys = selectionState.type === 'alpha' ? alphaKeys : colorKeys;
@@ -296,7 +441,6 @@ function createGradientEditorPanel(ring, selectionState = null) {
         }
         return 1;
     };
-
     const lerpColor = (t) => {
         if (colorKeys.length === 0) return { r: 1, g: 1, b: 1 };
         if (t <= colorKeys[0].t) return colorKeys[0];
@@ -326,7 +470,44 @@ function createGradientEditorPanel(ring, selectionState = null) {
         gradientPreview.style('background', `linear-gradient(to right, ${stops.join(', ')})`);
     };
 
-    const saveData = () => applyGradientToRing(ring, alphaKeys, colorKeys);
+    // --- Action Recording with Data Sync ---
+    let startData = getRingData(ring, 'gradient');
+
+    const saveData = (isTransient = false) => {
+        // UIの状態から現在のデータ配列を構築
+        const currentData = [];
+        const timeSet = new Set();
+        alphaKeys.forEach(k => timeSet.add(k.t));
+        colorKeys.forEach(k => timeSet.add(k.t));
+        const times = Array.from(timeSet).sort((a, b) => a - b);
+
+        times.forEach(t => {
+            const a = lerpAlpha(t);
+            const c = lerpColor(t);
+            currentData.push({ t, r: c.r, g: c.g, b: c.b, a });
+        });
+
+        // リアルタイム反映（既存オブジェクトを再利用）
+        applyRingData(ring, currentData, 'gradient');
+
+        // ドラッグ中は記録しない
+        if (isTransient) return;
+
+        // 記録用
+        const newData = getRingData(ring, 'gradient'); // 正規化されたデータを再取得
+        if (JSON.stringify(startData) === JSON.stringify(newData)) return;
+
+        redoStack = [];
+        actionStack.push(new Action("array_data_sync", {
+            ring: ring,
+            oldData: startData,
+            newData: newData,
+            mode: 'gradient'
+        }));
+
+        startData = newData; // 更新
+    };
+
 
     // UI Layout
     const topContainer = createDiv('');
@@ -379,6 +560,7 @@ function createGradientEditorPanel(ring, selectionState = null) {
 
             m.elt.addEventListener('mousedown', (e) => {
                 e.stopPropagation();
+                startData = getRingData(ring, 'gradient'); // 操作開始
                 selectedKey = key; selectedType = type;
                 renderMarkers(); updateControls();
                 const startX = e.clientX;
@@ -391,11 +573,12 @@ function createGradientEditorPanel(ring, selectionState = null) {
                     if (type === 'alpha') alphaKeys.sort((a, b) => a.t - b.t);
                     else colorKeys.sort((a, b) => a.t - b.t);
                     renderMarkers(); updatePreview(); updateControls();
+                    saveData(true); // ドラッグ中
                 };
                 const dragUp = () => {
                     window.removeEventListener('mousemove', dragMove);
                     window.removeEventListener('mouseup', dragUp);
-                    saveData();
+                    saveData(false); // 確定
                 };
                 window.addEventListener('mousemove', dragMove);
                 window.addEventListener('mouseup', dragUp);
@@ -407,6 +590,7 @@ function createGradientEditorPanel(ring, selectionState = null) {
 
     gradientBar.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation(); e.preventDefault();
+        startData = getRingData(ring, 'gradient'); // 操作開始
         const rect = gradientBar.elt.getBoundingClientRect();
         const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
         const y = e.clientY - rect.top;
@@ -421,7 +605,8 @@ function createGradientEditorPanel(ring, selectionState = null) {
             colorKeys.push(newKey); colorKeys.sort((a, b) => a.t - b.t);
             selectedKey = newKey; selectedType = 'color';
         }
-        renderMarkers(); updatePreview(); updateControls(); saveData();
+        renderMarkers(); updatePreview(); updateControls();
+        saveData(false);
     });
 
     const updateControls = () => {
@@ -435,12 +620,14 @@ function createGradientEditorPanel(ring, selectionState = null) {
         const locInput = createInput((selectedKey.t * 100).toFixed(1)).parent(locGroup).addClass('ui-input-dark').style('width', '35px').style('text-align', 'right');
         createDiv('%').parent(locGroup).addClass('ui-label');
 
+        locInput.elt.addEventListener('focus', () => { startData = getRingData(ring, 'gradient'); });
         locInput.elt.onchange = () => {
             let val = parseFloat(locInput.value());
             if (isNaN(val)) return;
             selectedKey.t = Math.max(0, Math.min(100, val)) / 100;
             if (selectedType === 'alpha') alphaKeys.sort((a, b) => a.t - b.t); else colorKeys.sort((a, b) => a.t - b.t);
-            renderMarkers(); updatePreview(); saveData();
+            renderMarkers(); updatePreview();
+            saveData(false);
         };
 
         if (selectedType === 'alpha') {
@@ -450,10 +637,19 @@ function createGradientEditorPanel(ring, selectionState = null) {
             const alphaNum = createInput(Math.floor(selectedKey.val * 255)).parent(valGroup).addClass('ui-input-dark').style('width', '30px').style('text-align', 'right');
 
             const onAlphaChange = (v) => {
-                selectedKey.val = v / 255; renderMarkers(); updatePreview(); saveData();
+                selectedKey.val = v / 255; renderMarkers(); updatePreview();
             };
-            alphaSlider.input(() => { alphaNum.value(alphaSlider.value()); onAlphaChange(alphaSlider.value()); });
+
+            alphaSlider.elt.addEventListener('mousedown', () => { startData = getRingData(ring, 'gradient'); });
+            alphaSlider.elt.addEventListener('mouseup', () => saveData(false));
+            alphaSlider.input(() => {
+                alphaNum.value(alphaSlider.value()); onAlphaChange(alphaSlider.value());
+                saveData(true);
+            });
+
+            alphaNum.elt.addEventListener('focus', () => { startData = getRingData(ring, 'gradient'); });
             alphaNum.input(() => { let v = Math.max(0, Math.min(255, parseInt(alphaNum.value()) || 0)); alphaSlider.value(v); onAlphaChange(v); });
+            alphaNum.elt.onchange = () => saveData(false);
 
         } else {
             const colGroup = createDiv('').parent(controlsDiv).addClass('ui-row');
@@ -466,15 +662,20 @@ function createGradientEditorPanel(ring, selectionState = null) {
             colorBox.elt.addEventListener('mousedown', (e) => {
                 e.stopPropagation();
                 const idx = colorKeys.indexOf(selectedKey);
+                // モック作成時もCharsを使う
                 const mockRing = {
-                    items: [null, { value: selectedKey.r }, { value: selectedKey.g }, { value: selectedKey.b }, { value: 1.0 }],
-                    CalculateLayout: () => {
+                    items: [null, new Chars(0, 0, String(selectedKey.r), null), new Chars(0, 0, String(selectedKey.g), null), new Chars(0, 0, String(selectedKey.b), null), new Chars(0, 0, "1.0", null)],
+                    CalculateLayout: () => { },
+                    onColorPickerClose: () => {
+                        // カラーピッカーから戻ってきたら値を反映して保存
                         selectedKey.r = parseFloat(mockRing.items[1].value);
                         selectedKey.g = parseFloat(mockRing.items[2].value);
                         selectedKey.b = parseFloat(mockRing.items[3].value);
-                        saveData();
-                    },
-                    onColorPickerClose: () => createGradientEditorPanel(ring, { type: 'color', index: idx })
+                        // startDataはクリック前に取っているはずだが、ピッカーを開く前に保存しておく必要がある
+                        startData = getRingData(ring, 'gradient');
+                        saveData(false);
+                        createGradientEditorPanel(ring, { type: 'color', index: idx });
+                    }
                 };
                 closePanel(); createColorPickerPanel(mockRing);
             });
@@ -484,9 +685,11 @@ function createGradientEditorPanel(ring, selectionState = null) {
         delBtn.elt.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             if ((selectedType === 'alpha' && alphaKeys.length > 1) || (selectedType === 'color' && colorKeys.length > 1)) {
+                startData = getRingData(ring, 'gradient'); // 削除前保存
                 if (selectedType === 'alpha') alphaKeys = alphaKeys.filter(k => k !== selectedKey);
                 else colorKeys = colorKeys.filter(k => k !== selectedKey);
-                selectedKey = null; renderMarkers(); updatePreview(); updateControls(); saveData();
+                selectedKey = null; renderMarkers(); updatePreview(); updateControls();
+                saveData(false);
             } else {
                 alert("Cannot delete the last key.");
             }
@@ -521,7 +724,34 @@ function createCurveEditorPanel(ring) {
 
     let selectedPoint = null;
 
-    const saveData = () => applyCurveToRing(ring, points, maxValue, minValue);
+    // --- Action Recording ---
+    let startData = getRingData(ring, 'curve');
+
+    const saveData = (isTransient = false) => {
+        // 現在のpointsからデータを構築
+        const currentData = {
+            points: points,
+            min: minValue,
+            max: maxValue
+        };
+
+        // リアルタイム反映
+        applyRingData(ring, currentData, 'curve');
+
+        if (isTransient) return;
+
+        const newData = getRingData(ring, 'curve');
+        if (JSON.stringify(startData) === JSON.stringify(newData)) return;
+
+        redoStack = [];
+        actionStack.push(new Action("array_data_sync", {
+            ring: ring,
+            oldData: startData,
+            newData: newData,
+            mode: 'curve'
+        }));
+        startData = newData;
+    };
 
     // UI Layout
     // Min/Max Value Input Area
@@ -541,6 +771,7 @@ function createCurveEditorPanel(ring) {
 
     minValInput.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
+        startData = getRingData(ring, 'curve'); // 開始
         const inputVal = prompt("Enter Min Value:", minValue);
         if (inputVal !== null) {
             const val = parseFloat(inputVal);
@@ -549,7 +780,7 @@ function createCurveEditorPanel(ring) {
                 minValInput.html(minValue);
                 render();
                 updateControls();
-                saveData();
+                saveData(false);
             }
         }
     });
@@ -563,6 +794,7 @@ function createCurveEditorPanel(ring) {
 
     maxValInput.elt.addEventListener('mousedown', (e) => {
         e.stopPropagation();
+        startData = getRingData(ring, 'curve'); // 開始
         const inputVal = prompt("Enter Max Value:", maxValue);
         if (inputVal !== null) {
             const val = parseFloat(inputVal);
@@ -571,7 +803,7 @@ function createCurveEditorPanel(ring) {
                 maxValInput.html(maxValue); // Update display
                 render();
                 updateControls();
-                saveData();
+                saveData(false);
             }
         }
     });
@@ -582,41 +814,32 @@ function createCurveEditorPanel(ring) {
 
     // グリッド線とラベルを更新する関数
     const updateGrid = () => {
-        // 既存のグリッド要素を削除
         editorContainer.elt.querySelectorAll('.ce-grid-line-h').forEach(e => e.remove());
         editorContainer.elt.querySelectorAll('.ce-grid-line-v').forEach(e => e.remove());
         editorContainer.elt.querySelectorAll('.ce-grid-label').forEach(e => e.remove());
         editorContainer.elt.querySelectorAll('.ce-grid-line-h-zero').forEach(e => e.remove());
 
-        // 縦線（時間軸）
         for (let i = 1; i < 4; i++) {
             createDiv('').parent(editorContainer).addClass('ce-grid-line-v').style('left', `${i * 25}%`);
         }
 
-        // 横線と目盛り（値軸）
         const steps = 4;
         for (let i = 0; i <= steps; i++) {
             const ratio = i / steps;
             const val = minValue + (maxValue - minValue) * ratio;
             const yPos = (1 - ratio) * 100; // topからの%
 
-            // 線 (端以外)
             if (i > 0 && i < steps) {
-                // 通常のグリッド線
                 if (Math.abs(val) > 0.001) {
-                    const line = createDiv('');
-                    line.parent(editorContainer);
-                    line.addClass('ce-grid-line-h');
-                    line.style('top', `${yPos}%`);
+                    createDiv('').parent(editorContainer).addClass('ce-grid-line-h').style('top', `${yPos}%`);
                 }
             }
 
-            // ラベル (左寄せ)
             const label = createDiv(val.toFixed(2));
             label.parent(editorContainer);
             label.addClass('ce-grid-label');
             label.style('position', 'absolute');
-            label.style('left', '2px'); // 左寄せ
+            label.style('left', '2px');
             label.style('top', `${yPos}%`);
             label.style('transform', 'translateY(-50%)');
             label.style('font-size', '10px');
@@ -625,20 +848,17 @@ function createCurveEditorPanel(ring) {
             label.style('text-shadow', '1px 1px 0 #000');
         }
 
-        // Y=0 の線 (範囲内にある場合)
         if (minValue <= 0 && maxValue >= 0) {
             const zeroRatio = (0 - minValue) / (maxValue - minValue);
             const zeroYPos = (1 - zeroRatio) * 100;
-
             const zeroLine = createDiv('');
             zeroLine.parent(editorContainer);
             zeroLine.addClass('ce-grid-line-h-zero');
-            // スタイルを直接適用 (またはCSSに追加)
             zeroLine.style('position', 'absolute');
             zeroLine.style('left', '0');
             zeroLine.style('right', '0');
             zeroLine.style('height', '2px');
-            zeroLine.style('background-color', 'rgba(255, 255, 255, 0.5)'); // 太めの白線
+            zeroLine.style('background-color', 'rgba(255, 255, 255, 0.5)');
             zeroLine.style('top', `${zeroYPos}%`);
             zeroLine.style('pointer-events', 'none');
         }
@@ -662,17 +882,12 @@ function createCurveEditorPanel(ring) {
 
     const render = () => {
         updateGrid();
-
-        // Render Points
         editorContainer.elt.querySelectorAll('.ce-point').forEach(e => e.remove());
-
-        // Sort points by t
         points.sort((a, b) => a.t - b.t);
 
         const width = editorContainer.elt.offsetWidth;
         const height = editorContainer.elt.offsetHeight;
 
-        // Catmull-Rom スプラインを使用してパスを生成
         const pathD = getSplinePath(points, width, height, maxValue, minValue);
         polyline.setAttribute("d", pathD);
 
@@ -693,6 +908,7 @@ function createCurveEditorPanel(ring) {
 
             dot.elt.addEventListener('mousedown', (e) => {
                 e.stopPropagation();
+                startData = getRingData(ring, 'curve'); // ドラッグ開始
                 selectedPoint = p;
                 render();
                 updateControls();
@@ -705,21 +921,16 @@ function createCurveEditorPanel(ring) {
                 const dragMove = (ev) => {
                     const dx = ev.clientX - startX;
                     const dy = ev.clientY - startY;
-
                     p.t = Math.max(0, Math.min(1, startT + dx / width));
-
-                    // 値の更新ロジック修正
                     const valChange = -(dy / height) * range;
                     p.val = Math.max(minValue, Math.min(maxValue, startVal + valChange));
-
-                    render();
-                    updateControls();
+                    render(); updateControls(); saveData(true);
                 };
 
                 const dragUp = () => {
                     window.removeEventListener('mousemove', dragMove);
                     window.removeEventListener('mouseup', dragUp);
-                    saveData();
+                    saveData(false); // 確定
                 };
                 window.addEventListener('mousemove', dragMove);
                 window.addEventListener('mouseup', dragUp);
@@ -728,11 +939,9 @@ function createCurveEditorPanel(ring) {
     };
 
     editorContainer.elt.addEventListener('dblclick', (e) => {
-        // Add point
+        startData = getRingData(ring, 'curve'); // 追加開始
         const rect = editorContainer.elt.getBoundingClientRect();
         const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-
-        // Y coordinate to Value
         const yRatio = 1 - (e.clientY - rect.top) / rect.height; // 0 (bottom) to 1 (top)
         const range = maxValue - minValue;
         const val = Math.max(minValue, Math.min(maxValue, minValue + yRatio * range));
@@ -742,7 +951,7 @@ function createCurveEditorPanel(ring) {
         selectedPoint = newPoint;
         render();
         updateControls();
-        saveData();
+        saveData(false);
     });
 
     const updateControls = () => {
@@ -759,11 +968,14 @@ function createCurveEditorPanel(ring) {
             createDiv('V:').parent(inputGroup).addClass('ui-label');
             const vInput = createInput((selectedPoint.val).toFixed(3)).parent(inputGroup).addClass('ui-input-dark').style('width', '40px');
 
+            tInput.elt.addEventListener('focus', () => { startData = getRingData(ring, 'curve'); });
+            vInput.elt.addEventListener('focus', () => { startData = getRingData(ring, 'curve'); });
+
             const updateFromInputs = () => {
                 selectedPoint.t = Math.max(0, Math.min(1, parseFloat(tInput.value()) || 0));
                 selectedPoint.val = Math.max(minValue, Math.min(maxValue, parseFloat(vInput.value()) || 0));
                 render();
-                saveData();
+                saveData(false);
             };
 
             tInput.changed(updateFromInputs);
@@ -775,12 +987,13 @@ function createCurveEditorPanel(ring) {
         const addBtn = createButton('Add').parent(btnGroup).addClass('ui-btn').style('padding', '2px 6px');
         addBtn.elt.addEventListener('mousedown', (e) => {
             e.stopPropagation();
+            startData = getRingData(ring, 'curve'); // 追加開始
             const newPoint = { t: 0.5, val: minValue + (maxValue - minValue) * 0.5, id: Date.now() };
             points.push(newPoint);
             selectedPoint = newPoint;
             render();
             updateControls();
-            saveData();
+            saveData(false);
         });
 
         const delBtn = createButton('Del').parent(btnGroup).addClass('ui-btn').addClass('ui-btn-danger').style('padding', '2px 6px');
@@ -788,11 +1001,12 @@ function createCurveEditorPanel(ring) {
             e.stopPropagation();
             if (points.length > 2) {
                 if (selectedPoint) {
+                    startData = getRingData(ring, 'curve'); // 削除開始
                     points = points.filter(p => p !== selectedPoint);
                     selectedPoint = null;
                     render();
                     updateControls();
-                    saveData();
+                    saveData(false);
                 } else {
                     alert("Select a point to delete.");
                 }
@@ -936,7 +1150,9 @@ function applyGradientToRing(ring, alphaKeys, colorKeys) {
         }
     }
     ring.items = newItems; ring.CalculateLayout();
-    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring);
+
+    // システム操作のためUndo記録はしない: false
+    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring, false);
 }
 
 // Curve Utility Functions
@@ -1003,7 +1219,9 @@ function applyCurveToRing(ring, points, maxValue, minValue) {
         }
     }
     ring.items = newItems; ring.CalculateLayout();
-    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring);
+
+    // システム操作のためUndo記録はしない: false
+    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring, false);
 }
 
 // Color Utility Functions

@@ -1,6 +1,9 @@
 // =============================================
 // User Input Handling
 // =============================================
+let itemOldPos;
+let itemOldAngle; // 追加: 回転開始時の角度を保存
+let dragStartInfo = null; // 追加: ドラッグ開始時の情報を保存
 
 function InputInitialize() {
     // 右クリックメニューを無効化（ブラウザ標準メニューが出ないようにする）
@@ -290,6 +293,7 @@ function StartDragRing(ring, pos) {
     inputMode = "ringDrag";
     dragOffset.x = ring.pos.x - pos.x;
     dragOffset.y = ring.pos.y - pos.y;
+    itemOldPos = { x: ring.pos.x, y: ring.pos.y };
 }
 
 function DragRing(ring, pos) {
@@ -302,7 +306,26 @@ function DragRing(ring, pos) {
 }
 
 function EndDragRing() {
+    // 削除判定（メニュー領域へのドロップ）
     if (CheckMouseObject()[0] == "menu") {
+        // 削除されるリングを参照しているJointを収集
+        const connectedJoints = [];
+        rings.forEach(r => {
+            r.items.forEach(item => {
+                if (item && item.type === 'joint' && item.value === selectRing) {
+                    connectedJoints.push(item);
+                }
+            });
+        });
+        fieldItems.forEach(item => {
+            if (item && item.type === 'joint' && item.value === selectRing) {
+                connectedJoints.push(item);
+            }
+        });
+
+        const wasStartPoint = selectRing.isStartPoint; // Start Point 状態を保存
+
+        // 実際の削除処理
         rings.forEach(r => {
             r.items.forEach(item => {
                 if (item && item.type === 'joint' && item.value === selectRing) {
@@ -320,18 +343,51 @@ function EndDragRing() {
                 item.value = null;
             }
         });
+
+        // Action記録 (ring_remove)
+        redoStack = [];
+        actionStack.push(new Action("ring_remove", {
+            ring: selectRing,
+            connectedJoints: connectedJoints,
+            oldPos: itemOldPos, // 削除前の位置を保存
+            wasStartPoint: wasStartPoint // Start Point 状態を保存
+        }));
+    }
+    else {
+        // 通常のドロップ（移動または新規追加）
+        if (selectRing) {
+            if (selectRing.isNew) {
+                // 新規追加
+                createRingPanel(selectRing);
+                selectRing.isNew = false;
+
+                // Action記録 (ring_add)
+                redoStack = [];
+                actionStack.push(new Action("ring_add", {
+                    ring: selectRing
+                }));
+            }
+            else {
+                // 移動
+                if (dist(itemOldPos.x, itemOldPos.y, selectRing.pos.x, selectRing.pos.y) > 0.1) {
+                    redoStack = [];
+                    actionStack.push(new Action("move", {
+                        target: selectRing,
+                        oldPos: itemOldPos,
+                        newPos: { x: selectRing.pos.x, y: selectRing.pos.y }
+                    }));
+                }
+            }
+        }
     }
     inputMode = "";
-    if (selectRing && selectRing.isNew) {
-        createRingPanel(selectRing);
-        selectRing.isNew = false;
-    }
 }
 
 function StartRotateRing(ring, pos) {
     inputMode = "rotate";
     const mouseAngle = Math.atan2(pos.y - ring.pos.y, pos.x - ring.pos.x);
     rotateOffset = ring.angle - mouseAngle;
+    itemOldAngle = ring.angle; // 回転開始時の角度を保存
 }
 
 function RotateRing(ring, pos) {
@@ -354,10 +410,32 @@ function RotateRing(ring, pos) {
 
 function EndRotateRing(ring) {
     inputMode = "";
+    if (selectRing) {
+        // 回転量が一定以上の場合のみアクションとして記録
+        if (Math.abs(selectRing.angle - itemOldAngle) > 0.0001) {
+            redoStack = [];
+            actionStack.push(new Action("rotate", {
+                target: selectRing,
+                oldAngle: itemOldAngle,
+                newAngle: selectRing.angle
+            }));
+            console.log(actionStack);
+        }
+    }
 }
 
 function StartDragItem(item, index) {
     inputMode = "itemDrag";
+
+    // ドラッグ開始時の情報を保存
+    dragStartInfo = {
+        item: item,
+        fromRing: item.parentRing,
+        fromIndex: index,
+        fromPos: { x: item.pos.x, y: item.pos.y },
+        isNew: item.isNew || false // 新規作成アイテムかどうか
+    };
+
     draggingItem = { item: item, index: index };
     if (item.parentRing)
         item.parentRing.items[index] = null;
@@ -369,6 +447,7 @@ function EndDragItem() {
     if (!draggingItem || !draggingItem.item) {
         inputMode = "itemDrag";
         draggingItem = null;
+        dragStartInfo = null;
         return;
     }
     const obj = CheckMouseObject();
@@ -416,8 +495,39 @@ function EndDragItem() {
         draggedItem.isNew = false;
     }
 
+    // Actionの記録
+    if (dragStartInfo) {
+        let toRing = draggedItem.parentRing;
+        let toIndex = -1;
+        if (toRing) {
+            toIndex = toRing.items.indexOf(draggedItem);
+        }
+        let toPos = { x: draggedItem.pos.x, y: draggedItem.pos.y };
+
+        // 判定ロジック: 新規追加、移動、またはメニューへのドロップ（削除）
+        const isMoved = (dragStartInfo.fromRing !== toRing) ||
+            (dragStartInfo.fromIndex !== toIndex) ||
+            (!toRing && (dist(dragStartInfo.fromPos.x, dragStartInfo.fromPos.y, toPos.x, toPos.y) > 1));
+
+        if (dragStartInfo.isNew || isMoved) {
+            redoStack = [];
+            actionStack.push(new Action("item_move", {
+                item: draggedItem,
+                fromRing: dragStartInfo.fromRing,
+                fromIndex: dragStartInfo.fromIndex,
+                fromPos: dragStartInfo.fromPos,
+                toRing: toRing,
+                toIndex: toIndex,
+                toPos: toPos,
+                isNewItem: dragStartInfo.isNew
+            }));
+            console.log(actionStack);
+        }
+    }
+
     draggingItem = null;
     inputMode = "";
+    dragStartInfo = null; // リセット
     if (originalRing) {
         originalRing.CalculateLayout();
     }

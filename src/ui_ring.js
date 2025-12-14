@@ -95,6 +95,14 @@ function createCommentPanel(ring) {
 function createRingPanel(ring) {
     const closePanel = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } editingItem = null; };
     const handleDelete = () => {
+        const oldPos = { x: ring.pos.x, y: ring.pos.y };
+        const wasStartPoint = ring.isStartPoint;
+        const connectedJoints = [];
+        rings.forEach(r => {
+            r.items.forEach(item => { if (item && item.type === 'joint' && item.value === ring) connectedJoints.push(item); });
+        });
+        fieldItems.forEach(item => { if (item && item.type === 'joint' && item.value === ring) connectedJoints.push(item); });
+
         rings.forEach(r => {
             r.items.forEach(item => { if (item && item.type === 'joint' && item.value === ring) item.value = null; });
         });
@@ -104,9 +112,25 @@ function createRingPanel(ring) {
             if (startRing) startRing.isStartPoint = true;
         }
         fieldItems.forEach(item => { if (item && item.type === 'joint' && item.value === ring) item.value = null; });
+
+        redoStack = [];
+        actionStack.push(new Action("ring_remove", {
+            ring: ring,
+            connectedJoints: connectedJoints,
+            oldPos: oldPos,
+            wasStartPoint: wasStartPoint
+        }));
+
         closePanel();
     };
-    const handleDuplicate = () => { ring.clone(); closePanel(); };
+    const handleDuplicate = () => {
+        const newRing = ring.clone();
+        redoStack = [];
+        actionStack.push(new Action("ring_add", {
+            ring: newRing
+        }));
+        closePanel();
+    };
 
     const panelResult = createBasePanel('Ring Settings', closePanel, handleDelete, handleDuplicate);
     if (!panelResult) return;
@@ -168,7 +192,18 @@ function createRingPanel(ring) {
         const newJoint = new Joint(ring.pos.x, ring.pos.y, ring, null);
         newJoint.pos.x += (ring.radius + 70) * Math.sin(ring.angle + PI / 20);
         newJoint.pos.y -= (ring.radius + 70) * Math.cos(ring.angle + PI / 20);
-        fieldItems.push(newJoint); closePanel();
+        fieldItems.push(newJoint);
+
+        redoStack = [];
+        actionStack.push(new Action("item_move", {
+            item: newJoint,
+            toRing: null,
+            toIndex: -1,
+            toPos: { x: newJoint.pos.x, y: newJoint.pos.y },
+            isNewItem: true
+        }));
+
+        closePanel();
     });
 
     if (ring === startRing) {
@@ -177,8 +212,18 @@ function createRingPanel(ring) {
         const setStartButton = createButton('Set as Start Point').parent(buttonContainer).addClass('ui-btn').addClass('ui-btn-block');
         setStartButton.elt.addEventListener('mousedown', (e) => {
             e.stopPropagation();
+
+            redoStack = [];
+            actionStack.push(new Action("change_start_point", {
+                oldStartRing: startRing,
+                newStartRing: ring
+            }));
+
             if (startRing) startRing.isStartPoint = false;
-            startRing = ring; ring.isStartPoint = true; closePanel();
+            startRing = ring;
+            ring.isStartPoint = true;
+
+            closePanel();
         });
     }
 
@@ -205,7 +250,17 @@ function createRingPanel(ring) {
                 if (key === 'Select parameter...') return;
                 const paramDef = templateDatas[ring.magic].parameters[key];
                 if (paramDef) {
-                    ring.items.push(new Name(0, 0, key, ring));
+                    const newItem = new Name(0, 0, key, ring);
+                    ring.items.push(newItem);
+                    redoStack = [];
+                    actionStack.push(new Action("item_move", {
+                        item: newItem,
+                        toRing: ring,
+                        toIndex: ring.items.length - 1,
+                        toPos: null,
+                        isNewItem: true
+                    }));
+
                     const type = paramDef.type;
                     const vals = String(paramDef.defaultValue).split(/\s+/);
                     if (type === 'vector3' || type === 'color') {
@@ -213,11 +268,45 @@ function createRingPanel(ring) {
                         const newArrayRing = new ArrayRing(newRingPos);
                         if (type === 'color') newArrayRing.visualEffect = 'color';
                         rings.push(newArrayRing);
-                        vals.forEach(v => { if (v) newArrayRing.items.push(new Chars(0, 0, v, newArrayRing)); });
+
+                        actionStack.push(new Action("ring_add", { ring: newArrayRing }));
+
+                        vals.forEach(v => {
+                            if (v) {
+                                const arrItem = new Chars(0, 0, v, newArrayRing);
+                                newArrayRing.items.push(arrItem);
+                                // Note: 子リング内のアイテム追加も個別に記録するか、リング追加に含めるか。
+                                // ここではリング追加アクションでリング丸ごと管理されると仮定するが、
+                                // itemsへのpushなので厳密にはリングの中身が変わっている。
+                                // 簡略化のため、リング追加時は初期アイテムも込みとする。
+                            }
+                        });
                         newArrayRing.CalculateLayout();
-                        ring.items.push(new Joint(0, 0, newArrayRing, ring));
+
+                        const newJoint = new Joint(0, 0, newArrayRing, ring);
+                        ring.items.push(newJoint);
+                        actionStack.push(new Action("item_move", {
+                            item: newJoint,
+                            toRing: ring,
+                            toIndex: ring.items.length - 1,
+                            toPos: null,
+                            isNewItem: true
+                        }));
+
                     } else {
-                        vals.forEach(v => { if (v) ring.items.push(new Chars(0, 0, v, ring)); });
+                        vals.forEach(v => {
+                            if (v) {
+                                const valItem = new Chars(0, 0, v, ring);
+                                ring.items.push(valItem);
+                                actionStack.push(new Action("item_move", {
+                                    item: valItem,
+                                    toRing: ring,
+                                    toIndex: ring.items.length - 1,
+                                    toPos: null,
+                                    isNewItem: true
+                                }));
+                            }
+                        });
                     }
                     ring.CalculateLayout(); paramSelect.selected('Select parameter...');
                 }
@@ -232,6 +321,10 @@ function createRingPanel(ring) {
             visualSelect.selected(ring.visualEffect);
 
             visualSelect.changed(() => {
+                const oldVisualEffect = ring.visualEffect;
+                const oldItems = [...ring.items];
+                const oldRingsLength = rings.length;
+
                 ring.visualEffect = visualSelect.value();
                 if (typeof ring.CanAcceptItem === 'function') ring.items = ring.items.filter(item => ring.CanAcceptItem(item));
                 switch (visualSelect.value()) {
@@ -270,9 +363,22 @@ function createRingPanel(ring) {
                         });
                         break;
                 }
+
+                const newRings = rings.slice(oldRingsLength);
+
+                redoStack = [];
+                actionStack.push(new Action("ring_change_visual_effect", {
+                    ring: ring,
+                    oldVisualEffect: oldVisualEffect,
+                    newVisualEffect: ring.visualEffect,
+                    oldItems: oldItems,
+                    newItems: [...ring.items],
+                    createdRings: newRings
+                }));
+
                 closePanel();
                 ring.CalculateLayout();
-                if (typeof alignConnectedRings === 'function') alignConnectedRings(ring);
+                if (typeof alignConnectedRings === 'function') alignConnectedRings(ring, false);
                 setTimeout(() => createRingPanel(ring), 10);
             });
 
@@ -298,6 +404,30 @@ function createRingPanel(ring) {
             }
 
             if (ring.visualEffect === 'curve') {
+                const rangeContainer = createDiv('').parent(contentArea).addClass('ui-row').style('gap', '5px').style('margin-bottom', '5px');
+
+                const createNumInput = (label, val, setter) => {
+                    const wrap = createDiv('').parent(rangeContainer).style('display', 'flex').style('align-items', 'center').style('flex', '1');
+                    createDiv(label).parent(wrap).style('font-size', '10px').style('margin-right', '3px');
+                    const inp = createInput(String(val), 'number').parent(wrap).style('width', '100%').style('min-width', '40px');
+                    inp.changed(() => {
+                        const oldVal = val;
+                        const newVal = parseFloat(inp.value());
+                        setter(newVal);
+
+                        redoStack = [];
+                        actionStack.push(new Action("ring_change_property", {
+                            ring: ring,
+                            propertyName: label === 'Min:' ? 'minValue' : 'maxValue',
+                            oldValue: oldVal,
+                            newValue: newVal
+                        }));
+                    });
+                };
+
+                createNumInput('Min:', ring.minValue, (v) => ring.minValue = v);
+                createNumInput('Max:', ring.maxValue, (v) => ring.maxValue = v);
+
                 const curveContainer = createDiv('').parent(contentArea).addClass('preview-box');
 
                 // SVG Preview
@@ -361,9 +491,22 @@ function createRingPanel(ring) {
                 else newRing = new MagicRing(ring.pos);
 
                 newRing.items = newRing.items.concat(ring.items.slice(1));
+                // itemのparentRingを更新
+                newRing.items.forEach(item => { if (item) item.parentRing = newRing; });
+
                 newRing.CalculateLayout(); newRing.isNew = false; newRing.angle = ring.angle; newRing.isStartPoint = ring.isStartPoint; newRing.marker = ring.marker;
+
+                // Undo/Redo アクション記録
+                redoStack = [];
+                actionStack.push(new Action("ring_change_type", {
+                    oldRing: ring,
+                    newRing: newRing
+                }));
+
+                // Swapを実行
                 rings[ringIndex] = newRing;
                 rings.forEach(r => { r.items.forEach(item => { if (item && item.type === 'joint' && item.value === ring) item.value = newRing; }); });
+                fieldItems.forEach(item => { if (item && item.type === 'joint' && item.value === ring) item.value = newRing; });
                 if (startRing === ring) startRing = newRing;
             }
             closePanel();

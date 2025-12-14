@@ -1053,8 +1053,14 @@ class Joint extends RingItem {
         return "";
     }
 
-    Straighten() {
+    Straighten(recordUndo = true) {
         const connectedRing = this.value;
+        if (!connectedRing) return;
+
+        // Capture state BEFORE
+        // We need captureSubtreeState. We can assume it's global or defined in layout.js
+        const beforeState = (typeof captureSubtreeState === 'function') ? captureSubtreeState(connectedRing) : [];
+
         const jointIndex = this.parentRing.items.indexOf(this);
         if (jointIndex === -1 || !this.parentRing.layouts[jointIndex]) {
             return;
@@ -1075,6 +1081,19 @@ class Joint extends RingItem {
         const newChildAngle = angleToParent + HALF_PI;
 
         transformSubtree(connectedRing, newChildX, newChildY, newChildAngle);
+
+        if (recordUndo) {
+            // Capture state AFTER
+            const afterState = (typeof captureSubtreeState === 'function') ? captureSubtreeState(connectedRing) : [];
+
+            if (beforeState.length > 0 && afterState.length > 0) {
+                redoStack = [];
+                actionStack.push(new Action("batch_transform", {
+                    before: beforeState,
+                    after: afterState
+                }));
+            }
+        }
     }
 }
 
@@ -1133,5 +1152,276 @@ class Button {
     Up() {
         this.isPressed = false;
         lastPressedButton = null;
+    }
+}
+
+class Action {
+    constructor(type, value) {
+        this.type = type;
+        this.value = value;
+    }
+
+    redo() {
+        switch (this.type) {
+            case "move":
+                transformSubtree(this.value.target, this.value.newPos.x, this.value.newPos.y, this.value.target.angle);
+                break;
+            case "rotate":
+                transformSubtree(this.value.target, this.value.target.pos.x, this.value.target.pos.y, this.value.newAngle);
+                break;
+            case "item_move":
+                this._moveItem(this.value.item, this.value.toRing, this.value.toIndex, this.value.toPos);
+                break;
+            case "item_remove":
+                this._removeItem(this.value.item);
+                break;
+            case "item_change_value":
+                this.value.item.value = this.value.newValue;
+                if (this.value.item.parentRing) {
+                    this.value.item.parentRing.CalculateLayout();
+                }
+                break;
+            case "item_change_property":
+                this.value.item[this.value.propertyName] = this.value.newValue;
+                if (this.value.item.parentRing) {
+                    this.value.item.parentRing.CalculateLayout();
+                }
+                break;
+            case "ring_add":
+                if (!rings.includes(this.value.ring)) {
+                    rings.push(this.value.ring);
+                }
+                break;
+            case "ring_remove":
+                rings = rings.filter(r => r !== this.value.ring);
+                this._cleanupRingConnections(this.value.ring);
+                break;
+            case "ring_change_type":
+                this._swapRing(this.value.oldRing, this.value.newRing);
+                break;
+            case "change_start_point":
+                if (this.value.oldStartRing) this.value.oldStartRing.isStartPoint = false;
+                if (this.value.newStartRing) this.value.newStartRing.isStartPoint = true;
+                startRing = this.value.newStartRing;
+                break;
+            case "ring_change_visual_effect":
+                this.value.ring.visualEffect = this.value.newVisualEffect;
+                this.value.ring.items = [...this.value.newItems];
+                this.value.ring.items.forEach(item => { if (item) item.parentRing = this.value.ring; });
+                if (this.value.createdRings) {
+                    this.value.createdRings.forEach(r => {
+                        if (!rings.includes(r)) rings.push(r);
+                    });
+                }
+                this.value.ring.CalculateLayout();
+                break;
+            case "ring_change_property":
+                this.value.ring[this.value.propertyName] = this.value.newValue;
+                this.value.ring.CalculateLayout();
+                break;
+
+            // [追加] データ同期用のアクション (Redo)
+            case "array_data_sync":
+                if (typeof applyRingData === 'function') {
+                    // 新しいデータを適用
+                    applyRingData(this.value.ring, this.value.newData, this.value.mode);
+                }
+                break;
+            case "batch_transform":
+                this.value.after.forEach(state => {
+                    if (state.ring) {
+                        state.ring.pos.x = state.pos.x;
+                        state.ring.pos.y = state.pos.y;
+                        state.ring.angle = state.angle;
+                    }
+                });
+                break;
+        }
+    }
+
+    undo() {
+        switch (this.type) {
+            case "move":
+                transformSubtree(this.value.target, this.value.oldPos.x, this.value.oldPos.y, this.value.target.angle);
+                break;
+            case "rotate":
+                transformSubtree(this.value.target, this.value.target.pos.x, this.value.target.pos.y, this.value.oldAngle);
+                break;
+            case "item_move":
+                if (this.value.isNewItem) {
+                    this._removeItem(this.value.item);
+                } else {
+                    this._moveItem(this.value.item, this.value.fromRing, this.value.fromIndex, this.value.fromPos);
+                }
+                break;
+            case "item_remove":
+                this._moveItem(this.value.item, this.value.fromRing, this.value.fromIndex, this.value.fromPos);
+                break;
+            case "item_change_value":
+                this.value.item.value = this.value.oldValue;
+                if (this.value.item.parentRing) {
+                    this.value.item.parentRing.CalculateLayout();
+                }
+                break;
+            case "item_change_property":
+                this.value.item[this.value.propertyName] = this.value.oldValue;
+                if (this.value.item.parentRing) {
+                    this.value.item.parentRing.CalculateLayout();
+                }
+                break;
+            case "ring_add":
+                const addIdx = rings.indexOf(this.value.ring);
+                if (addIdx !== -1) rings.splice(addIdx, 1);
+                this._cleanupRingConnections(this.value.ring);
+                break;
+            case "ring_remove":
+                if (!rings.includes(this.value.ring)) {
+                    rings.push(this.value.ring);
+                }
+                this._restoreRingConnections(this.value.connectedJoints, this.value.ring);
+                if (this.value.oldPos) {
+                    transformSubtree(this.value.ring, this.value.oldPos.x, this.value.oldPos.y, this.value.ring.angle);
+                }
+                if (this.value.wasStartPoint) {
+                    if (startRing) startRing.isStartPoint = false;
+                    startRing = this.value.ring;
+                    startRing.isStartPoint = true;
+                }
+                break;
+            case "ring_change_type":
+                this._swapRing(this.value.newRing, this.value.oldRing);
+                break;
+            case "change_start_point":
+                if (this.value.newStartRing) this.value.newStartRing.isStartPoint = false;
+                if (this.value.oldStartRing) this.value.oldStartRing.isStartPoint = true;
+                startRing = this.value.oldStartRing;
+                break;
+            case "ring_change_visual_effect":
+                this.value.ring.visualEffect = this.value.oldVisualEffect;
+                this.value.ring.items = [...this.value.oldItems];
+                this.value.ring.items.forEach(item => { if (item) item.parentRing = this.value.ring; });
+                if (this.value.createdRings) {
+                    this.value.createdRings.forEach(r => {
+                        const idx = rings.indexOf(r);
+                        if (idx !== -1) rings.splice(idx, 1);
+                        this._cleanupRingConnections(r);
+                    });
+                }
+                this.value.ring.CalculateLayout();
+                break;
+            case "ring_change_property":
+                this.value.ring[this.value.propertyName] = this.value.oldValue;
+                this.value.ring.CalculateLayout();
+                break;
+
+            // [追加] データ同期用のアクション (Undo)
+            case "array_data_sync":
+                if (typeof applyRingData === 'function') {
+                    // 古いデータに戻す
+                    applyRingData(this.value.ring, this.value.oldData, this.value.mode);
+                }
+                break;
+            case "batch_transform":
+                this.value.before.forEach(state => {
+                    if (state.ring) {
+                        state.ring.pos.x = state.pos.x;
+                        state.ring.pos.y = state.pos.y;
+                        state.ring.angle = state.angle;
+                    }
+                });
+                break;
+        }
+    }
+
+    _moveItem(item, targetRing, targetIndex, targetPos) {
+        this._removeItem(item);
+        if (targetRing) {
+            targetRing.InsertItem(item, targetIndex);
+            item.parentRing = targetRing;
+            targetRing.CalculateLayout();
+        } else {
+            if (targetPos) {
+                item.pos = { x: targetPos.x, y: targetPos.y };
+            }
+            item.parentRing = null;
+            if (!fieldItems.includes(item)) {
+                fieldItems.push(item);
+            }
+        }
+    }
+
+    _removeItem(item) {
+        if (item.parentRing) {
+            const index = item.parentRing.items.indexOf(item);
+            if (index !== -1) {
+                item.parentRing.RemoveItem(index);
+                item.parentRing.CalculateLayout();
+            }
+        } else {
+            const index = fieldItems.indexOf(item);
+            if (index !== -1) {
+                fieldItems.splice(index, 1);
+            }
+        }
+        item.parentRing = null;
+    }
+
+    _cleanupRingConnections(ring) {
+        rings.forEach(r => {
+            r.items.forEach(item => {
+                if (item && item.type === 'joint' && item.value === ring) {
+                    item.value = null;
+                }
+            });
+        });
+        fieldItems.forEach(item => {
+            if (item && item.type === 'joint' && item.value === ring) {
+                item.value = null;
+            }
+        });
+        if (startRing === ring) {
+            startRing = rings.find(r => isRingStartable(r)) || (rings.length > 0 ? rings[0] : null);
+            if (startRing) startRing.isStartPoint = true;
+        }
+    }
+
+    _restoreRingConnections(connectedJoints, ring) {
+        if (connectedJoints) {
+            connectedJoints.forEach(joint => {
+                joint.value = ring;
+            });
+        }
+    }
+
+    _swapRing(fromRing, toRing) {
+        const index = rings.indexOf(fromRing);
+        if (index !== -1) {
+            rings[index] = toRing;
+        } else {
+            rings.push(toRing);
+        }
+
+        rings.forEach(r => {
+            r.items.forEach(item => {
+                if (item && item.type === 'joint' && item.value === fromRing) {
+                    item.value = toRing;
+                }
+            });
+        });
+        fieldItems.forEach(item => {
+            if (item && item.type === 'joint' && item.value === fromRing) {
+                item.value = toRing;
+            }
+        });
+
+        toRing.items.forEach(item => {
+            if (item) item.parentRing = toRing;
+        });
+
+        if (startRing === fromRing) {
+            startRing = toRing;
+        }
+
+        toRing.CalculateLayout();
     }
 }

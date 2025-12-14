@@ -1,11 +1,28 @@
 /**
  * 指定されたリングをルートとして、ツリー構造全体のレイアウトを自動的に調整します。
  * @param {MagicRing} startRing レイアウトの基点となるリング
+ * @param {boolean} recordUndo Undo/Redoスタックに記録するかどうか（デフォルト: true）
  */
-function alignConnectedRings(startRing) {
+function alignConnectedRings(startRing, recordUndo = true) {
     if (!startRing) return;
+
+    // Capture state BEFORE
+    const beforeState = captureSubtreeState(startRing);
+
     // 始点リングをルートとして、再帰的なレイアウト処理を開始
     layoutSubtreeAndGetEffectiveRadius(startRing, new Set());
+
+    // Capture state AFTER
+    const afterState = captureSubtreeState(startRing);
+
+    // ユーザー操作(recordUndo=true)かつ、状態に変化があった場合のみ記録
+    if (recordUndo && statesAreDifferent(beforeState, afterState)) {
+        redoStack = [];
+        actionStack.push(new Action("batch_transform", {
+            before: beforeState,
+            after: afterState
+        }));
+    }
 }
 
 /**
@@ -214,12 +231,69 @@ function transformSubtree(ringToUpdate, newX, newY, newAngle) {
     ringToUpdate.angle = newAngle;
 }
 
-function StraightenConnectedJoints(startRing) {
+/**
+ * StartRingから繋がるすべてのJointを直線化します。
+ * @param {MagicRing} startRing 
+ * @param {boolean} recordUndo Undo/Redoスタックに記録するかどうか（デフォルト: true）
+ */
+function StraightenConnectedJoints(startRing, recordUndo = true) {
     if (!startRing) return;
-    startRing.items.forEach(item => {
+
+    // Capture state BEFORE
+    const beforeState = captureSubtreeState(startRing);
+
+    _straightenRecursively(startRing);
+
+    // Capture state AFTER
+    const afterState = captureSubtreeState(startRing);
+
+    // ユーザー操作(recordUndo=true)かつ、状態に変化があった場合のみ記録
+    if (recordUndo && statesAreDifferent(beforeState, afterState)) {
+        redoStack = [];
+        actionStack.push(new Action("batch_transform", {
+            before: beforeState,
+            after: afterState
+        }));
+    }
+}
+
+function _straightenRecursively(ring) {
+    if (!ring) return;
+    ring.items.forEach(item => {
         if (item && item.type === 'joint' && item.value) {
-            item.Straighten();
-            StraightenConnectedJoints(item.value);
+            // 個別のStraighten呼び出しではUndoを記録しない (false)
+            item.Straighten(false);
+            _straightenRecursively(item.value);
         }
     });
+}
+
+function captureSubtreeState(rootRing, visited = new Set()) {
+    if (!rootRing || visited.has(rootRing)) return [];
+    visited.add(rootRing);
+
+    let state = [{
+        ring: rootRing,
+        pos: { x: rootRing.pos.x, y: rootRing.pos.y },
+        angle: rootRing.angle
+    }];
+
+    // Traverse children via joints
+    rootRing.items.forEach(item => {
+        if (item && item.type === 'joint' && item.value instanceof MagicRing) {
+            state = state.concat(captureSubtreeState(item.value, visited));
+        }
+    });
+    return state;
+}
+
+function statesAreDifferent(before, after) {
+    if (before.length !== after.length) return true;
+    for (let i = 0; i < before.length; i++) {
+        if (before[i].ring !== after[i].ring) return true;
+        if (Math.abs(before[i].pos.x - after[i].pos.x) > 0.001) return true;
+        if (Math.abs(before[i].pos.y - after[i].pos.y) > 0.001) return true;
+        if (Math.abs(before[i].angle - after[i].angle) > 0.001) return true;
+    }
+    return false;
 }

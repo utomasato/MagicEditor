@@ -116,15 +116,60 @@ function createAddObjectPanel() {
         btn.elt.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             let newObj = null;
+            let actionType = "";
+
             switch (item.type) {
-                case 'MagicRing': newObj = new MagicRing(spawnPos); rings.push(newObj); break;
-                case 'TemplateRing': newObj = new TemplateRing(spawnPos); rings.push(newObj); break;
-                case 'Sigil': newObj = new Sigil(spawnPos.x, spawnPos.y, "add", null); fieldItems.push(newObj); break;
-                case 'Num': newObj = new Chars(spawnPos.x, spawnPos.y, "0", null); fieldItems.push(newObj); break;
-                case 'String': newObj = new StringToken(spawnPos.x, spawnPos.y, "string", null); fieldItems.push(newObj); break;
-                case 'Name': newObj = new Name(spawnPos.x, spawnPos.y, "name", null); fieldItems.push(newObj); break;
+                case 'MagicRing':
+                    newObj = new MagicRing(spawnPos);
+                    rings.push(newObj);
+                    actionType = "ring";
+                    break;
+                case 'TemplateRing':
+                    newObj = new TemplateRing(spawnPos);
+                    rings.push(newObj);
+                    actionType = "ring";
+                    break;
+                case 'Sigil':
+                    newObj = new Sigil(spawnPos.x, spawnPos.y, "add", null);
+                    fieldItems.push(newObj);
+                    actionType = "item";
+                    break;
+                case 'Num':
+                    newObj = new Chars(spawnPos.x, spawnPos.y, "0", null);
+                    fieldItems.push(newObj);
+                    actionType = "item";
+                    break;
+                case 'String':
+                    newObj = new StringToken(spawnPos.x, spawnPos.y, "string", null);
+                    fieldItems.push(newObj);
+                    actionType = "item";
+                    break;
+                case 'Name':
+                    newObj = new Name(spawnPos.x, spawnPos.y, "name", null);
+                    fieldItems.push(newObj);
+                    actionType = "item";
+                    break;
             }
-            if (newObj) newObj.isNew = true;
+
+            if (newObj) {
+                newObj.isNew = false;
+
+                // Undo/Redo履歴への記録
+                redoStack = [];
+                if (actionType === "ring") {
+                    actionStack.push(new Action("ring_add", {
+                        ring: newObj
+                    }));
+                } else if (actionType === "item") {
+                    actionStack.push(new Action("item_move", {
+                        item: newObj,
+                        toRing: null,
+                        toIndex: -1,
+                        toPos: { x: newObj.pos.x, y: newObj.pos.y },
+                        isNewItem: true
+                    }));
+                }
+            }
             closePanel();
         });
     });

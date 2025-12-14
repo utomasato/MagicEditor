@@ -4,14 +4,41 @@
 function createTextInput(item) {
     const closePanel = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } editingItem = null; };
     const handleDelete = () => {
+        const fromRing = item.parentRing;
+        const fromIndex = fromRing ? fromRing.items.indexOf(item) : -1;
+        const fromPos = { x: item.pos.x, y: item.pos.y };
+
         if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); if (index > -1) { ring.RemoveItem(index); ring.CalculateLayout(); } }
         else { fieldItems = fieldItems.filter(fItem => fItem !== item); }
+
+        redoStack = [];
+        actionStack.push(new Action("item_remove", {
+            item: item,
+            fromRing: fromRing,
+            fromIndex: fromIndex,
+            fromPos: fromPos
+        }));
+
         closePanel();
     };
     const handleDuplicate = () => {
         const newItem = item.clone(new Map());
-        if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); ring.InsertItem(newItem, index + 1); newItem.parentRing = ring; ring.CalculateLayout(); }
-        else { const index = fieldItems.indexOf(item); newItem.pos = { x: item.pos.x + 30, y: item.pos.y }; fieldItems.splice(index + 1, 0, newItem); }
+        let toRing = null;
+        let toIndex = -1;
+        let toPos = { x: item.pos.x + 30, y: item.pos.y };
+
+        if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); ring.InsertItem(newItem, index + 1); newItem.parentRing = ring; ring.CalculateLayout(); toRing = ring; toIndex = index + 1; }
+        else { const index = fieldItems.indexOf(item); newItem.pos = toPos; fieldItems.splice(index + 1, 0, newItem); }
+
+        redoStack = [];
+        actionStack.push(new Action("item_move", {
+            item: newItem,
+            toRing: toRing,
+            toIndex: toIndex,
+            toPos: toPos,
+            isNewItem: true
+        }));
+
         closePanel();
     };
 
@@ -49,9 +76,18 @@ function createTextInput(item) {
             break;
         }
 
-        if (newValue !== null) {
+        if (newValue !== null && newValue !== item.value) {
+            const oldValue = item.value;
             item.value = newValue; valueDisplay.html(newValue);
             if (item.parentRing) item.parentRing.CalculateLayout();
+
+            // Undo/Redo記録
+            redoStack = [];
+            actionStack.push(new Action("item_change_value", {
+                item: item,
+                oldValue: oldValue,
+                newValue: newValue
+            }));
         }
         closePanel();
     });
@@ -60,14 +96,41 @@ function createTextInput(item) {
 function createSigilDropdown(item) {
     const closeDropdown = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } currentSelectElement = null; editingItem = null; };
     const handleDelete = () => {
+        const fromRing = item.parentRing;
+        const fromIndex = fromRing ? fromRing.items.indexOf(item) : -1;
+        const fromPos = { x: item.pos.x, y: item.pos.y };
+
         if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); if (index > -1) { ring.RemoveItem(index); ring.CalculateLayout(); } }
         else { fieldItems = fieldItems.filter(fItem => fItem !== item); }
+
+        redoStack = [];
+        actionStack.push(new Action("item_remove", {
+            item: item,
+            fromRing: fromRing,
+            fromIndex: fromIndex,
+            fromPos: fromPos
+        }));
+
         closeDropdown();
     };
     const handleDuplicate = () => {
         const newItem = item.clone(new Map());
-        if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); ring.InsertItem(newItem, index + 1); newItem.parentRing = ring; ring.CalculateLayout(); }
-        else { const index = fieldItems.indexOf(item); newItem.pos = { x: item.pos.x + 30, y: item.pos.y }; fieldItems.splice(index + 1, 0, newItem); }
+        let toRing = null;
+        let toIndex = -1;
+        let toPos = { x: item.pos.x + 30, y: item.pos.y };
+
+        if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); ring.InsertItem(newItem, index + 1); newItem.parentRing = ring; ring.CalculateLayout(); toRing = ring; toIndex = index + 1; }
+        else { const index = fieldItems.indexOf(item); newItem.pos = toPos; fieldItems.splice(index + 1, 0, newItem); }
+
+        redoStack = [];
+        actionStack.push(new Action("item_move", {
+            item: newItem,
+            toRing: toRing,
+            toIndex: toIndex,
+            toPos: toPos,
+            isNewItem: true
+        }));
+
         closeDropdown();
     };
 
@@ -93,8 +156,21 @@ function createSigilDropdown(item) {
     currentSelectElement.selected(item.value);
     currentSelectElement.changed(() => {
         if (editingItem) {
-            editingItem.value = currentSelectElement.value();
-            if (editingItem.parentRing) { editingItem.parentRing.CalculateLayout(); }
+            const oldValue = editingItem.value;
+            const newValue = currentSelectElement.value();
+
+            if (oldValue !== newValue) {
+                editingItem.value = newValue;
+                if (editingItem.parentRing) { editingItem.parentRing.CalculateLayout(); }
+
+                // Undo/Redo記録
+                redoStack = [];
+                actionStack.push(new Action("item_change_value", {
+                    item: editingItem,
+                    oldValue: oldValue,
+                    newValue: newValue
+                }));
+            }
         }
         closeDropdown();
     });
@@ -103,14 +179,41 @@ function createSigilDropdown(item) {
 function createJointPanel(item) {
     const closePanel = () => { if (currentUiPanel) { currentUiPanel.remove(); currentUiPanel = null; } editingItem = null; };
     const handleDelete = () => {
+        const fromRing = item.parentRing;
+        const fromIndex = fromRing ? fromRing.items.indexOf(item) : -1;
+        const fromPos = { x: item.pos.x, y: item.pos.y };
+
         if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); if (index > -1) { ring.RemoveItem(index); ring.CalculateLayout(); } }
         else { fieldItems = fieldItems.filter(fItem => fItem !== item); }
+
+        redoStack = [];
+        actionStack.push(new Action("item_remove", {
+            item: item,
+            fromRing: fromRing,
+            fromIndex: fromIndex,
+            fromPos: fromPos
+        }));
+
         closePanel();
     };
     const handleDuplicate = () => {
         const newItem = item.clone(new Map());
-        if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); ring.InsertItem(newItem, index + 1); newItem.parentRing = ring; ring.CalculateLayout(); }
-        else { const index = fieldItems.indexOf(item); newItem.pos = { x: item.pos.x + 30, y: item.pos.y }; fieldItems.splice(index + 1, 0, newItem); }
+        let toRing = null;
+        let toIndex = -1;
+        let toPos = { x: item.pos.x + 30, y: item.pos.y };
+
+        if (item.parentRing) { const ring = item.parentRing; const index = ring.items.indexOf(item); ring.InsertItem(newItem, index + 1); newItem.parentRing = ring; ring.CalculateLayout(); toRing = ring; toIndex = index + 1; }
+        else { const index = fieldItems.indexOf(item); newItem.pos = toPos; fieldItems.splice(index + 1, 0, newItem); }
+
+        redoStack = [];
+        actionStack.push(new Action("item_move", {
+            item: newItem,
+            toRing: toRing,
+            toIndex: toIndex,
+            toPos: toPos,
+            isNewItem: true
+        }));
+
         closePanel();
     };
 
@@ -129,17 +232,50 @@ function createJointPanel(item) {
     executeCheckbox.style('cursor', 'pointer');
     executeCheckbox.elt.checked = item.isExecute;
     executeCheckbox.elt.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    // Checkbox change event
     executeCheckbox.changed(() => {
-        item.isExecute = executeCheckbox.elt.checked;
-        if (item.parentRing) item.parentRing.CalculateLayout();
+        const oldValue = item.isExecute;
+        const newValue = executeCheckbox.elt.checked;
+
+        if (oldValue !== newValue) {
+            item.isExecute = newValue;
+            if (item.parentRing) item.parentRing.CalculateLayout();
+
+            // Undo/Redo記録
+            redoStack = [];
+            actionStack.push(new Action("item_change_property", {
+                item: item,
+                propertyName: "isExecute",
+                oldValue: oldValue,
+                newValue: newValue
+            }));
+        }
     });
 
     const executeLabel = createP('Execute (exec)');
     executeLabel.parent(executeContainer);
     executeLabel.style('margin', '0').style('cursor', 'pointer');
+
+    // Label click event (toggles checkbox)
     executeLabel.elt.addEventListener('mousedown', (e) => {
-        e.stopPropagation(); item.isExecute = !item.isExecute; executeCheckbox.elt.checked = item.isExecute;
+        e.stopPropagation();
+        const oldValue = item.isExecute;
+        const newValue = !item.isExecute;
+
+        item.isExecute = newValue;
+        executeCheckbox.elt.checked = newValue;
+
         if (item.parentRing) item.parentRing.CalculateLayout();
+
+        // Undo/Redo記録
+        redoStack = [];
+        actionStack.push(new Action("item_change_property", {
+            item: item,
+            propertyName: "isExecute",
+            oldValue: oldValue,
+            newValue: newValue
+        }));
     });
 
     const connectedRing = item.value;

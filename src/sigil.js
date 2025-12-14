@@ -138,7 +138,7 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1) {
         case "sqrt": // 平方根
             for (let i = 0; i < 2; i++) {
                 push();
-                rotate(i * PI);
+                Rotate(i * PI);
                 line(0.5, 0.25, 0.375, 0);
                 line(0.375, 0, 0.25, 0.5);
                 line(0.25, 0.5, -0.5, 0.5);
@@ -593,7 +593,7 @@ function sigil_parts(part) {
             break;
         case "look":
             push();
-            rotate(HALF_PI);
+            Rotate(HALF_PI);
             sigil_parts("current");
             pop();
             break;
@@ -733,7 +733,7 @@ function DrawElement(e, x, y, size = 1.0) {
             break;
         default:
             for (var i = 0; i < 4; i++) {
-                rotate(HALF_PI);
+                Rotate(HALF_PI);
                 line(0, 0.1, 0.1, 0.3);
                 line(0.1, 0.3, 0, 0.5);
                 line(0, 0.5, -0.1, 0.3);
