@@ -213,6 +213,7 @@ function Start() {
             (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
             { x: 0, y: 1 }, { x: 0, y: 1 }, 25, "+", color(0, 0, 0),
             () => { ZoomIn(); }),
+        /*
         new Button(10, 60, 40, 40,
             () => { return cursormode == "grad" ? color(100, 100, 100) : color(200, 200, 200); },
             { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🖐️", color(0, 0, 0),
@@ -221,11 +222,12 @@ function Start() {
             () => { return cursormode == "edit" ? color(100, 100, 100) : color(200, 200, 200); },
             { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "🪶", color(0, 0, 0),
             () => { cursormode = "edit"; SetMouseCursor('default'); }),
-        new Button(100, 60, 60, 40,
+        */
+        new Button(100 - 90, 60, 60, 40,
             (instance) => { return instance.isPressed ? color(100, 110, 128) : color(200, 220, 255); },
             { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Align", color(0, 0, 0),
             () => { if (startRing) { alignConnectedRings(startRing); } }),
-        new Button(165, 60, 85, 40,
+        new Button(165 - 90, 60, 85, 40,
             (instance) => { return instance.isPressed ? color(100, 110, 128) : color(200, 220, 255); },
             { x: 0, y: 0 }, { x: 0, y: 0 }, 17, "Straight", color(0, 0, 0),
             () => { if (startRing) { StraightenConnectedJoints(startRing); } }),
@@ -315,8 +317,8 @@ function Update() {
     if (CheckKeyDown(Key.R)) { staticButtons[3].Down(); }
     if (CheckKeyDown(Key.T)) { staticButtons[4].Down(); }
     if (CheckKeyDown(Key.Y)) { staticButtons[5].Down(); }
-    if (CheckKeyDown(Key.D)) { if (startRing) { alignConnectedRings(startRing); } }
-    if (CheckKeyDown(Key.F)) { if (startRing) { StraightenConnectedJoints(startRing); } }
+    if (CheckKeyDown(Key.A)) { if (startRing) { alignConnectedRings(startRing); } }
+    if (CheckKeyDown(Key.S)) { if (startRing) { StraightenConnectedJoints(startRing); } }
 }
 
 function Draw() {

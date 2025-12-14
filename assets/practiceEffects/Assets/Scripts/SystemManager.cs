@@ -44,6 +44,10 @@ public class SystemManager : MonoBehaviour
     [Tooltip("パーティクルの生成を担当するGenerator")]
     public ParticleGenerator particleGenerator;
 
+    [Header("オブジェクトのマテリアル")]
+    [Tooltip("CreateObjectFromMpsでオブジェにつけるマテリアル")]
+    public Material defaultMaterial;
+
     [Header("マテリアルリスト")]
     [Tooltip("名前とマテリアルを紐付けて登録します")]
     public List<MaterialEntry> materialList;
@@ -210,9 +214,13 @@ public class SystemManager : MonoBehaviour
         {
             ObjectCreationData creationData = MpsParser.ParseObjectCreation(mpsCode);
             GameObject newObject = null;
+            string lowerType = creationData.objectType.ToLower();
+
+            // ★デバッグログ: 何を作ろうとしているか確認
+            Debug.Log($"[SystemManager] CreateObjectFromMps called. Type: {lowerType}, ID: {objectId}");
 
             // objectTypeに基づいてGameObjectを生成
-            switch (creationData.objectType.ToLower()) // 小文字に変換して比較
+            switch (lowerType)
             {
                 case "empty":
                     newObject = new GameObject("Empty Object");
@@ -244,6 +252,22 @@ public class SystemManager : MonoBehaviour
             // 生成したオブジェクトをリストと辞書に追加
             if (newObject != null)
             {
+                // ★追加の確認: MeshFilterが存在するか（アセットストリッピング対策の確認）
+                if (lowerType != "empty" && newObject.GetComponent<MeshFilter>() == null)
+                {
+                    Debug.LogError($"[SystemManager] WARNING: {lowerType} created but MeshFilter is MISSING. It may be invisible due to WebGL Asset Stripping.");
+                }
+
+                // ★追加の確認: マテリアルが正常か。
+                // WebGLで標準マテリアルがピンクまたは透明になる場合、以下のコメントアウトを外して
+                // 登録済みのマテリアルを強制適用して可視化を試みてください。
+                var rend = newObject.GetComponent<Renderer>();
+                if (rend != null && defaultMaterial != null)
+                {
+                    Debug.Log($"[SystemManager] Forcing material '{defaultMaterial.name}' to generated object for visibility test.");
+                    rend.material = defaultMaterial;
+                }
+
                 GeneratedObjects.Add(newObject);
 
                 if (!string.IsNullOrEmpty(objectId))
@@ -261,6 +285,12 @@ public class SystemManager : MonoBehaviour
                     managedObjectsById.Add(objectId, newObject);
                     newObject.name = $"{creationData.objectType}_{objectId}"; // オブジェクト名をわかりやすく設定
                 }
+
+                Debug.Log($"[SystemManager] Successfully registered object: {newObject.name}");
+            }
+            else
+            {
+                Debug.LogError("[SystemManager] Failed to create object variable (newObject is null).");
             }
         }
         catch (System.Exception e)

@@ -317,7 +317,9 @@ function createRingPanel(ring) {
                     if (item && item.type === 'joint' && item.value instanceof ArrayRing) {
                         const childRing = item.value;
                         if (childRing.items.length >= 3) {
-                            const getVal = (idx) => (childRing.items[idx] && childRing.items[idx].value) ? parseFloat(childRing.items[idx].value) : 0;
+                            const getVal = (idx) => (childRing.items[idx] && childRing.items[idx].value)
+                                ? parseFloat(childRing.items[idx].value)
+                                : 0;
                             points.push({ t: getVal(1), val: getVal(2) });
                         }
                     }
