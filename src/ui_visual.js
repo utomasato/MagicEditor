@@ -41,6 +41,7 @@ function getRingData(ring, mode) {
     return null;
 }
 
+
 /**
  * 軽量データをリングに適用します。
  * 既存のオブジェクトを可能な限り再利用し、増減が必要な場合のみ生成・削除を行います。
@@ -127,7 +128,8 @@ function applyRingData(ring, data, mode) {
     }
 
     // レイアウト調整（システム操作のためUndo記録はしない: false）
-    if (typeof alignConnectedRings === 'function') alignConnectedRings(ring, false);
+    // ring.posが存在する場合のみ実行（グラディエントエディタのモック用対策）
+    if (typeof alignConnectedRings === 'function' && ring.pos) alignConnectedRings(ring, false);
 }
 
 // Actionクラスから呼べるようにグローバルに公開
@@ -664,6 +666,7 @@ function createGradientEditorPanel(ring, selectionState = null) {
                 const idx = colorKeys.indexOf(selectedKey);
                 // モック作成時もCharsを使う
                 const mockRing = {
+                    pos: { x: 0, y: 0 }, // Added: Dummy position to prevent crash in alignConnectedRings
                     items: [null, new Chars(0, 0, String(selectedKey.r), null), new Chars(0, 0, String(selectedKey.g), null), new Chars(0, 0, String(selectedKey.b), null), new Chars(0, 0, "1.0", null)],
                     CalculateLayout: () => { },
                     onColorPickerClose: () => {

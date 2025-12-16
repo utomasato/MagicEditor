@@ -244,35 +244,11 @@ function Start() {
         new Button(55, -10, 40, 40,
             (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
             { x: 0, y: 1 }, { x: 0, y: 1 }, 20, "undo", color(0, 0, 0),
-            () => {
-                if (actionStack.length > 0) {
-                    const action = actionStack.pop();
-                    action.undo();
-                    redoStack.push(action);
-                }
-                console.log("#####################");
-                console.log("action:");
-                console.log(actionStack);
-                console.log("redo: ");
-                console.log(redoStack);
-                console.log("#####################");
-            }),
+            () => { Undo(); }),
         new Button(55, -55, 40, 40,
             (instance) => { return instance.isPressed ? color(100, 100, 100) : color(200, 200, 200); },
             { x: 0, y: 1 }, { x: 0, y: 1 }, 20, "redo", color(0, 0, 0),
-            () => {
-                if (redoStack.length > 0) {
-                    const action = redoStack.pop()
-                    action.redo();
-                    actionStack.push(action);
-                }
-                console.log("#####################");
-                console.log("action:");
-                console.log(actionStack);
-                console.log("redo: ");
-                console.log(redoStack);
-                console.log("#####################");
-            }),
+            () => { Redo(); }),
         new Button(5, 105, 30, 15,
             () => { return color(0, 250, 0) },
             { x: 0, y: 0 }, { x: 0, y: 0 }, 12, "> Start", color(100, 100, 100),
@@ -448,4 +424,28 @@ function GenerateSpell(ringToStart) {
         return spell.slice(1, -1) // 一番外側の{}を外す
     }
     return "";
+}
+
+function Undo() {
+    if (actionStack.length > 0) {
+        const action = actionStack.pop();
+        action.undo();
+        redoStack.push(action);
+    }
+    console.log("actionStack:");
+    console.log(actionStack);
+    console.log("redoStack: ");
+    console.log(redoStack);
+}
+
+function Redo() {
+    if (redoStack.length > 0) {
+        const action = redoStack.pop()
+        action.redo();
+        actionStack.push(action);
+    }
+    console.log("actionStack:");
+    console.log(actionStack);
+    console.log("redoStack: ");
+    console.log(redoStack);
 }
