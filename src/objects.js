@@ -1220,21 +1220,42 @@ class Action {
                 this.value.ring.CalculateLayout();
                 break;
 
-            // [追加] データ同期用のアクション (Redo)
             case "array_data_sync":
                 if (typeof applyRingData === 'function') {
-                    // 新しいデータを適用
                     applyRingData(this.value.ring, this.value.newData, this.value.mode);
                 }
                 break;
             case "batch_transform":
-                this.value.after.forEach(state => {
-                    if (state.ring) {
-                        state.ring.pos.x = state.pos.x;
-                        state.ring.pos.y = state.pos.y;
-                        state.ring.angle = state.angle;
+                let appliedRedo = false;
+                // ツリー構造に基づいて適用を試みる（オブジェクトが再生成されている場合に対応）
+                if (typeof captureSubtreeState === 'function' && this.value.after.length > 0) {
+                    const rootRing = this.value.after[0].ring;
+                    // ルートリングが存在し、シーンに含まれているか確認
+                    if (rootRing && rings.includes(rootRing)) {
+                        const currentTree = captureSubtreeState(rootRing);
+                        // 構造（個数）が一致していれば、インデックス順に適用
+                        if (currentTree.length === this.value.after.length) {
+                            this.value.after.forEach((state, i) => {
+                                const target = currentTree[i].ring;
+                                target.pos.x = state.pos.x;
+                                target.pos.y = state.pos.y;
+                                target.angle = state.angle;
+                            });
+                            appliedRedo = true;
+                        }
                     }
-                });
+                }
+
+                // 構造マッチに失敗した場合は、保存されている参照を直接使用（フォールバック）
+                if (!appliedRedo) {
+                    this.value.after.forEach(state => {
+                        if (state.ring) {
+                            state.ring.pos.x = state.pos.x;
+                            state.ring.pos.y = state.pos.y;
+                            state.ring.angle = state.angle;
+                        }
+                    });
+                }
                 break;
         }
     }
@@ -1314,21 +1335,39 @@ class Action {
                 this.value.ring.CalculateLayout();
                 break;
 
-            // [追加] データ同期用のアクション (Undo)
             case "array_data_sync":
                 if (typeof applyRingData === 'function') {
-                    // 古いデータに戻す
                     applyRingData(this.value.ring, this.value.oldData, this.value.mode);
                 }
                 break;
             case "batch_transform":
-                this.value.before.forEach(state => {
-                    if (state.ring) {
-                        state.ring.pos.x = state.pos.x;
-                        state.ring.pos.y = state.pos.y;
-                        state.ring.angle = state.angle;
+                let appliedUndo = false;
+                // ツリー構造に基づいて適用を試みる
+                if (typeof captureSubtreeState === 'function' && this.value.before.length > 0) {
+                    const rootRing = this.value.before[0].ring;
+                    if (rootRing && rings.includes(rootRing)) {
+                        const currentTree = captureSubtreeState(rootRing);
+                        if (currentTree.length === this.value.before.length) {
+                            this.value.before.forEach((state, i) => {
+                                const target = currentTree[i].ring;
+                                target.pos.x = state.pos.x;
+                                target.pos.y = state.pos.y;
+                                target.angle = state.angle;
+                            });
+                            appliedUndo = true;
+                        }
                     }
-                });
+                }
+
+                if (!appliedUndo) {
+                    this.value.before.forEach(state => {
+                        if (state.ring) {
+                            state.ring.pos.x = state.pos.x;
+                            state.ring.pos.y = state.pos.y;
+                            state.ring.angle = state.angle;
+                        }
+                    });
+                }
                 break;
         }
     }
