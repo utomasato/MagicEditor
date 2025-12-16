@@ -1,6 +1,7 @@
 let currentFileHandle = null;
 
 document.addEventListener('keydown', async (e) => {
+    // 既存の保存処理 (Ctrl+S / Cmd+S)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         const xmlContent = generateLayoutXML();
@@ -21,7 +22,24 @@ document.addEventListener('keydown', async (e) => {
             }
         } catch (err) { if (err.name !== 'AbortError') alert('保存に失敗しました: ' + err.message); }
     }
+
+    // Undo: Ctrl+Z or Cmd+Z (Shiftが押されていないこと)
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (typeof Undo === 'function') Undo();
+    }
+
+    // Redo: Ctrl+Shift+Z or Cmd+Shift+Z (または Ctrl+Y)
+    else if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y')
+    ) {
+        e.preventDefault();
+        if (typeof Redo === 'function') Redo();
+    }
 });
+
+// ... 以下、既存のコードが続く
 
 function showToast(message) {
     const msg = createDiv(message);
