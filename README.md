@@ -114,7 +114,7 @@ graph TD
 1. **リポジトリのクローン**:
 
    ```bash
-   git clone [https://github.com/utomasato/MagicEditor.git](https://github.com/utomasato/MagicEditor.git)
+   git clone https://github.com/utomasato/MagicEditor.git
    ```
 2. **ローカルサーバーの起動**:
 
