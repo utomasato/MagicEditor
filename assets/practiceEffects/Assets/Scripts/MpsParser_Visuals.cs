@@ -22,8 +22,9 @@ public static partial class MpsParser
         {
             string k = s.Consume().Substring(1);
             if (k == "enabled") c.enabled = s.ConsumeBool();
-            // "gradient" に加えて "color" も受け付けるように変更
-            else if (k == "gradient" || k == "color") c.color = ParseGradient(s);
+            // 変更: ParseGradientではなくParseMinMaxGradientを使用
+            // これにより、リスト形式 [ [T,R,G,B,A] ... ] や、2つのグラディエントも対応可能になる
+            else if (k == "gradient" || k == "color") c.color = ParseMinMaxGradient(s);
             else SkipUnknownValue(s);
         }
         return c;

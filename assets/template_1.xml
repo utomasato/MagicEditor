@@ -7,19 +7,19 @@
     <Items>
       <Item type="sigil" value="RETURN" />
       <Item type="name" value="root" />
-      <Item type="joint" value="24" isExecute="false" />
+      <Item type="joint" value="14" isExecute="false" />
       <Item type="sigil" value="spawnobj" />
       <Item type="name" value="setMagic" />
-      <Item type="joint" value="25" isExecute="false" />
+      <Item type="joint" value="15" isExecute="false" />
       <Item type="sigil" value="def" />
       <Item type="name" value="preset" />
       <Item type="joint" value="1" isExecute="false" />
       <Item type="sigil" value="def" />
       <Item type="chars" value="setMagic" />
-      <Item type="joint" value="26" isExecute="true" />
+      <Item type="joint" value="16" isExecute="true" />
       <Item type="chars" value="setMagic" />
       <Item type="chars" value="root" />
-      <Item type="joint" value="19" isExecute="false" />
+      <Item type="joint" value="12" isExecute="false" />
       <Item type="sigil" value="transform" />
     </Items>
   </Ring>
@@ -77,13 +77,13 @@
       <Item type="chars" value="0.0001" />
     </Items>
   </Ring>
-  <Ring id="5" type="DictRing" x="-30.92" y="1174.08" angle="-0.2507">
+  <Ring id="5" type="DictRing" x="-30.91" y="1174.08" angle="-0.2507">
     <Comments>
     </Comments>
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="name" value="gradient" />
-      <Item type="joint" value="11" isExecute="false" />
+      <Item type="joint" value="17" isExecute="false" />
     </Items>
   </Ring>
   <Ring id="6" type="DictRing" x="157.75" y="715.24" angle="4.3720">
@@ -92,10 +92,10 @@
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="name" value="z" />
-      <Item type="joint" value="12" isExecute="false" />
+      <Item type="joint" value="11" isExecute="false" />
     </Items>
   </Ring>
-  <Ring id="7" type="DictRing" x="9.73" y="518.34" angle="3.5626">
+  <Ring id="7" type="DictRing" x="9.72" y="518.34" angle="3.5626">
     <Comments>
     </Comments>
     <Items>
@@ -104,7 +104,7 @@
       <Item type="string_token" value="Fire_1" />
     </Items>
   </Ring>
-  <Ring id="8" type="ArrayRing" x="-188.92" y="242.75" angle="4.0330">
+  <Ring id="8" type="ArrayRing" x="-188.92" y="242.74" angle="4.0330" visualEffect="-">
     <Comments>
     </Comments>
     <Items>
@@ -113,7 +113,7 @@
       <Item type="chars" value="2" />
     </Items>
   </Ring>
-  <Ring id="9" type="ArrayRing" x="-610.49" y="434.04" angle="1.3982">
+  <Ring id="9" type="ArrayRing" x="-610.49" y="434.04" angle="1.3982" visualEffect="-">
     <Comments>
     </Comments>
     <Items>
@@ -122,7 +122,7 @@
       <Item type="chars" value="0.4" />
     </Items>
   </Ring>
-  <Ring id="10" type="ArrayRing" x="-333.87" y="628.51" angle="-0.1726">
+  <Ring id="10" type="ArrayRing" x="-333.87" y="628.51" angle="-0.1726" visualEffect="-">
     <Comments>
     </Comments>
     <Items>
@@ -131,18 +131,7 @@
       <Item type="chars" value="360" />
     </Items>
   </Ring>
-  <Ring id="11" type="DictRing" x="340.54" y="1136.84" angle="4.6125">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="name" value="colorKeys" />
-      <Item type="joint" value="13" isExecute="false" />
-      <Item type="name" value="alphaKeys" />
-      <Item type="joint" value="14" isExecute="false" />
-    </Items>
-  </Ring>
-  <Ring id="12" type="ArrayRing" x="164.24" y="537.85" angle="3.1782">
+  <Ring id="11" type="ArrayRing" x="164.24" y="537.85" angle="3.1782" visualEffect="-">
     <Comments>
     </Comments>
     <Items>
@@ -151,77 +140,18 @@
       <Item type="chars" value="45" />
     </Items>
   </Ring>
-  <Ring id="13" type="ArrayRing" x="509.35" y="1161.57" angle="-1.4253">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="joint" value="15" isExecute="false" />
-      <Item type="joint" value="23" isExecute="false" />
-      <Item type="joint" value="22" isExecute="false" />
-    </Items>
-  </Ring>
-  <Ring id="14" type="ArrayRing" x="203.48" y="1021.92" angle="2.2685">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="joint" value="16" isExecute="false" />
-      <Item type="joint" value="17" isExecute="false" />
-      <Item type="joint" value="18" isExecute="false" />
-    </Items>
-  </Ring>
-  <Ring id="15" type="ArrayRing" x="516.25" y="1297.26" angle="-0.0508">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="1.0" />
-      <Item type="chars" value="0.6" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="1.0" />
-    </Items>
-  </Ring>
-  <Ring id="16" type="ArrayRing" x="266.45" y="907.05" angle="3.6430">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="0.0" />
-    </Items>
-  </Ring>
-  <Ring id="17" type="ArrayRing" x="103.83" y="938.37" angle="2.2685">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="0.5" />
-      <Item type="chars" value="1.0" />
-    </Items>
-  </Ring>
-  <Ring id="18" type="ArrayRing" x="103.04" y="1102.60" angle="0.8941">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="1.0" />
-      <Item type="chars" value="0.0" />
-    </Items>
-  </Ring>
-  <Ring id="19" type="DictRing" x="192.26" y="-245.98" angle="3.8050">
+  <Ring id="12" type="DictRing" x="192.26" y="-245.98" angle="3.8050">
     <Comments>
     </Comments>
     <Items>
       <Item type="sigil" value="COMPLETE" />
       <Item type="name" value="rotation" />
-      <Item type="joint" value="20" isExecute="false" />
+      <Item type="joint" value="13" isExecute="false" />
       <Item type="name" value="scale" />
-      <Item type="joint" value="21" isExecute="false" />
+      <Item type="chars" value="2" />
     </Items>
   </Ring>
-  <Ring id="20" type="ArrayRing" x="304.70" y="-383.33" angle="3.8276">
+  <Ring id="13" type="ArrayRing" x="301.21" y="-386.11" angle="3.8025" visualEffect="-">
     <Comments>
     </Comments>
     <Items>
@@ -231,41 +161,7 @@
       <Item type="chars" value="0" />
     </Items>
   </Ring>
-  <Ring id="21" type="ArrayRing" x="15.52" y="-262.45" angle="1.6637">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="2" />
-      <Item type="chars" value="2" />
-      <Item type="chars" value="2" />
-    </Items>
-  </Ring>
-  <Ring id="22" type="ArrayRing" x="553.25" y="1038.21" angle="3.4835">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="1.0" />
-      <Item type="chars" value="1.0" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="1.0" />
-    </Items>
-  </Ring>
-  <Ring id="23" type="ArrayRing" x="642.83" y="1181.14" angle="-1.4253">
-    <Comments>
-    </Comments>
-    <Items>
-      <Item type="sigil" value="COMPLETE" />
-      <Item type="chars" value="0.6" />
-      <Item type="chars" value="1.0" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="0.0" />
-      <Item type="chars" value="1.0" />
-    </Items>
-  </Ring>
-  <Ring id="24" type="DictRing" x="-195.35" y="-229.02" angle="2.4354">
+  <Ring id="14" type="DictRing" x="-195.35" y="-229.02" angle="2.4354">
     <Comments>
     </Comments>
     <Items>
@@ -274,7 +170,7 @@
       <Item type="string_token" value="empty" />
     </Items>
   </Ring>
-  <Ring id="25" type="MagicRing" x="-307.60" y="112.62" angle="1.2198">
+  <Ring id="15" type="MagicRing" x="-307.60" y="112.62" angle="1.2198">
     <Comments>
     </Comments>
     <Items>
@@ -287,7 +183,7 @@
       <Item type="sigil" value="attachtoparent" />
     </Items>
   </Ring>
-  <Ring id="26" type="MagicRing" x="334.34" y="140.59" angle="-1.1727">
+  <Ring id="16" type="MagicRing" x="334.34" y="140.59" angle="-1.1727">
     <Comments>
     </Comments>
     <Items>
@@ -302,6 +198,65 @@
       <Item type="name" value="sortingFudge" />
       <Item type="chars" value="10" />
       <Item type="sigil" value="put" />
+    </Items>
+  </Ring>
+  <Ring id="17" type="ArrayRing" x="187.70" y="1152.16" angle="4.6125" visualEffect="gradient">
+    <Comments>
+    </Comments>
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="joint" value="18" isExecute="false" />
+      <Item type="joint" value="19" isExecute="false" />
+      <Item type="joint" value="20" isExecute="false" />
+      <Item type="joint" value="21" isExecute="false" />
+    </Items>
+  </Ring>
+  <Ring id="18" type="ArrayRing" x="191.56" y="1332.62" angle="-0.0214" visualEffect="gradient-sub">
+    <Comments>
+    </Comments>
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="1.000" />
+      <Item type="chars" value="0.600" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="0.000" />
+    </Items>
+  </Ring>
+  <Ring id="19" type="ArrayRing" x="350.24" y="1230.65" angle="-1.1209" visualEffect="gradient-sub">
+    <Comments>
+    </Comments>
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="chars" value="0.500" />
+      <Item type="chars" value="1.000" />
+      <Item type="chars" value="0.099" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="1.000" />
+    </Items>
+  </Ring>
+  <Ring id="20" type="ArrayRing" x="331.42" y="1042.97" angle="4.0627" visualEffect="-">
+    <Comments>
+    </Comments>
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="chars" value="0.600" />
+      <Item type="chars" value="1.000" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="0.802" />
+    </Items>
+  </Ring>
+  <Ring id="21" type="ArrayRing" x="155.66" y="974.53" angle="2.9631" visualEffect="-">
+    <Comments>
+    </Comments>
+    <Items>
+      <Item type="sigil" value="COMPLETE" />
+      <Item type="chars" value="1.000" />
+      <Item type="chars" value="1.000" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="0.000" />
+      <Item type="chars" value="0.000" />
     </Items>
   </Ring>
  </Rings>

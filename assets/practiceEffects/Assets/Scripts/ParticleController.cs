@@ -153,6 +153,40 @@ public class ParticleController : MonoBehaviour
         return grad;
     }
 
+    // Helper: MinMaxGradientData を Unity ParticleSystem.MinMaxGradient に変換
+    private ParticleSystem.MinMaxGradient CreatePsMinMaxGradientFromData(MinMaxGradientData data)
+    {
+        if (data == null) return new ParticleSystem.MinMaxGradient(Color.white);
+
+        ParticleSystem.MinMaxGradient minMaxGrad = new ParticleSystem.MinMaxGradient(Color.white);
+
+        switch (data.mode)
+        {
+            case "Color":
+                minMaxGrad = new ParticleSystem.MinMaxGradient(data.colorMax);
+                break;
+            case "TwoColors":
+                minMaxGrad = new ParticleSystem.MinMaxGradient(data.colorMin, data.colorMax);
+                break;
+            case "Gradient":
+                minMaxGrad = new ParticleSystem.MinMaxGradient(CreateUnityGradient(data.gradientMax));
+                break;
+            case "TwoGradients":
+                minMaxGrad = new ParticleSystem.MinMaxGradient(
+                    CreateUnityGradient(data.gradientMin),
+                    CreateUnityGradient(data.gradientMax)
+                );
+                break;
+            case "RandomColor":
+                var g = CreateUnityGradient(data.gradientMax);
+                minMaxGrad = new ParticleSystem.MinMaxGradient(g);
+                minMaxGrad.mode = ParticleSystemGradientMode.RandomColor;
+                break;
+        }
+
+        return minMaxGrad;
+    }
+
     public void CustomizeAndPlay(ParticlePreset preset)
     {
         ps = GetComponent<ParticleSystem>();
@@ -226,33 +260,9 @@ public class ParticleController : MonoBehaviour
             // --- Start Colorの適用 ---
             if (preset.main.startColor != null)
             {
-                var sc = preset.main.startColor;
-                ParticleSystem.MinMaxGradient minMaxGrad = new ParticleSystem.MinMaxGradient(Color.white);
+                var minMaxGrad = CreatePsMinMaxGradientFromData(preset.main.startColor);
 
-                switch (sc.mode)
-                {
-                    case "Color":
-                        minMaxGrad = new ParticleSystem.MinMaxGradient(sc.colorMax);
-                        break;
-                    case "TwoColors":
-                        minMaxGrad = new ParticleSystem.MinMaxGradient(sc.colorMin, sc.colorMax);
-                        break;
-                    case "Gradient":
-                        minMaxGrad = new ParticleSystem.MinMaxGradient(CreateUnityGradient(sc.gradientMax));
-                        break;
-                    case "TwoGradients":
-                        minMaxGrad = new ParticleSystem.MinMaxGradient(
-                            CreateUnityGradient(sc.gradientMin),
-                            CreateUnityGradient(sc.gradientMax)
-                        );
-                        break;
-                    case "RandomColor":
-                        var g = CreateUnityGradient(sc.gradientMax);
-                        minMaxGrad = new ParticleSystem.MinMaxGradient(g);
-                        minMaxGrad.mode = ParticleSystemGradientMode.RandomColor;
-                        break;
-                }
-
+                // RandomColorフラグの特別処理
                 if (preset.main.randomColor)
                 {
                     if (minMaxGrad.mode == ParticleSystemGradientMode.Gradient ||
@@ -442,7 +452,8 @@ public class ParticleController : MonoBehaviour
         colorOverLifetime.enabled = preset.colorOverLifetime != null && preset.colorOverLifetime.enabled;
         if (colorOverLifetime.enabled && preset.colorOverLifetime.color != null)
         {
-            colorOverLifetime.color = CreateUnityGradient(preset.colorOverLifetime.color);
+            // GradientData から MinMaxGradientData (StartColorと同等) に対応
+            colorOverLifetime.color = CreatePsMinMaxGradientFromData(preset.colorOverLifetime.color);
         }
 
         // --- Color by Speed Module ---

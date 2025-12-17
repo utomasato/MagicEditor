@@ -302,7 +302,8 @@ public class ForceOverLifetimeModuleData
 public class ColorOverLifetimeModuleData
 {
     public bool enabled;
-    public GradientData color = new GradientData();
+    // 変更: GradientDataからMinMaxGradientDataへアップグレード
+    public MinMaxGradientData color = new MinMaxGradientData();
 }
 
 [System.Serializable]
