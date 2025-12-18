@@ -27,9 +27,9 @@ function InputInitialize() {
 
 function mouseWheelTurned(event) {
     if (event.deltaY > 0) { // 奥側
-        ZoomOut();
+        ZoomOut(1 + event.deltaY / 200);
     } else if (event.deltaY < 0) { // 手前側
-        ZoomIn();
+        ZoomIn(1 + Math.abs(event.deltaY / 200));
     } else {
     }
 }

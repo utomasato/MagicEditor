@@ -386,8 +386,8 @@ function DrawGrid() {
     }
 }
 
-function ZoomIn() { zoomSize = min(5, zoomSize * 1.2); }
-function ZoomOut() { zoomSize = zoomSize / 1.2; }
+function ZoomIn(delta = 1.2) { zoomSize = min(5, zoomSize * delta); }
+function ZoomOut(delta = 1.2) { zoomSize = zoomSize / delta; }
 function ZoomReset() { zoomSize = 1; }
 
 function updateConsolePanel(message) {

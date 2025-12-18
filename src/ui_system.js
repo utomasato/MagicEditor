@@ -8,7 +8,7 @@ function createConsolePanel() {
     consolePanel.addClass('console-panel');
 
     // 初期配置 (JSで計算が必要な部分は残す)
-    consolePanel.position(60, GetScreenSize()[1] - 160);
+    consolePanel.position(120, GetScreenSize()[1] - 160);
     consolePanel.size(300, 150);
     consolePanel.style('position', 'absolute');
     consolePanel.style('z-index', '1000');
