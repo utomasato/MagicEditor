@@ -261,10 +261,8 @@ public class JsCallbackHandler : MonoBehaviour
 
     void TestObject()
     {
-        string objectText = "<~shape (cube)>";
+        string objectText = "<~shape (cube) >";
         string testId = "test-id-from-csharp-100";
-        systemManager.CreateObjectFromMps(objectText, testId);
-        testId = "test-id-from-csharp-200";
         systemManager.CreateObjectFromMps(objectText, testId);
     }
 

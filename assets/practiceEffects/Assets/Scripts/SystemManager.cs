@@ -252,20 +252,107 @@ public class SystemManager : MonoBehaviour
             // 生成したオブジェクトをリストと辞書に追加
             if (newObject != null)
             {
-                // ★追加の確認: MeshFilterが存在するか（アセットストリッピング対策の確認）
+                // MeshFilterが存在するか（アセットストリッピング対策の確認）
                 if (lowerType != "empty" && newObject.GetComponent<MeshFilter>() == null)
                 {
                     Debug.LogError($"[SystemManager] WARNING: {lowerType} created but MeshFilter is MISSING. It may be invisible due to WebGL Asset Stripping.");
                 }
 
-                // ★追加の確認: マテリアルが正常か。
-                // WebGLで標準マテリアルがピンクまたは透明になる場合、以下のコメントアウトを外して
-                // 登録済みのマテリアルを強制適用して可視化を試みてください。
+                // --- マテリアルとプロパティの適用 ---
                 var rend = newObject.GetComponent<Renderer>();
-                if (rend != null && defaultMaterial != null)
+                if (rend != null)
                 {
-                    Debug.Log($"[SystemManager] Forcing material '{defaultMaterial.name}' to generated object for visibility test.");
-                    rend.material = defaultMaterial;
+                    // ベースとなるマテリアルの決定
+                    Material baseMat = null;
+                    if (defaultMaterial != null)
+                    {
+                        baseMat = defaultMaterial;
+                    }
+                    else if (rend.sharedMaterial != null)
+                    {
+                        // defaultMaterialが設定されていない場合は、Primitiveが元々持っているマテリアル(Default-Material)をベースにする
+                        baseMat = rend.sharedMaterial;
+                    }
+                    else
+                    {
+                        // 最終手段としてStandardシェーダーを作成
+                        baseMat = new Material(Shader.Find("Standard"));
+                    }
+
+                    // インスタンスマテリアルの作成（個別にプロパティを変更するため）
+                    Material instanceMat = new Material(baseMat);
+
+                    // 1. Base Color
+                    if (creationData.baseColor.HasValue)
+                    {
+                        if (instanceMat.HasProperty("_BaseColor")) // URP / HDRP
+                            instanceMat.SetColor("_BaseColor", creationData.baseColor.Value);
+                        else if (instanceMat.HasProperty("_Color")) // Built-in Standard
+                            instanceMat.SetColor("_Color", creationData.baseColor.Value);
+                    }
+
+                    // 2. Metallic
+                    if (creationData.metallic.HasValue)
+                    {
+                        if (instanceMat.HasProperty("_Metallic"))
+                            instanceMat.SetFloat("_Metallic", creationData.metallic.Value);
+                    }
+
+                    // 3. Smoothness
+                    if (creationData.smoothness.HasValue)
+                    {
+                        if (instanceMat.HasProperty("_Smoothness")) // URP
+                            instanceMat.SetFloat("_Smoothness", creationData.smoothness.Value);
+                        else if (instanceMat.HasProperty("_Glossiness")) // Built-in Standard (Smoothness is often stored in _Glossiness)
+                            instanceMat.SetFloat("_Glossiness", creationData.smoothness.Value);
+                    }
+
+                    // 4. Emission
+                    if (creationData.emissionColor.HasValue || creationData.emissionIntensity.HasValue)
+                    {
+                        instanceMat.EnableKeyword("_EMISSION");
+
+                        Color finalEmission = Color.black;
+
+                        // 現在のEmission色を取得（既存の設定を維持するため）
+                        if (instanceMat.HasProperty("_EmissionColor"))
+                            finalEmission = instanceMat.GetColor("_EmissionColor");
+
+                        // 色の上書き
+                        if (creationData.emissionColor.HasValue)
+                        {
+                            finalEmission = creationData.emissionColor.Value;
+                        }
+
+                        // 強度の適用（HDRカラーとして強度を乗算）
+                        if (creationData.emissionIntensity.HasValue)
+                        {
+                            // 単純な色 * 強度のアプローチ (Standard Shader等ではこれで光る)
+                            // 元の色が黒(0,0,0)だと光らないので、色が未指定かつ強度が指定された場合は白をベースにする等の調整が必要かもしれないが、
+                            // ここではユーザーが色も指定することを期待するか、ベースマテリアルの色を使う。
+
+                            // もし色が真っ黒で、かつ色が指定されていなかった場合、白にしておく親切設計
+                            if (finalEmission == Color.black && !creationData.emissionColor.HasValue)
+                            {
+                                finalEmission = Color.white;
+                            }
+
+                            float intensity = creationData.emissionIntensity.Value;
+                            // HDRカラーの計算: 線形空間での強度乗算
+                            float factor = Mathf.Pow(2, intensity); // EV値として扱う場合
+                            // 単純倍率として扱う場合: finalEmission *= intensity;
+                            // ここでは単純倍率として扱います（扱いやすいので）
+                            finalEmission *= intensity;
+                        }
+
+                        if (instanceMat.HasProperty("_EmissionColor"))
+                        {
+                            instanceMat.SetColor("_EmissionColor", finalEmission);
+                            instanceMat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                        }
+                    }
+
+                    rend.material = instanceMat;
                 }
 
                 GeneratedObjects.Add(newObject);

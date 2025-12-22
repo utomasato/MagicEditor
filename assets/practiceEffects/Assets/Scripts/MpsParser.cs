@@ -19,6 +19,13 @@ public struct TransformData
 public struct ObjectCreationData
 {
     public string objectType;
+
+    // マテリアルプロパティ（指定がない場合はnull）
+    public Color? baseColor;
+    public float? metallic;
+    public float? smoothness;
+    public Color? emissionColor;
+    public float? emissionIntensity;
 }
 
 [System.Serializable]
@@ -400,6 +407,26 @@ public static partial class MpsParser
         SkipToCloseBracket(scanner);
         return new Color(r, g, b, a);
     }
+
+    // 柔軟なカラーパーサー（RGB3要素またはRGBA4要素に対応）
+    private static Color ParseFlexibleColor(Scanner scanner)
+    {
+        scanner.Expect("[");
+        List<float> vals = new List<float>();
+        while (scanner.Peek() != "]" && scanner.Peek() != null)
+        {
+            vals.Add(scanner.ConsumeFloat());
+        }
+        scanner.Expect("]");
+
+        float r = vals.Count > 0 ? vals[0] : 0f;
+        float g = vals.Count > 1 ? vals[1] : 0f;
+        float b = vals.Count > 2 ? vals[2] : 0f;
+        float a = vals.Count > 3 ? vals[3] : 1f;
+
+        return new Color(r, g, b, a);
+    }
+
     private static List<float> ParseFloatListInsideBrackets(Scanner scanner)
     {
         List<float> l = new List<float>();
@@ -546,6 +573,11 @@ public static partial class MpsParser
         {
             string key = scanner.Consume().Substring(1);
             if (key == "shape") data.objectType = scanner.ConsumeStringInParens();
+            else if (key == "color") data.baseColor = ParseFlexibleColor(scanner);
+            else if (key == "metallic") data.metallic = scanner.ConsumeFloat();
+            else if (key == "smoothness") data.smoothness = scanner.ConsumeFloat();
+            else if (key == "emissionColor") data.emissionColor = ParseFlexibleColor(scanner);
+            else if (key == "emissionIntensity") data.emissionIntensity = scanner.ConsumeFloat();
             else SkipUnknownValue(scanner);
         }
         scanner.Expect(">");
