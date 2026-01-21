@@ -753,9 +753,41 @@ function DrawElement(e, x, y, size = 1.0) {
             bezier(0.05, -0.4, -0.15, -0.35, -0.15, -0.15, -0.1, 0);
             bezier(-0.1, 0, 0, 0.2, -0.3, 0.15, -0.2121, -0.1121);
             break;
+        case "bullet":
+            line(0, -0.5, 0.15, -0.2);
+            line(0, -0.5, -0.15, -0.2);
+            line(0.15, -0.2, 0.15, 0.3);
+            line(-0.15, -0.2, -0.15, 0.3);
+            line(0.15, 0.3, 0, 0.4);
+            line(-0.15, 0.3, 0, 0.4);
+            line(0, 0.1, 0, 0.3);
+            break;
+        case "charge":
+            ellipse(0, 0, 0.2);
+            for (let i = 0; i < 4; i++) {
+                push();
+                rotate(HALF_PI * i);
+                line(0, -0.5, 0, -0.25);
+                line(0, -0.25, -0.1, -0.35);
+                line(0, -0.25, 0.1, -0.35);
+                point(0, -0.6);
+                pop();
+            }
+            break;
+        case "barrier":
+            beginShape();
+            for (let i = 0; i < 6; i++) {
+                let angle = TWO_PI / 6 * i;
+                vertex(cos(angle) * 0.5, sin(angle) * 0.5);
+            }
+            endShape(CLOSE);
+            ellipse(0, 0, 0.4);
+            line(-0.2, 0, 0.2, 0);
+            line(0, -0.2, 0, 0.2);
+            break;
         default:
             for (var i = 0; i < 4; i++) {
-                Rotate(HALF_PI);
+                rotate(HALF_PI);
                 line(0, 0.1, 0.1, 0.3);
                 line(0.1, 0.3, 0, 0.5);
                 line(0, 0.5, -0.1, 0.3);
