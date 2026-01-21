@@ -482,6 +482,21 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1) {
             arc(0, -0.125, 0.75, 0.75, -5 / 6 * PI, 5 / 6 * PI);
             sigil_parts("current");
             break;
+        case "spawnobj":
+            ellipse(0, 0, 1);
+            line(0, 0.4, 0, 0.5);
+            line(0.346, -0.2, 0.433, -0.25);
+            line(-0.347, -0.201, -0.434, -0.251);
+            line(0, -0.1, 0, -0.2);
+            line(-0.087, 0.05, -0.174, 0.1);
+            line(0.259, 0.15, -0.26, -0.151);
+            line(0, 0.3, 0.259, 0.15);
+            line(0.259, 0.05, 0.259, -0.05);
+            line(0.259, -0.15, 0, -0.3);
+            line(0, -0.3, -0.26, -0.15);
+            line(-0.26, -0.05, -0.26, 0.05);
+            line(-0.26, 0.15, 0, 0.3);
+            break;
         case "magicactivate":
             ellipse(0, 0, 1);
             line(0, 0.5, 0.433, -0.25);
@@ -522,6 +537,13 @@ function DrawSigil(token, x, y, rotate = 0, zoom = 1) {
             line(0.4, -0.4, 0.3, -0.4);
             line(-0.4, 0.3, -0.4, 0.4);
             line(-0.4, 0.4, -0.3, 0.4);
+            break;
+        case "attachtoparent":
+            arc(0, -0.1, 0.7, 0.7, PI, 0);
+            ellipse(0, 0.3, 0.2);
+            line(0, 0.3, 0, -0.1);
+            line(0, -0.1, -0.1, 0);
+            line(0, -0.1, 0.1, 0);
             break;
         case "animation":
             line(-0.067, 0.375, 0.366, -0.375);
